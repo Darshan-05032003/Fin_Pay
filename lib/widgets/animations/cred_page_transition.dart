@@ -8,31 +8,46 @@ class CredPageTransition extends PageRouteBuilder {
 
   CredPageTransition({
     required this.page,
-    this.transitionDuration = const Duration(milliseconds: 400),
+    this.transitionDuration = const Duration(milliseconds: 350),
     this.curve = Curves.easeOutCubic,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionDuration: transitionDuration,
-          reverseTransitionDuration: transitionDuration,
+          reverseTransitionDuration: const Duration(milliseconds: 250),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curvedAnimation = CurvedAnimation(
+            final fadeAnimation = Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(CurvedAnimation(
               parent: animation,
-              curve: curve,
-            );
+              curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+            ));
 
-            return FadeTransition(
-              opacity: curvedAnimation,
-              child: ScaleTransition(
-                scale: Tween<double>(
-                  begin: 0.95,
-                  end: 1.0,
-                ).animate(curvedAnimation),
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.02),
-                    end: Offset.zero,
-                  ).animate(curvedAnimation),
-                  child: child,
+            final scaleAnimation = Tween<double>(
+              begin: 0.96,
+              end: 1.0,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
+            ));
+
+            final slideAnimation = Tween<Offset>(
+              begin: const Offset(0, 0.01),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
+            ));
+
+            return RepaintBoundary(
+              child: FadeTransition(
+                opacity: fadeAnimation,
+                child: ScaleTransition(
+                  scale: scaleAnimation,
+                  child: SlideTransition(
+                    position: slideAnimation,
+                    child: child,
+                  ),
                 ),
               ),
             );

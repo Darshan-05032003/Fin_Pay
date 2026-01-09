@@ -10,8 +10,8 @@ class FadeInAnimation extends StatefulWidget {
     super.key,
     required this.child,
     this.delay = Duration.zero,
-    this.duration = const Duration(milliseconds: 600),
-    this.curve = Curves.easeOut,
+    this.duration = const Duration(milliseconds: 500),
+    this.curve = Curves.easeOutCubic,
   });
 
   @override
@@ -63,11 +63,13 @@ class _FadeInAnimationState extends State<FadeInAnimation>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: widget.child,
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: widget.child,
+        ),
       ),
     );
   }

@@ -224,12 +224,13 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                           duration: const Duration(milliseconds: 1500),
                           curve: Curves.easeOutCubic,
                           offset: const Offset(0, 20),
-                          child: TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.0, end: double.parse(widget.amount)),
-                            duration: const Duration(milliseconds: 1500),
-                            curve: Curves.easeOutCubic,
-                            builder: (context, value, child) {
-                              return Text(
+                          child: RepaintBoundary(
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0.0, end: double.parse(widget.amount)),
+                              duration: const Duration(milliseconds: 1200),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, value, child) {
+                                return Text(
                                 '\$${value.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 42,
@@ -240,6 +241,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                                 textAlign: TextAlign.center,
                               );
                             },
+                            ),
                           ),
                         ),
                       ],

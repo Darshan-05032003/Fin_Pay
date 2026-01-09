@@ -176,15 +176,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildAnimatedPage(OnboardingPage page, int index) {
     final isCurrentPage = _currentPage == index;
     
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: isCurrentPage ? 1.0 : 0.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(30 * (1 - value), 0),
+    return RepaintBoundary(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: isCurrentPage ? 1.0 : 0.0),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, _) {
+          return Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(30 * (1 - value), 0),
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: Column(
@@ -259,9 +260,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ],
                 ),
               ),
-          ),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 

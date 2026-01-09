@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 /// CRED-style card reveal animation with 3D perspective
 class CredCardReveal extends StatefulWidget {
@@ -12,7 +11,7 @@ class CredCardReveal extends StatefulWidget {
   const CredCardReveal({
     super.key,
     required this.child,
-    this.duration = const Duration(milliseconds: 600),
+    this.duration = const Duration(milliseconds: 500),
     this.curve = Curves.easeOutCubic,
     this.perspective = 0.001,
     this.revealFromBottom = true,
@@ -63,23 +62,26 @@ class _CredCardRevealState extends State<CredCardReveal>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform(
-          alignment: Alignment.center,
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, widget.perspective)
-            ..rotateX(_rotationAnimation.value),
-          child: Opacity(
-            opacity: _opacityAnimation.value,
-            child: Transform.translate(
-              offset: Offset(0, 30 * (1 - _opacityAnimation.value)),
-              child: widget.child,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, widget.perspective)
+              ..rotateX(_rotationAnimation.value),
+            child: Opacity(
+              opacity: _opacityAnimation.value,
+              child: Transform.translate(
+                offset: Offset(0, 30 * (1 - _opacityAnimation.value)),
+                child: widget.child,
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 }

@@ -41,12 +41,12 @@ class _FloatingActionButtonWithDelayState extends State<_FloatingActionButtonWit
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.elasticOut,
+      curve: Curves.easeOutCubic,
     );
     
     Future.delayed(widget.delay, () {
@@ -66,9 +66,11 @@ class _FloatingActionButtonWithDelayState extends State<_FloatingActionButtonWit
   @override
   Widget build(BuildContext context) {
     if (!_isVisible) return const SizedBox.shrink();
-    return ScaleTransition(
-      scale: _animation,
-      child: widget.child,
+    return RepaintBoundary(
+      child: ScaleTransition(
+        scale: _animation,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -200,28 +202,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 600),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(-20 * (1 - value), 0),
-                              child: child,
+                      RepaintBoundary(
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(-20 * (1 - value), 0),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Text(
+                            '$greeting.',
+                            style: const TextStyle(
+                              color: AppTheme.credTextSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
-                          );
-                        },
-                        child: Text(
-                          '$greeting.',
-                    style: const TextStyle(
-                      color: AppTheme.credTextSecondary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+                          ),
+                        ),
+                      ),
                 const SizedBox(height: 4),
                 custom.FadeInAnimation(
                   delay: const Duration(milliseconds: 100),

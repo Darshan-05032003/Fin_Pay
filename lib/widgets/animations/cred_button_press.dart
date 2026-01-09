@@ -12,8 +12,8 @@ class CredButtonPress extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.duration = const Duration(milliseconds: 200),
-    this.scaleAmount = 0.95,
+    this.duration = const Duration(milliseconds: 150),
+    this.scaleAmount = 0.96,
     this.rippleColor,
   });
 
@@ -25,7 +25,6 @@ class _CredButtonPressState extends State<CredButtonPress>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
 
   @override
   void initState() {
@@ -40,7 +39,7 @@ class _CredButtonPressState extends State<CredButtonPress>
       end: widget.scaleAmount,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic,
     ));
   }
 
@@ -51,18 +50,15 @@ class _CredButtonPressState extends State<CredButtonPress>
   }
 
   void _handleTapDown(TapDownDetails details) {
-    setState(() => _isPressed = true);
     _controller.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
-    setState(() => _isPressed = false);
     _controller.reverse();
     widget.onTap?.call();
   }
 
   void _handleTapCancel() {
-    setState(() => _isPressed = false);
     _controller.reverse();
   }
 
@@ -72,14 +68,17 @@ class _CredButtonPressState extends State<CredButtonPress>
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: widget.child,
-          );
-        },
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: widget.child,
+            );
+          },
+          child: widget.child,
+        ),
       ),
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 /// CRED-style animated number counter with smooth transitions
 class CredNumberCounter extends StatefulWidget {
@@ -75,16 +74,18 @@ class _CredNumberCounterState extends State<CredNumberCounter>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        final displayValue = _animation.value;
-        final formattedValue = displayValue.toStringAsFixed(widget.decimalPlaces);
-        return Text(
-          '${widget.prefix ?? ''}$formattedValue${widget.suffix ?? ''}',
-          style: widget.style,
-        );
-      },
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          final displayValue = _animation.value;
+          final formattedValue = displayValue.toStringAsFixed(widget.decimalPlaces);
+          return Text(
+            '${widget.prefix ?? ''}$formattedValue${widget.suffix ?? ''}',
+            style: widget.style,
+          );
+        },
+      ),
     );
   }
 }

@@ -33,25 +33,25 @@ class _SpringAnimationState extends State<SpringAnimation>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
     );
 
-    // Spring physics applied through curve animations
+    // Smoother spring physics using optimized curves
 
     _offsetAnimation = Tween<Offset>(
       begin: widget.startOffset,
       end: widget.endOffset,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOut,
+      curve: Curves.easeOutCubic,
     ));
 
     _scaleAnimation = Tween<double>(
-      begin: 0.8,
+      begin: 0.85,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.elasticOut,
+      curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
     ));
 
     _controller.forward();
@@ -65,18 +65,20 @@ class _SpringAnimationState extends State<SpringAnimation>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Transform.translate(
-            offset: _offsetAnimation.value,
-            child: widget.child,
-          ),
-        );
-      },
-      child: widget.child,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Transform.translate(
+              offset: _offsetAnimation.value,
+              child: widget.child,
+            ),
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 }

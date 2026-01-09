@@ -141,16 +141,17 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   }
 
   Widget _buildCardDisplay(models.Card card) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: 0.9 + (0.1 * value),
-          child: Opacity(
-            opacity: value,
-            child: Container(
+    return RepaintBoundary(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, _) {
+          return Transform.scale(
+            scale: 0.9 + (0.1 * value),
+            child: Opacity(
+              opacity: value,
+              child: Container(
               height: 200,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -257,6 +258,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
           ),
         );
       },
+      ),
     );
   }
 
