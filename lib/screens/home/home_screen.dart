@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../constants/theme.dart';
 import '../../models/transaction.dart' as models;
 import '../../models/user.dart';
-import '../../presentation/providers/user_provider.dart';
-import '../../presentation/providers/transaction_provider.dart';
+import '../../blocs/user/user_bloc.dart';
+import '../../blocs/user/user_event.dart';
+import '../../blocs/user/user_state.dart';
+import '../../blocs/transaction/transaction_bloc.dart';
+import '../../blocs/transaction/transaction_event.dart';
+import '../../blocs/transaction/transaction_state.dart';
 import '../../services/haptic_service.dart';
 import '../../widgets/animations/fade_in_animation.dart' as custom;
 import '../../widgets/animations/staggered_list_animation.dart';
@@ -17,6 +21,7 @@ import '../../widgets/animations/cred_number_counter.dart';
 import '../../widgets/animations/cred_slide_in.dart';
 import '../../widgets/animations/cred_button_press.dart';
 import '../../widgets/animations/cred_card_reveal.dart';
+import '../../widgets/cred_bottom_navigation_bar.dart';
 
 class _FloatingActionButtonWithDelay extends StatefulWidget {
   final Widget child;
@@ -85,92 +90,108 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    return Consumer2<UserProvider, TransactionProvider>(
-      builder: (context, userProvider, transactionProvider, child) {
-        final user = userProvider.user;
-        final recentTransactions = transactionProvider.recentTransactions;
-        final isLoading = userProvider.isLoading || transactionProvider.isLoading;
+    return BlocBuilder<UserBloc, UserState>(
+      builder: (context, userState) {
+        return BlocBuilder<TransactionBloc, TransactionState>(
+          builder: (context, transactionState) {
+            final user = userState is UserLoaded ? userState.user : null;
+            final recentTransactions = transactionState is TransactionLoaded
+                ? transactionState.recentTransactions
+                : <models.Transaction>[];
+            final isLoading = userState is UserLoading || transactionState is TransactionLoading;
 
-        if (isLoading) {
-          return Scaffold(
-            backgroundColor: AppTheme.credBlack,
-            body: _buildSkeletonLoader(),
-          );
-        }
+            if (isLoading) {
+              return Scaffold(
+                backgroundColor: AppTheme.credPureBackground,
+                body: _buildSkeletonLoader(),
+              );
+            }
 
-        return Scaffold(
-          backgroundColor: AppTheme.credBlack,
-          body: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, user),
-                Expanded(
-                  child: CustomPullToRefresh(
-                    onRefresh: () async {
-                      await userProvider.loadUser();
-                      await transactionProvider.loadTransactions();
+            return Scaffold(
+              backgroundColor: AppTheme.credPureBackground,
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    _buildHeader(context, user),
+                    Expanded(
+                      child: CustomPullToRefresh(
+                        onRefresh: () async {
+                          context.read<UserBloc>().add(const LoadUserEvent());
+                          context.read<TransactionBloc>().add(const LoadTransactionsEvent());
+                        },
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildQuickActions(),
+                              _buildPaymentList(context),
+                              _buildPromoSection(),
+                              _buildRecentTransactions(context, recentTransactions),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              bottomNavigationBar: CredBottomNavigationBar(
+                currentIndex: 0,
+                onTap: (index) {
+                  if (index == 0) {
+                    Navigator.pushReplacementNamed(context, '/home');
+                  } else if (index == 1) {
+                    Navigator.pushReplacementNamed(context, '/statistics');
+                  } else if (index == 2) {
+                    Navigator.pushReplacementNamed(context, '/cards');
+                  } else if (index == 3) {
+                    Navigator.pushReplacementNamed(context, '/profile');
+                  }
+                },
+              ),
+              floatingActionButton: CredSlideIn(
+                delay: const Duration(milliseconds: 1000),
+                offset: const Offset(0, 50),
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.elasticOut,
+                child: PulseAnimation(
+                  duration: const Duration(seconds: 2),
+                  minScale: 0.95,
+                  maxScale: 1.05,
+                  child: CredButtonPress(
+                    onTap: () async {
+                      await HapticService.mediumImpact();
+                      Navigator.pushNamed(context, '/transfer').then((_) {
+                        context.read<UserBloc>().add(const LoadUserEvent());
+                        context.read<TransactionBloc>().add(const LoadTransactionsEvent());
+                      });
                     },
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildQuickActions(),
-                      _buildPaymentList(context),
-                      _buildPromoSection(),
-                      _buildRecentTransactions(context, recentTransactions),
-                    ],
+                    child: FloatingActionButton(
+                      onPressed: null,
+                      backgroundColor: AppTheme.credOrangeSunshine,
+                      elevation: 12,
+                      child: IconMorph(
+                        startIcon: Icons.send,
+                        endIcon: Icons.send,
+                        color: AppTheme.credWhite,
+                        size: 28,
+                        animateOnTap: true,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: _buildBottomNavigationBar(context, 0),
-      floatingActionButton: CredSlideIn(
-        delay: const Duration(milliseconds: 1000),
-        offset: const Offset(0, 50),
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.elasticOut,
-        child: PulseAnimation(
-          duration: const Duration(seconds: 2),
-          minScale: 0.95,
-          maxScale: 1.05,
-          child: CredButtonPress(
-            onTap: () async {
-              await HapticService.mediumImpact();
-              final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
-              final userProvider = Provider.of<UserProvider>(context, listen: false);
-              Navigator.pushNamed(context, '/transfer').then((_) {
-                userProvider.loadUser();
-                transactionProvider.loadTransactions();
-              });
-            },
-            child: FloatingActionButton(
-              onPressed: null,
-              backgroundColor: AppTheme.credPurple,
-              elevation: 12,
-              child: IconMorph(
-                startIcon: Icons.send,
-                endIcon: Icons.send,
-                color: AppTheme.credWhite,
-                size: 28,
-                animateOnTap: true,
-              ),
-            ),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildHeader(BuildContext context, User? user) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final balance = userProvider.balance;
+    final balance = user?.balance ?? 0.0;
     final hour = DateTime.now().hour;
     final greeting = hour < 12
         ? 'Good Morning'
@@ -183,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
       decoration: BoxDecoration(
-        gradient: AppTheme.credPurpleGradient,
+        gradient: AppTheme.credOrangeGradient,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -256,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: IconMorph(
                           startIcon: Icons.notifications_outlined,
                           endIcon: Icons.notifications,
-                          color: AppTheme.credGray,
+                          color: AppTheme.credSurfaceCard,
                           size: 24,
                           animateOnTap: false,
                         ),
@@ -273,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: IconMorph(
                           startIcon: Icons.settings_outlined,
                           endIcon: Icons.settings,
-                          color: AppTheme.credGray,
+                          color: AppTheme.credSurfaceCard,
                           size: 24,
                           animateOnTap: false,
                         ),
@@ -353,15 +374,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppTheme.credGray,
+                  color: AppTheme.credSurfaceCard,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppTheme.credLightGray.withOpacity(0.3),
+                    color: AppTheme.credMediumGray.withOpacity(0.3),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.credPurple.withOpacity(0.1),
+                      color: AppTheme.credOrangeSunshine.withOpacity(0.1),
                       blurRadius: 8,
                       spreadRadius: 0,
                     ),
@@ -410,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppTheme.credGray,
+        backgroundColor: AppTheme.credSurfaceCard,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -420,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showMoreOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.credGray,
+      backgroundColor: AppTheme.credSurfaceCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -459,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMoreOption(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: AppTheme.credPurple),
+      leading: Icon(icon, color: AppTheme.credOrangeSunshine),
       title: Text(label, style: const TextStyle(color: AppTheme.credTextPrimary)),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppTheme.credTextSecondary),
       onTap: () async {
@@ -500,12 +521,12 @@ class _HomeScreenState extends State<HomeScreen> {
               childAspectRatio: 0.85,
               children: [
                 _buildAnimatedPaymentItem(Icons.wifi, 'Internet', AppTheme.credOrange, 0),
-                _buildAnimatedPaymentItem(Icons.bolt, 'Electricity', AppTheme.credRed, 1),
-                _buildAnimatedPaymentItem(Icons.phone, 'Mobile', AppTheme.credPurple, 2),
+                _buildAnimatedPaymentItem(Icons.bolt, 'Electricity', AppTheme.credError, 1),
+                _buildAnimatedPaymentItem(Icons.phone, 'Mobile', AppTheme.credOrangeSunshine, 2),
                 _buildAnimatedPaymentItem(Icons.water_drop, 'Water', AppTheme.credBlue, 3),
-                _buildAnimatedPaymentItem(Icons.local_gas_station, 'Gas', AppTheme.credGreen, 4),
-                _buildAnimatedPaymentItem(Icons.tv, 'TV', AppTheme.credPurpleLight, 5),
-                _buildAnimatedPaymentItem(Icons.store, 'Merchant', AppTheme.credPurple, 6),
+                _buildAnimatedPaymentItem(Icons.local_gas_station, 'Gas', AppTheme.credNeoPaccha, 4),
+                _buildAnimatedPaymentItem(Icons.tv, 'TV', AppTheme.credOrangeSunshine.withOpacity(0.7), 5),
+                _buildAnimatedPaymentItem(Icons.store, 'Merchant', AppTheme.credOrangeSunshine, 6),
                 _buildAnimatedPaymentItem(Icons.more_horiz, 'More', AppTheme.credTextSecondary, 7),
               ],
             ),
@@ -541,10 +562,10 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppTheme.credGray,
+              color: AppTheme.credSurfaceCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppTheme.credLightGray.withOpacity(0.3),
+                color: AppTheme.credMediumGray.withOpacity(0.3),
                 width: 1,
               ),
               boxShadow: [
@@ -608,7 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showMorePaymentOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.credGray,
+      backgroundColor: AppTheme.credSurfaceCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -672,11 +693,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
-              gradient: AppTheme.credPurpleGradient,
+              gradient: AppTheme.credOrangeGradient,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.credPurple.withOpacity(0.4),
+                  color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                   blurRadius: 24,
                   spreadRadius: 0,
                   offset: const Offset(0, 12),
@@ -759,18 +780,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   CredButtonPress(
                     onTap: () {
-                      final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
-                      final userProvider = Provider.of<UserProvider>(context, listen: false);
                       Navigator.pushNamed(context, '/transactions').then((_) {
-                        userProvider.loadUser();
-                        transactionProvider.loadTransactions();
+                        context.read<UserBloc>().add(const LoadUserEvent());
+                        context.read<TransactionBloc>().add(const LoadTransactionsEvent());
                       });
                     },
                     child: TextButton(
                       onPressed: null,
                       child: const Text(
                         'See All',
-                        style: TextStyle(color: AppTheme.credPurple),
+                        style: TextStyle(color: AppTheme.credOrangeSunshine),
                       ),
                     ),
                   ),
@@ -816,10 +835,10 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.credGray,
+          color: AppTheme.credSurfaceCard,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.credLightGray.withOpacity(0.2),
+            color: AppTheme.credMediumGray.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -830,8 +849,8 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 52,
               decoration: BoxDecoration(
                 color: (transaction.type == models.TransactionType.receiveMoney || transaction.amount > 0
-                        ? AppTheme.credGreen
-                        : AppTheme.credRed).withOpacity(0.15),
+                        ? AppTheme.credNeoPaccha
+                        : AppTheme.credError).withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -839,8 +858,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   transaction.icon,
                   style: TextStyle(
                     color: transaction.type == models.TransactionType.receiveMoney || transaction.amount > 0
-                        ? AppTheme.credGreen
-                        : AppTheme.credRed,
+                        ? AppTheme.credNeoPaccha
+                        : AppTheme.credError,
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
                   ),
@@ -880,14 +899,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: transaction.amount < 0 ? AppTheme.credRed : AppTheme.credGreen,
+                    color: transaction.amount < 0 ? AppTheme.credError : AppTheme.credNeoPaccha,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: (transaction.amount < 0 ? AppTheme.credRed : AppTheme.credGreen).withOpacity(0.15),
+                    color: (transaction.amount < 0 ? AppTheme.credError : AppTheme.credNeoPaccha).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -895,7 +914,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: transaction.amount < 0 ? AppTheme.credRed : AppTheme.credGreen,
+                      color: transaction.amount < 0 ? AppTheme.credError : AppTheme.credNeoPaccha,
                     ),
                   ),
                 ),
@@ -922,7 +941,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSkeletonLoader() {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16.0),
@@ -936,62 +955,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBottomNavigationBar(BuildContext context, int currentIndex) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.credGray,
-        border: Border(
-          top: BorderSide(
-            color: AppTheme.credLightGray.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppTheme.credGray,
-        selectedItemColor: AppTheme.credPurple,
-        unselectedItemColor: AppTheme.credTextTertiary,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-        onTap: (index) async {
-          await HapticService.selection();
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/statistics');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/cards');
-          } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/profile');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Statics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card),
-            label: 'My Cards',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
 }

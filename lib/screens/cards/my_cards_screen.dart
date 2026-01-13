@@ -7,6 +7,7 @@ import '../../widgets/animations/card_3d_flip.dart';
 import '../../widgets/animations/ripple_effect.dart';
 import '../../widgets/animations/fade_in_animation.dart';
 import '../../services/haptic_service.dart';
+import '../../widgets/cred_bottom_navigation_bar.dart';
 import 'add_card_screen.dart';
 
 class MyCardsScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('My Card'),
         leading: IconButton(
@@ -107,14 +108,14 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                             scale: value,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: AppTheme.credPurple.withOpacity(0.15),
+                                color: AppTheme.credOrangeSunshine.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: ElevatedButton(
                                 onPressed: null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
-                                  foregroundColor: AppTheme.credPurple,
+                                  foregroundColor: AppTheme.credOrangeSunshine,
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -155,11 +156,11 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
               height: 200,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: AppTheme.credPurpleGradient,
+                gradient: AppTheme.credOrangeGradient,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credPurple.withOpacity(0.4 * value),
+                    color: AppTheme.credOrangeSunshine.withOpacity(0.4 * value),
                     blurRadius: 20,
                     spreadRadius: 5,
                     offset: Offset(0, 10 * value),
@@ -180,7 +181,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                                 ? 'MASTERCARD'
                                 : 'AMEX',
                         style: const TextStyle(
-                          color: AppTheme.credGray,
+                          color: AppTheme.credSurfaceCard,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 2,
@@ -194,7 +195,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                       Text(
                         card.maskedNumber,
                         style: const TextStyle(
-                          color: AppTheme.credGray,
+                          color: AppTheme.credSurfaceCard,
                           fontSize: 18,
                           letterSpacing: 2,
                         ),
@@ -210,14 +211,14 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                                 Text(
                                   'Card Holder',
                                   style: TextStyle(
-                                    color: AppTheme.credGray.withOpacity(0.7),
+                                    color: AppTheme.credSurfaceCard.withOpacity(0.7),
                                     fontSize: 12,
                                   ),
                                 ),
                                 Text(
                                   card.cardHolderName,
                                   style: const TextStyle(
-                                    color: AppTheme.credGray,
+                                    color: AppTheme.credSurfaceCard,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -233,14 +234,14 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                                 Text(
                                   'Expire',
                                   style: TextStyle(
-                                    color: AppTheme.credGray.withOpacity(0.7),
+                                    color: AppTheme.credSurfaceCard.withOpacity(0.7),
                                     fontSize: 12,
                                   ),
                                 ),
                                 Text(
                                   card.expireDate,
                                   style: const TextStyle(
-                                    color: AppTheme.credGray,
+                                    color: AppTheme.credSurfaceCard,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -270,7 +271,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
         gradient: LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [AppTheme.credPurpleDark, AppTheme.credPurple],
+          colors: [AppTheme.credOrangeSunshine.withOpacity(0.5), AppTheme.credOrangeSunshine],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -296,7 +297,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                 child: Text(
                   card.cvv,
                   style: const TextStyle(
-                    color: AppTheme.credGray,
+                    color: AppTheme.credSurfaceCard,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -309,7 +310,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                   Text(
                     card.cardHolderName.toUpperCase(),
                     style: const TextStyle(
-                      color: AppTheme.credGray,
+                      color: AppTheme.credSurfaceCard,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1,
@@ -318,7 +319,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                   Text(
                     card.expireDate,
                     style: const TextStyle(
-                      color: AppTheme.credGray,
+                      color: AppTheme.credSurfaceCard,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -336,7 +337,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.credGray,
+        color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -398,52 +399,19 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   }
 
   Widget _buildBottomNavigationBar(BuildContext context, int currentIndex) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.credGray,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primaryGreen,
-        unselectedItemColor: AppTheme.textLight,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/statistics');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/cards');
-          } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/profile');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Statics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card),
-            label: 'My Cards',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+    return CredBottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: (index) {
+        if (index == 0) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else if (index == 1) {
+          Navigator.pushReplacementNamed(context, '/statistics');
+        } else if (index == 2) {
+          Navigator.pushReplacementNamed(context, '/cards');
+        } else if (index == 3) {
+          Navigator.pushReplacementNamed(context, '/profile');
+        }
+      },
     );
   }
 }

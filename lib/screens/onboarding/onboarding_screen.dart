@@ -40,7 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -89,8 +89,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _pageController,
                 count: _pages.length,
                 effect: const WormEffect(
-                  activeDotColor: AppTheme.credPurple,
-                  dotColor: AppTheme.credLightGray,
+                  activeDotColor: AppTheme.credOrangeSunshine,
+                  dotColor: AppTheme.credMediumGray,
                   dotHeight: 10,
                   dotWidth: 10,
                   spacing: 8,
@@ -138,11 +138,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         endOffset: Offset.zero,
                         child: Container(
                           decoration: BoxDecoration(
-                            gradient: AppTheme.credPurpleGradient,
+                            gradient: AppTheme.credOrangeGradient,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.credPurple.withOpacity(0.4),
+                                color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                 blurRadius: 20,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 10),
@@ -237,11 +237,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             width: 220,
                             height: 220,
                             decoration: BoxDecoration(
-                              gradient: AppTheme.credPurpleGradient,
+                              gradient: AppTheme.credOrangeGradient,
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.credPurple.withOpacity(0.4),
+                                  color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                   blurRadius: 24,
                                   spreadRadius: 0,
                                   offset: const Offset(0, 12),

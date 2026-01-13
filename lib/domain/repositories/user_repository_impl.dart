@@ -1,6 +1,5 @@
 import '../../models/user.dart';
 import '../../core/result/result.dart';
-import '../../core/errors/app_exception.dart';
 import '../../data/datasources/local_datasource.dart';
 import '../../services/user_service.dart';
 import 'user_repository.dart';

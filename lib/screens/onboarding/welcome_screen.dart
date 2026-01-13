@@ -44,7 +44,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _controller,
@@ -107,7 +107,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               Navigator.pushNamed(context, '/onboarding');
                             },
                             style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.credPurple,
+            backgroundColor: AppTheme.credOrangeSunshine,
             foregroundColor: AppTheme.credWhite,
                               minimumSize: const Size(double.infinity, 60),
                               shape: RoundedRectangleBorder(

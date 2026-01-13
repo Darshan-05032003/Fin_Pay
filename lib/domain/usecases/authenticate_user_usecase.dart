@@ -1,6 +1,5 @@
 import '../../core/result/result.dart';
 import '../../models/user.dart';
-import '../../core/errors/app_exception.dart';
 import '../repositories/user_repository.dart';
 
 /// Use case for user authentication

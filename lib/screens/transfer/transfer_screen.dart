@@ -48,7 +48,7 @@ class _TransferScreenState extends State<TransferScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         appBar: AppBar(
           title: const Text('Transfer'),
           leading: IconButton(
@@ -61,7 +61,7 @@ class _TransferScreenState extends State<TransferScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('Transfer'),
         leading: IconButton(
@@ -127,19 +127,19 @@ class _TransferScreenState extends State<TransferScreen> {
                                       height: 60,
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? AppTheme.credPurple
-                                            : AppTheme.credGray,
+                                            ? AppTheme.credOrangeSunshine
+                                            : AppTheme.credSurfaceCard,
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: isSelected
-                                              ? AppTheme.credPurple
-                                              : AppTheme.credLightGray.withOpacity(0.3),
+                                              ? AppTheme.credOrangeSunshine
+                                              : AppTheme.credMediumGray.withOpacity(0.3),
                                           width: isSelected ? 3 : 2,
                                         ),
                                         boxShadow: isSelected
                                             ? [
                                                 BoxShadow(
-                                                  color: AppTheme.credPurple.withOpacity(0.4),
+                                                  color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                                   blurRadius: 12,
                                                   spreadRadius: 0,
                                                 ),
@@ -200,12 +200,12 @@ class _TransferScreenState extends State<TransferScreen> {
                             curve: Curves.easeOutCubic,
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                             decoration: BoxDecoration(
-                              color: AppTheme.credGray,
+                              color: AppTheme.credSurfaceCard,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: hasFocus
-                                    ? AppTheme.credPurple
-                                    : AppTheme.credLightGray.withOpacity(0.2),
+                                    ? AppTheme.credOrangeSunshine
+                                    : AppTheme.credMediumGray.withOpacity(0.2),
                                 width: hasFocus ? 2 : 1,
                               ),
                             ),
@@ -214,7 +214,7 @@ class _TransferScreenState extends State<TransferScreen> {
                               style: const TextStyle(
                                 fontSize: 42,
                                 fontWeight: FontWeight.w800,
-                                color: AppTheme.credPurple,
+                                color: AppTheme.credOrangeSunshine,
                                 letterSpacing: -1,
                               ),
                               textAlign: TextAlign.center,
@@ -224,14 +224,14 @@ class _TransferScreenState extends State<TransferScreen> {
                                 prefixStyle: const TextStyle(
                                   fontSize: 42,
                                   fontWeight: FontWeight.w800,
-                                  color: AppTheme.credPurple,
+                                  color: AppTheme.credOrangeSunshine,
                                   letterSpacing: -1,
                                 ),
                                 border: InputBorder.none,
                                 hintText: '0.00',
                                 hintStyle: TextStyle(
                                   fontSize: 42,
-                                  color: AppTheme.credPurple.withOpacity(0.3),
+                                  color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                                 ),
                               ),
                             ),
@@ -260,7 +260,7 @@ class _TransferScreenState extends State<TransferScreen> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.credPurple,
+                              color: AppTheme.credOrangeSunshine,
                             ),
                             prefix: '\$',
                             suffix: ' (Available)',
@@ -285,7 +285,7 @@ class _TransferScreenState extends State<TransferScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Please enter a valid amount'),
-                              backgroundColor: AppTheme.credRed,
+                              backgroundColor: AppTheme.credError,
                             ),
                           );
                           return;
@@ -295,7 +295,7 @@ class _TransferScreenState extends State<TransferScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Insufficient balance'),
-                              backgroundColor: AppTheme.credRed,
+                              backgroundColor: AppTheme.credError,
                             ),
                           );
                           return;
@@ -322,16 +322,16 @@ class _TransferScreenState extends State<TransferScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: (selectedRecipient != null && _amountController.text.isNotEmpty)
-                          ? AppTheme.credPurpleGradient
+                          ? AppTheme.credOrangeGradient
                           : null,
                       color: (selectedRecipient != null && _amountController.text.isNotEmpty)
                           ? null
-                          : AppTheme.credGray,
+                          : AppTheme.credSurfaceCard,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: (selectedRecipient != null && _amountController.text.isNotEmpty)
                           ? [
                               BoxShadow(
-                                color: AppTheme.credPurple.withOpacity(0.4),
+                                color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                 blurRadius: 16,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 8),
@@ -370,11 +370,11 @@ class _TransferScreenState extends State<TransferScreen> {
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        gradient: AppTheme.credPurpleGradient,
+        gradient: AppTheme.credOrangeGradient,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.credPurple.withOpacity(0.4),
+            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
             blurRadius: 12,
             spreadRadius: 0,
           ),
@@ -396,10 +396,10 @@ class _TransferScreenState extends State<TransferScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.credGray,
+        color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.credPurple.withOpacity(0.3),
+          color: AppTheme.credOrangeSunshine.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -413,11 +413,11 @@ class _TransferScreenState extends State<TransferScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                gradient: AppTheme.credPurpleGradient,
+                gradient: AppTheme.credOrangeGradient,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credPurple.withOpacity(0.4),
+                    color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                     blurRadius: 12,
                     spreadRadius: 0,
                   ),
@@ -473,7 +473,7 @@ class _TransferScreenState extends State<TransferScreen> {
               child: const Text(
                 'Change',
                 style: TextStyle(
-                  color: AppTheme.credPurple,
+                  color: AppTheme.credOrangeSunshine,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -542,10 +542,10 @@ class _TransferScreenState extends State<TransferScreen> {
           perspective: 0.0006,
           child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.credGray,
+              color: AppTheme.credSurfaceCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppTheme.credLightGray.withOpacity(0.2),
+                color: AppTheme.credMediumGray.withOpacity(0.2),
                 width: 1,
               ),
             ),
@@ -555,7 +555,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: isBackspace ? AppTheme.credRed : AppTheme.credTextPrimary,
+                  color: isBackspace ? AppTheme.credError : AppTheme.credTextPrimary,
                 ),
               ),
             ),

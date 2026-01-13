@@ -13,9 +13,9 @@ class FingerprintSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.credTextPrimary),
@@ -71,11 +71,11 @@ class FingerprintSetupScreen extends StatelessWidget {
                         width: 220,
                         height: 220,
                         decoration: BoxDecoration(
-                          gradient: AppTheme.credPurpleGradient,
+                          gradient: AppTheme.credOrangeGradient,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.credPurple.withOpacity(0.4),
+                              color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                               blurRadius: 24,
                               spreadRadius: 0,
                               offset: const Offset(0, 12),
@@ -120,11 +120,11 @@ class FingerprintSetupScreen extends StatelessWidget {
                     endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.credPurpleGradient,
+                        gradient: AppTheme.credOrangeGradient,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credPurple.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
                             spreadRadius: 0,
                             offset: const Offset(0, 10),

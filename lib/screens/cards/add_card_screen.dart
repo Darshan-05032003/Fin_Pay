@@ -27,7 +27,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('Add New Card'),
         leading: IconButton(
@@ -74,12 +74,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeOutCubic,
                         decoration: BoxDecoration(
-                          color: AppTheme.credGray,
+                          color: AppTheme.credSurfaceCard,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: hasFocus
-                                ? AppTheme.credPurple
-                                : AppTheme.credLightGray.withOpacity(0.2),
+                                ? AppTheme.credOrangeSunshine
+                                : AppTheme.credMediumGray.withOpacity(0.2),
                             width: hasFocus ? 2 : 1,
                           ),
                         ),
@@ -115,12 +115,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeOutCubic,
                         decoration: BoxDecoration(
-                          color: AppTheme.credGray,
+                          color: AppTheme.credSurfaceCard,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: hasFocus
-                                ? AppTheme.credPurple
-                                : AppTheme.credLightGray.withOpacity(0.2),
+                                ? AppTheme.credOrangeSunshine
+                                : AppTheme.credMediumGray.withOpacity(0.2),
                             width: hasFocus ? 2 : 1,
                           ),
                         ),
@@ -160,12 +160,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOutCubic,
                               decoration: BoxDecoration(
-                                color: AppTheme.credGray,
+                                color: AppTheme.credSurfaceCard,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: hasFocus
-                                      ? AppTheme.credPurple
-                                      : AppTheme.credLightGray.withOpacity(0.2),
+                                      ? AppTheme.credOrangeSunshine
+                                      : AppTheme.credMediumGray.withOpacity(0.2),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
@@ -200,12 +200,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOutCubic,
                               decoration: BoxDecoration(
-                                color: AppTheme.credGray,
+                                color: AppTheme.credSurfaceCard,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: hasFocus
-                                      ? AppTheme.credPurple
-                                      : AppTheme.credLightGray.withOpacity(0.2),
+                                      ? AppTheme.credOrangeSunshine
+                                      : AppTheme.credMediumGray.withOpacity(0.2),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
@@ -246,7 +246,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Please fill all fields'),
-                        backgroundColor: AppTheme.credRed,
+                        backgroundColor: AppTheme.credError,
                       ),
                     );
                     return;
@@ -278,7 +278,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Card added successfully!'),
-                        backgroundColor: AppTheme.credGreen,
+                        backgroundColor: AppTheme.credNeoPaccha,
                       ),
                     );
                   }
@@ -288,11 +288,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   endOffset: Offset.zero,
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: AppTheme.credPurpleGradient,
+                      gradient: AppTheme.credOrangeGradient,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.credPurple.withOpacity(0.4),
+                          color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                           blurRadius: 20,
                           spreadRadius: 0,
                           offset: const Offset(0, 10),
@@ -330,11 +330,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
         height: 220,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          gradient: AppTheme.credPurpleGradient,
+          gradient: AppTheme.credOrangeGradient,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.credPurple.withOpacity(0.4),
+              color: AppTheme.credOrangeSunshine.withOpacity(0.4),
               blurRadius: 24,
               spreadRadius: 0,
               offset: const Offset(0, 12),
@@ -439,7 +439,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
         await HapticService.mediumImpact();
         showModalBottomSheet(
           context: context,
-          backgroundColor: AppTheme.credGray,
+          backgroundColor: AppTheme.credSurfaceCard,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
@@ -468,12 +468,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.credBlack,
+                      color: AppTheme.credPureBackground,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.credit_card, color: AppTheme.credPurple),
+                        Icon(Icons.credit_card, color: AppTheme.credOrangeSunshine),
                         SizedBox(width: 16),
                         Text(
                           'Visa',
@@ -499,12 +499,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.credBlack,
+                      color: AppTheme.credPureBackground,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.credit_card, color: AppTheme.credPurple),
+                        Icon(Icons.credit_card, color: AppTheme.credOrangeSunshine),
                         SizedBox(width: 16),
                         Text(
                           'Mastercard',
@@ -530,12 +530,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.credBlack,
+                      color: AppTheme.credPureBackground,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.credit_card, color: AppTheme.credPurple),
+                        Icon(Icons.credit_card, color: AppTheme.credOrangeSunshine),
                         SizedBox(width: 16),
                         Text(
                           'American Express',
@@ -558,10 +558,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
-          color: AppTheme.credGray,
+          color: AppTheme.credSurfaceCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.credLightGray.withOpacity(0.2),
+            color: AppTheme.credMediumGray.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -571,11 +571,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                gradient: AppTheme.credPurpleGradient,
+                gradient: AppTheme.credOrangeGradient,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credPurple.withOpacity(0.3),
+                    color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                     blurRadius: 8,
                     spreadRadius: 0,
                   ),

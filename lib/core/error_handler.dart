@@ -7,7 +7,7 @@ class ErrorHandler {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppTheme.credRed,
+        backgroundColor: AppTheme.credError,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),

@@ -66,7 +66,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
     return ConfettiEffect(
       autoPlay: true,
       child: Scaffold(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         appBar: AppBar(
           title: const Text('Review'),
           leading: IconButton(
@@ -80,7 +80,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
               margin: const EdgeInsets.all(24),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppTheme.credGray,
+                color: AppTheme.credSurfaceCard,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -109,12 +109,12 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                                 gradient: LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
-                                  colors: [AppTheme.primaryGreen, AppTheme.darkGreen],
+                                  colors: [AppTheme.primaryGreen, AppTheme.credNeoPaccha.withOpacity(0.7)],
                                 ),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.credPurple.withOpacity(0.4),
+                                    color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                     blurRadius: 20,
                                     spreadRadius: 5,
                                   ),
@@ -122,7 +122,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                               ),
                               child: const Icon(
                                 Icons.check,
-                                color: AppTheme.credGray,
+                                color: AppTheme.credSurfaceCard,
                                 size: 70,
                               ),
                             ),
@@ -189,7 +189,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.credPurple,
+                                  color: AppTheme.credOrangeSunshine,
                                 ),
                               ),
                             ),
@@ -235,7 +235,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                                 style: const TextStyle(
                                   fontSize: 42,
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.credPurple,
+                                  color: AppTheme.credOrangeSunshine,
                                   letterSpacing: 1,
                                 ),
                                 textAlign: TextAlign.center,
@@ -293,12 +293,12 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppTheme.primaryGreen, AppTheme.darkGreen],
+              colors: [AppTheme.primaryGreen, AppTheme.credNeoPaccha.withOpacity(0.7)],
             ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppTheme.credPurple.withOpacity(0.3),
+                color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -308,7 +308,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
             child: Text(
               initial,
               style: const TextStyle(
-                color: AppTheme.credGray,
+                color: AppTheme.credSurfaceCard,
                 fontWeight: FontWeight.w700,
                 fontSize: 24,
               ),

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'constants/theme.dart';
 import 'routes/app_router.dart';
 import 'services/user_service.dart';
 import 'core/di/dependency_injection.dart';
-import 'presentation/providers/user_provider.dart';
-import 'presentation/providers/transaction_provider.dart';
-import 'providers/card_provider.dart';
-import 'providers/notification_provider.dart';
+import 'blocs/user/user_bloc.dart';
+import 'blocs/user/user_event.dart';
+import 'blocs/transaction/transaction_bloc.dart';
+import 'blocs/transaction/transaction_event.dart';
+import 'blocs/card/card_bloc.dart';
+import 'blocs/card/card_event.dart';
+import 'blocs/notification/notification_bloc.dart';
+import 'blocs/notification/notification_event.dart';
 import 'core/logger.dart';
 
 /// Main entry point of the application
@@ -47,15 +51,16 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return MultiBlocProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()..loadUser()),
-        ChangeNotifierProvider(
-          create: (_) => TransactionProvider()..loadTransactions(),
+        BlocProvider(create: (_) => UserBloc()..add(const LoadUserEvent())),
+        BlocProvider(
+          create: (_) => TransactionBloc()..add(const LoadTransactionsEvent()),
         ),
-        ChangeNotifierProvider(create: (_) => CardProvider()..loadCards()),
-        ChangeNotifierProvider(
-          create: (_) => NotificationProvider()..loadNotifications(),
+        BlocProvider(create: (_) => CardBloc()..add(const LoadCardsEvent())),
+        BlocProvider(
+          create: (_) =>
+              NotificationBloc()..add(const LoadNotificationsEvent()),
         ),
       ],
       child: MaterialApp(

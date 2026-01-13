@@ -135,7 +135,7 @@ class DatabaseService {
       {
         'id': card.id,
         'cardNumber': card.cardNumber,
-        'maskedNumber': card.maskedNumber ?? card.cardNumber,
+        'maskedNumber': card.maskedNumber,
         'cardHolderName': card.cardHolderName,
         'expireDate': card.expireDate,
         'cvv': card.cvv,

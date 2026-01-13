@@ -25,9 +25,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: AppTheme.credTextPrimary),
@@ -84,12 +84,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeOutCubic,
                           decoration: BoxDecoration(
-                            color: AppTheme.credGray,
+                            color: AppTheme.credSurfaceCard,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: hasFocus
-                                  ? AppTheme.credPurple
-                                  : AppTheme.credLightGray.withOpacity(0.2),
+                                  ? AppTheme.credOrangeSunshine
+                                  : AppTheme.credMediumGray.withOpacity(0.2),
                               width: hasFocus ? 2 : 1,
                             ),
                           ),
@@ -128,12 +128,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOutCubic,
                               decoration: BoxDecoration(
-                                color: AppTheme.credGray,
+                                color: AppTheme.credSurfaceCard,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: hasFocus
-                                      ? AppTheme.credPurple
-                                      : AppTheme.credLightGray.withOpacity(0.2),
+                                      ? AppTheme.credOrangeSunshine
+                                      : AppTheme.credMediumGray.withOpacity(0.2),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
@@ -159,16 +159,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.credPurple.withOpacity(0.15),
+                            color: AppTheme.credOrangeSunshine.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppTheme.credPurple.withOpacity(0.3),
+                              color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                               width: 1,
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline, color: AppTheme.credPurple, size: 18),
+                              const Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -203,12 +203,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeOutCubic,
                           decoration: BoxDecoration(
-                            color: AppTheme.credGray,
+                            color: AppTheme.credSurfaceCard,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: hasFocus
-                                  ? AppTheme.credPurple
-                                  : AppTheme.credLightGray.withOpacity(0.2),
+                                  ? AppTheme.credOrangeSunshine
+                                  : AppTheme.credMediumGray.withOpacity(0.2),
                               width: hasFocus ? 2 : 1,
                             ),
                           ),
@@ -270,7 +270,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Please fill all fields'),
-                          backgroundColor: AppTheme.credRed,
+                          backgroundColor: AppTheme.credError,
                         ),
                       );
                       return;
@@ -295,11 +295,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.credPurpleGradient,
+                        gradient: AppTheme.credOrangeGradient,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credPurple.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
                             spreadRadius: 0,
                             offset: const Offset(0, 10),
@@ -325,7 +325,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(child: Divider(color: AppTheme.credLightGray.withOpacity(0.3))),
+                  Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
@@ -333,7 +333,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       style: TextStyle(color: AppTheme.credTextTertiary),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppTheme.credLightGray.withOpacity(0.3))),
+                  Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
                 ],
               ),
               const SizedBox(height: 24),
@@ -362,7 +362,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     },
                     child: const Text(
                       'Login',
-                      style: TextStyle(color: AppTheme.credPurple),
+                      style: TextStyle(color: AppTheme.credOrangeSunshine),
                     ),
                   ),
                 ],
@@ -389,10 +389,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppTheme.credGray,
+                color: AppTheme.credSurfaceCard,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppTheme.credLightGray.withOpacity(0.3),
+                  color: AppTheme.credMediumGray.withOpacity(0.3),
                   width: 1,
                 ),
               ),

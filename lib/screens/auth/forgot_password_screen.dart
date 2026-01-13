@@ -13,9 +13,9 @@ class ForgotPasswordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.credTextPrimary),
@@ -70,11 +70,11 @@ class ForgotPasswordScreen extends StatelessWidget {
                         width: 200,
                         height: 200,
                         decoration: BoxDecoration(
-                          gradient: AppTheme.credPurpleGradient,
+                          gradient: AppTheme.credOrangeGradient,
                           borderRadius: BorderRadius.circular(30),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.credPurple.withOpacity(0.4),
+                              color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                               blurRadius: 24,
                               spreadRadius: 0,
                               offset: const Offset(0, 12),
@@ -133,11 +133,11 @@ class ForgotPasswordScreen extends StatelessWidget {
                     endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.credPurpleGradient,
+                        gradient: AppTheme.credOrangeGradient,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credPurple.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
                             spreadRadius: 0,
                             offset: const Offset(0, 10),
@@ -181,10 +181,10 @@ class ForgotPasswordScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.credGray,
+            color: AppTheme.credSurfaceCard,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.credLightGray.withOpacity(0.2),
+              color: AppTheme.credMediumGray.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -198,11 +198,11 @@ class ForgotPasswordScreen extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    gradient: AppTheme.credPurpleGradient,
+                    gradient: AppTheme.credOrangeGradient,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.credPurple.withOpacity(0.3),
+                        color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                         blurRadius: 8,
                         spreadRadius: 0,
                       ),

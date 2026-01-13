@@ -71,7 +71,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('Notifications'),
         leading: IconButton(
@@ -103,12 +103,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOutCubic,
                               decoration: BoxDecoration(
-                                color: AppTheme.credGray,
+                                color: AppTheme.credSurfaceCard,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: hasFocus
-                                      ? AppTheme.credPurple
-                                      : AppTheme.credLightGray.withOpacity(0.2),
+                                      ? AppTheme.credOrangeSunshine
+                                      : AppTheme.credMediumGray.withOpacity(0.2),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
@@ -148,11 +148,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            gradient: AppTheme.credPurpleGradient,
+                            gradient: AppTheme.credOrangeGradient,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.credPurple.withOpacity(0.3),
+                                color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                                 blurRadius: 8,
                                 spreadRadius: 0,
                               ),
@@ -320,7 +320,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.credGray,
+        color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

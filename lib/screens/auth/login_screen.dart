@@ -43,9 +43,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.credTextPrimary),
@@ -106,12 +106,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOutCubic,
                               decoration: BoxDecoration(
-                                color: AppTheme.credGray,
+                                color: AppTheme.credSurfaceCard,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: hasFocus
-                                      ? AppTheme.credPurple
-                                      : AppTheme.credLightGray.withOpacity(0.2),
+                                      ? AppTheme.credOrangeSunshine
+                                      : AppTheme.credMediumGray.withOpacity(0.2),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
@@ -137,16 +137,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.credPurple.withOpacity(0.15),
+                            color: AppTheme.credOrangeSunshine.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppTheme.credPurple.withOpacity(0.3),
+                              color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                               width: 1,
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline, color: AppTheme.credPurple, size: 18),
+                              const Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -181,12 +181,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeOutCubic,
                           decoration: BoxDecoration(
-                            color: AppTheme.credGray,
+                            color: AppTheme.credSurfaceCard,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: hasFocus
-                                  ? AppTheme.credPurple
-                                  : AppTheme.credLightGray.withOpacity(0.2),
+                                  ? AppTheme.credOrangeSunshine
+                                  : AppTheme.credMediumGray.withOpacity(0.2),
                               width: hasFocus ? 2 : 1,
                             ),
                           ),
@@ -240,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       },
                       child: const Text(
                         'Forgot Password',
-                        style: TextStyle(color: AppTheme.credPurple),
+                        style: TextStyle(color: AppTheme.credOrangeSunshine),
                       ),
                     ),
                   ],
@@ -258,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Please fill all fields'),
-                          backgroundColor: AppTheme.credRed,
+                          backgroundColor: AppTheme.credError,
                         ),
                       );
                       return;
@@ -277,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Invalid email or password. Use: user@finpay.com / FinPay123'),
-                          backgroundColor: AppTheme.credRed,
+                          backgroundColor: AppTheme.credError,
                           duration: Duration(seconds: 3),
                         ),
                       );
@@ -292,11 +292,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.credPurpleGradient,
+                        gradient: AppTheme.credOrangeGradient,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credPurple.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
                             spreadRadius: 0,
                             offset: const Offset(0, 10),
@@ -324,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 delay: const Duration(milliseconds: 700),
                 child: Row(
                   children: [
-                    Expanded(child: Divider(color: AppTheme.credLightGray.withOpacity(0.3))),
+                    Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
@@ -332,7 +332,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         style: TextStyle(color: AppTheme.credTextTertiary),
                       ),
                     ),
-                    Expanded(child: Divider(color: AppTheme.credLightGray.withOpacity(0.3))),
+                    Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
                   ],
                 ),
               ),
@@ -342,11 +342,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildSocialIcon(Icons.g_mobiledata, AppTheme.credRed),
+                    _buildSocialIcon(Icons.g_mobiledata, AppTheme.credError),
                     const SizedBox(width: 24),
                     _buildSocialIcon(Icons.facebook, AppTheme.credBlue),
                     const SizedBox(width: 24),
-                    _buildSocialIcon(Icons.send, AppTheme.credPurple),
+                    _buildSocialIcon(Icons.send, AppTheme.credOrangeSunshine),
                   ],
                 ),
               ),
@@ -367,7 +367,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       },
                       child: const Text(
                         'Create Account',
-                        style: TextStyle(color: AppTheme.credPurple),
+                        style: TextStyle(color: AppTheme.credOrangeSunshine),
                       ),
                     ),
                   ],
@@ -397,10 +397,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppTheme.credGray,
+                color: AppTheme.credSurfaceCard,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppTheme.credLightGray.withOpacity(0.3),
+                  color: AppTheme.credMediumGray.withOpacity(0.3),
                   width: 1,
                 ),
               ),

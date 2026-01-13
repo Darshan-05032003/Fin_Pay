@@ -12,6 +12,7 @@ import '../../widgets/animations/cred_button_press.dart';
 import '../../widgets/animations/cred_card_reveal.dart';
 import '../../widgets/animations/cred_number_counter.dart';
 import '../../widgets/animations/pulse_animation.dart';
+import '../../widgets/cred_bottom_navigation_bar.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -61,7 +62,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('Statics'),
         leading: IconButton(
@@ -110,10 +111,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
-                                color: AppTheme.credGray,
+                                color: AppTheme.credSurfaceCard,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppTheme.credLightGray.withOpacity(0.2),
+                                  color: AppTheme.credMediumGray.withOpacity(0.2),
                                   width: 1,
                                 ),
                               ),
@@ -149,7 +150,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.credPurple,
+                        color: AppTheme.credOrangeSunshine,
                         letterSpacing: -1,
                       ),
                       prefix: '\$',
@@ -255,7 +256,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       height: 220,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.credGray,
+        color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -306,7 +307,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             width: 50,
             height: height.clamp(0.0, double.infinity),
             decoration: BoxDecoration(
-              color: AppTheme.credPurple,
+              color: AppTheme.credOrangeSunshine,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),
                 topRight: Radius.circular(4),
@@ -339,10 +340,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.credGray,
+            color: AppTheme.credSurfaceCard,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.credLightGray.withOpacity(0.2),
+              color: AppTheme.credMediumGray.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -357,11 +358,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    gradient: AppTheme.credPurpleGradient,
+                    gradient: AppTheme.credOrangeGradient,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.credPurple.withOpacity(0.3),
+                        color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                         blurRadius: 8,
                         spreadRadius: 0,
                       ),
@@ -387,7 +388,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: AppTheme.credPurple,
+                  color: AppTheme.credOrangeSunshine,
                   letterSpacing: -0.5,
                 ),
                 prefix: '\$',
@@ -403,7 +404,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.credGray,
+        color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -412,14 +413,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.credRed.withOpacity(0.1),
+              color: AppTheme.credError.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 transaction.icon,
                 style: const TextStyle(
-                  color: AppTheme.credRed,
+                  color: AppTheme.credError,
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
                 ),
@@ -459,21 +460,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.credRed,
+                  color: AppTheme.credError,
                 ),
               ),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.credRed.withOpacity(0.1),
+                  color: AppTheme.credError.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
                   'Payment',
                   style: TextStyle(
                     fontSize: 10,
-                    color: AppTheme.credRed,
+                    color: AppTheme.credError,
                   ),
                 ),
               ),
@@ -498,52 +499,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildBottomNavigationBar(BuildContext context, int currentIndex) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.credGray,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primaryGreen,
-        unselectedItemColor: AppTheme.textLight,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/statistics');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/cards');
-          } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/profile');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Statics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card),
-            label: 'My Cards',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+    return CredBottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: (index) {
+        if (index == 0) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else if (index == 1) {
+          Navigator.pushReplacementNamed(context, '/statistics');
+        } else if (index == 2) {
+          Navigator.pushReplacementNamed(context, '/cards');
+        } else if (index == 3) {
+          Navigator.pushReplacementNamed(context, '/profile');
+        }
+      },
     );
   }
 }

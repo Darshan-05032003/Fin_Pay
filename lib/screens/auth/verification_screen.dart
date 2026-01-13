@@ -31,7 +31,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     final userData = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       body: Center(
         child: CredSlideIn(
           delay: const Duration(milliseconds: 100),
@@ -43,15 +43,15 @@ class _VerificationScreenState extends State<VerificationScreen> {
               margin: const EdgeInsets.all(24),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppTheme.credGray,
+                color: AppTheme.credSurfaceCard,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.credLightGray.withOpacity(0.2),
+                  color: AppTheme.credMediumGray.withOpacity(0.2),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credPurple.withOpacity(0.2),
+                    color: AppTheme.credOrangeSunshine.withOpacity(0.2),
                     blurRadius: 24,
                     spreadRadius: 0,
                     offset: const Offset(0, 12),
@@ -77,11 +77,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             width: 80,
                             height: 80,
                             decoration: const BoxDecoration(
-                              gradient: AppTheme.credPurpleGradient,
+                              gradient: AppTheme.credOrangeGradient,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.credPurple,
+                                  color: AppTheme.credOrangeSunshine,
                                   blurRadius: 20,
                                   spreadRadius: 0,
                                 ),
@@ -156,12 +156,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                       duration: const Duration(milliseconds: 300),
                                       curve: Curves.easeOutCubic,
                                       decoration: BoxDecoration(
-                                        color: AppTheme.credBlack,
+                                        color: AppTheme.credPureBackground,
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
                                           color: hasFocus
-                                              ? AppTheme.credPurple
-                                              : AppTheme.credLightGray.withOpacity(0.2),
+                                              ? AppTheme.credOrangeSunshine
+                                              : AppTheme.credMediumGray.withOpacity(0.2),
                                           width: hasFocus ? 2 : 1,
                                         ),
                                       ),
@@ -174,7 +174,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                         style: const TextStyle(
                                           fontSize: 28,
                                           fontWeight: FontWeight.w800,
-                                          color: AppTheme.credPurple,
+                                          color: AppTheme.credOrangeSunshine,
                                           letterSpacing: -1,
                                         ),
                                         decoration: const InputDecoration(
@@ -219,7 +219,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           child: const Text(
                             'Resend It',
                             style: TextStyle(
-                              color: AppTheme.credPurple,
+                              color: AppTheme.credOrangeSunshine,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -240,7 +240,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Please enter the complete verification code'),
-                              backgroundColor: AppTheme.credRed,
+                              backgroundColor: AppTheme.credError,
                             ),
                           );
                           return;
@@ -272,7 +272,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Only default credentials allowed. Use: user@finpay.com / FinPay123'),
-                                backgroundColor: AppTheme.credRed,
+                                backgroundColor: AppTheme.credError,
                                 duration: Duration(seconds: 3),
                               ),
                             );
@@ -287,11 +287,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         endOffset: Offset.zero,
                         child: Container(
                           decoration: BoxDecoration(
-                            gradient: AppTheme.credPurpleGradient,
+                            gradient: AppTheme.credOrangeGradient,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.credPurple.withOpacity(0.4),
+                                color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                 blurRadius: 20,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 10),

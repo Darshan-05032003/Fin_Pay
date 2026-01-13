@@ -26,7 +26,7 @@ class TransferReviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('Review'),
         leading: IconButton(
@@ -80,23 +80,23 @@ class TransferReviewScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppTheme.credGray,
+                    color: AppTheme.credSurfaceCard,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppTheme.credLightGray.withOpacity(0.2),
+                      color: AppTheme.credMediumGray.withOpacity(0.2),
                       width: 1,
                     ),
                   ),
                   child: Column(
                     children: [
                       _buildDetailRow('Transaction ID', 'TXN 30342303'),
-                      const Divider(color: AppTheme.credLightGray, thickness: 0.5),
+                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
                       _buildDetailRow('Recipient', recipientName),
-                      const Divider(color: AppTheme.credLightGray, thickness: 0.5),
+                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
                       _buildDetailRow('Amount', '\$$amount'),
-                      const Divider(color: AppTheme.credLightGray, thickness: 0.5),
+                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
                       _buildDetailRow('Fees', '\$0.00'),
-                      const Divider(color: AppTheme.credLightGray, thickness: 0.5),
+                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
                       _buildDetailRow(
                         'Total Amount',
                         '\$$amount',
@@ -122,12 +122,12 @@ class TransferReviewScreen extends StatelessWidget {
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeOutCubic,
                         decoration: BoxDecoration(
-                          color: AppTheme.credGray,
+                          color: AppTheme.credSurfaceCard,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: hasFocus
-                                ? AppTheme.credPurple
-                                : AppTheme.credLightGray.withOpacity(0.2),
+                                ? AppTheme.credOrangeSunshine
+                                : AppTheme.credMediumGray.withOpacity(0.2),
                             width: hasFocus ? 2 : 1,
                           ),
                         ),
@@ -218,11 +218,11 @@ class TransferReviewScreen extends StatelessWidget {
                     endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.credPurpleGradient,
+                        gradient: AppTheme.credOrangeGradient,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credPurple.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
                             spreadRadius: 0,
                             offset: const Offset(0, 10),
@@ -294,11 +294,11 @@ class TransferReviewScreen extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              gradient: AppTheme.credPurpleGradient,
+              gradient: AppTheme.credOrangeGradient,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.credPurple.withOpacity(0.4),
+                  color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                   blurRadius: 16,
                   spreadRadius: 0,
                 ),
@@ -347,7 +347,7 @@ class TransferReviewScreen extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: isTotal ? 18 : 16,
-              color: isTotal ? AppTheme.credPurple : AppTheme.credTextPrimary,
+              color: isTotal ? AppTheme.credOrangeSunshine : AppTheme.credTextPrimary,
               fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
             ),
           ),

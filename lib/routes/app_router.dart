@@ -16,8 +16,6 @@ import '../screens/cards/add_card_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/statistics/statistics_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
-import '../widgets/animations/slide_page_route.dart';
-import '../widgets/animations/scale_page_route.dart';
 import '../widgets/animations/cred_page_transition.dart';
 
 class AppRouter {
@@ -73,12 +71,9 @@ class AppRouter {
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
-            ),
+            body: Center(child: Text('No route defined for ${settings.name}')),
           ),
         );
     }
   }
 }
-

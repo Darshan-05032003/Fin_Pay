@@ -12,6 +12,7 @@ import '../../widgets/animations/cred_card_reveal.dart';
 import '../../widgets/animations/cred_button_press.dart';
 import '../../widgets/animations/spring_animation.dart';
 import '../../widgets/animations/pulse_animation.dart';
+import '../../widgets/cred_bottom_navigation_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,14 +43,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         body: const SkeletonList(itemCount: 5),
       );
     }
 
     if (_user == null) {
       return Scaffold(
-        backgroundColor: AppTheme.credBlack,
+        backgroundColor: AppTheme.credPureBackground,
         appBar: AppBar(
           title: const Text('Profile'),
           leading: IconButton(
@@ -64,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.credBlack,
+      backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('Profile'),
         leading: IconButton(
@@ -137,10 +138,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.credGray,
+        color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.credLightGray.withOpacity(0.2),
+          color: AppTheme.credMediumGray.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -154,11 +155,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                gradient: AppTheme.credPurpleGradient,
+                gradient: AppTheme.credOrangeGradient,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credPurple.withOpacity(0.4),
+                    color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                     blurRadius: 16,
                     spreadRadius: 0,
                   ),
@@ -209,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _showEditDialog();
             },
             child: IconButton(
-              icon: const Icon(Icons.edit, color: AppTheme.credPurple),
+              icon: const Icon(Icons.edit, color: AppTheme.credOrangeSunshine),
               onPressed: null,
             ),
           ),
@@ -222,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.credGray,
+        backgroundColor: AppTheme.credSurfaceCard,
         title: const Text(
           'Privacy Policy',
           style: TextStyle(
@@ -249,7 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             child: const Text(
               'Close',
-              style: TextStyle(color: AppTheme.credPurple),
+              style: TextStyle(color: AppTheme.credOrangeSunshine),
             ),
           ),
         ],
@@ -413,10 +414,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.credGray,
+          color: AppTheme.credSurfaceCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.credLightGray.withOpacity(0.2),
+            color: AppTheme.credMediumGray.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -426,11 +427,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                gradient: AppTheme.credPurpleGradient,
+                gradient: AppTheme.credOrangeGradient,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credPurple.withOpacity(0.3),
+                    color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                     blurRadius: 8,
                     spreadRadius: 0,
                   ),
@@ -494,7 +495,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                   child: const Text(
                     'Logout',
-                    style: TextStyle(color: AppTheme.credRed),
+                    style: TextStyle(color: AppTheme.credError),
                   ),
                 ),
               ],
@@ -516,11 +517,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             endOffset: Offset.zero,
             child: Container(
               decoration: BoxDecoration(
-                color: AppTheme.credRed,
+                color: AppTheme.credError,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credRed.withOpacity(0.4),
+                    color: AppTheme.credError.withOpacity(0.4),
                     blurRadius: 16,
                     spreadRadius: 0,
                     offset: const Offset(0, 8),
@@ -548,52 +549,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildBottomNavigationBar(BuildContext context, int currentIndex) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.credGray,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primaryGreen,
-        unselectedItemColor: AppTheme.textLight,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/statistics');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/cards');
-          } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/profile');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Statics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card),
-            label: 'My Cards',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+    return CredBottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: (index) {
+        if (index == 0) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else if (index == 1) {
+          Navigator.pushReplacementNamed(context, '/statistics');
+        } else if (index == 2) {
+          Navigator.pushReplacementNamed(context, '/cards');
+        } else if (index == 3) {
+          Navigator.pushReplacementNamed(context, '/profile');
+        }
+      },
     );
   }
 }
