@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/notification_item.dart';
+import 'package:fin_pay/models/notification_item.dart';
 
 /// Base class for all notification-related states
 abstract class NotificationState extends Equatable {
@@ -21,9 +21,9 @@ class NotificationLoading extends NotificationState {
 
 /// State when notifications are successfully loaded
 class NotificationLoaded extends NotificationState {
-  final List<NotificationItem> notifications;
 
   const NotificationLoaded(this.notifications);
+  final List<NotificationItem> notifications;
 
   @override
   List<Object?> get props => [notifications];
@@ -33,9 +33,9 @@ class NotificationLoaded extends NotificationState {
 
 /// State when an error occurs
 class NotificationError extends NotificationState {
-  final String message;
 
   const NotificationError(this.message);
+  final String message;
 
   @override
   List<Object?> get props => [message];

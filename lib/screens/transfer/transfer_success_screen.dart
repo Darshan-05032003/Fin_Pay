@@ -1,19 +1,17 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/widgets/animations/confetti_effect.dart';
+import 'package:fin_pay/widgets/animations/delayed_animation.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../widgets/animations/fade_in_animation.dart';
-import '../../widgets/animations/delayed_animation.dart';
-import '../../widgets/animations/confetti_effect.dart';
-import '../../services/haptic_service.dart';
 
 class TransferSuccessScreen extends StatefulWidget {
-  final String recipientName;
-  final String amount;
 
   const TransferSuccessScreen({
-    super.key,
-    required this.recipientName,
-    required this.amount,
+    required this.recipientName, required this.amount, super.key,
   });
+  final String recipientName;
+  final String amount;
 
   @override
   State<TransferSuccessScreen> createState() => _TransferSuccessScreenState();
@@ -33,26 +31,24 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+        curve: const Interval(0, 0.6, curve: Curves.elasticOut),
       ),
     );
 
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * 3.14159).animate(
+    _rotationAnimation = Tween<double>(begin: 0, end: 2 * 3.14159).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+        curve: const Interval(0, 0.6, curve: Curves.easeOut),
       ),
     );
 
     _controller.forward();
     
     // Start haptic feedback
-    Future.delayed(const Duration(milliseconds: 300), () {
-      HapticService.success();
-    });
+    Future.delayed(const Duration(milliseconds: 300), HapticService.success);
   }
 
   @override
@@ -132,9 +128,9 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                     ),
                   ),
                   const SizedBox(height: 32),
-                  FadeInAnimation(
-                    delay: const Duration(milliseconds: 400),
-                    child: const Text(
+                  const FadeInAnimation(
+                    delay: Duration(milliseconds: 400),
+                    child: Text(
                       'Transfer Success!',
                       style: TextStyle(
                         fontSize: 28,
@@ -146,9 +142,9 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  FadeInAnimation(
-                    delay: const Duration(milliseconds: 500),
-                    child: const Text(
+                  const FadeInAnimation(
+                    delay: Duration(milliseconds: 500),
+                    child: Text(
                       'Below is your withdraw summary',
                       style: TextStyle(
                         fontSize: 14,
@@ -176,15 +172,14 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                           children: [
                             DelayedAnimation(
                               delay: const Duration(milliseconds: 700),
-                              duration: const Duration(milliseconds: 600),
                               curve: Curves.easeOutBack,
                               offset: const Offset(-20, 0),
                               child: _buildAvatar('A', 'Amir'),
                             ),
                             const SizedBox(width: 24),
-                            FadeInAnimation(
-                              delay: const Duration(milliseconds: 750),
-                              child: const Text(
+                            const FadeInAnimation(
+                              delay: Duration(milliseconds: 750),
+                              child: Text(
                                 'To',
                                 style: TextStyle(
                                   fontSize: 18,
@@ -196,7 +191,6 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                             const SizedBox(width: 24),
                             DelayedAnimation(
                               delay: const Duration(milliseconds: 800),
-                              duration: const Duration(milliseconds: 600),
                               curve: Curves.easeOutBack,
                               offset: const Offset(20, 0),
                               child: _buildAvatar('K', widget.recipientName),
@@ -222,11 +216,9 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                         DelayedAnimation(
                           delay: const Duration(milliseconds: 1000),
                           duration: const Duration(milliseconds: 1500),
-                          curve: Curves.easeOutCubic,
-                          offset: const Offset(0, 20),
                           child: RepaintBoundary(
                             child: TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: double.parse(widget.amount)),
+                              tween: Tween(begin: 0, end: double.parse(widget.amount)),
                               duration: const Duration(milliseconds: 1200),
                               curve: Curves.easeOutCubic,
                               builder: (context, value, child) {

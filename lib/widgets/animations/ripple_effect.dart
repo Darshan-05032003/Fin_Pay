@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 
 class RippleEffect extends StatefulWidget {
-  final Widget child;
-  final Color rippleColor;
-  final VoidCallback? onTap;
-  final double borderRadius;
 
   const RippleEffect({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.rippleColor = const Color(0x40000000),
     this.onTap,
     this.borderRadius = 8.0,
   });
+  final Widget child;
+  final Color rippleColor;
+  final VoidCallback? onTap;
+  final double borderRadius;
 
   @override
   State<RippleEffect> createState() => _RippleEffectState();
@@ -76,15 +75,15 @@ class _RippleEffectState extends State<RippleEffect>
 }
 
 class _RipplePainter extends CustomPainter {
-  final Animation<double> animation;
-  final Offset? tapPosition;
-  final Color color;
 
   _RipplePainter({
     required this.animation,
     required this.tapPosition,
     required this.color,
   }) : super(repaint: animation);
+  final Animation<double> animation;
+  final Offset? tapPosition;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {

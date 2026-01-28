@@ -1,13 +1,14 @@
 import 'dart:convert';
+
+import 'package:fin_pay/core/logger.dart';
+import 'package:fin_pay/utils/constants.dart';
 import 'package:http/http.dart' as http;
-import '../utils/constants.dart';
-import 'logger.dart';
 
 /// Network service for API calls (ready for future backend integration)
 class NetworkService {
-  static final NetworkService _instance = NetworkService._internal();
   factory NetworkService() => _instance;
   NetworkService._internal();
+  static final NetworkService _instance = NetworkService._internal();
 
   Future<Map<String, dynamic>> get(String endpoint) async {
     try {

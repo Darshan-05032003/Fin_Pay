@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/card.dart';
+import 'package:fin_pay/models/card.dart';
 
 /// Base class for all card-related events
 abstract class CardEvent extends Equatable {
@@ -16,9 +16,9 @@ class LoadCardsEvent extends CardEvent {
 
 /// Event to add a new card
 class AddCardEvent extends CardEvent {
-  final Card card;
 
   const AddCardEvent(this.card);
+  final Card card;
 
   @override
   List<Object?> get props => [card];
@@ -26,9 +26,9 @@ class AddCardEvent extends CardEvent {
 
 /// Event to delete a card
 class DeleteCardEvent extends CardEvent {
-  final String cardId;
 
   const DeleteCardEvent(this.cardId);
+  final String cardId;
 
   @override
   List<Object?> get props => [cardId];

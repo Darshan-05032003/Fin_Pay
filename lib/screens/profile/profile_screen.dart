@@ -1,18 +1,18 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/user.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/ripple_effect.dart';
+import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
+import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../constants/theme.dart';
-import '../../models/user.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/skeleton_loader_full.dart';
-import '../../widgets/animations/ripple_effect.dart';
-import '../../widgets/animations/pull_to_refresh_custom.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
-import '../../widgets/cred_bottom_navigation_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,9 +42,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: AppTheme.credPureBackground,
-        body: const SkeletonList(itemCount: 5),
+        body: SkeletonList(),
       );
     }
 
@@ -84,16 +84,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               CredSlideIn(
                 delay: const Duration(milliseconds: 100),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
-                  duration: const Duration(milliseconds: 500),
                   perspective: 0.0008,
                   child: _buildProfileHeader(),
                 ),
               ),
               CredSlideIn(
                 delay: const Duration(milliseconds: 200),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
                   duration: const Duration(milliseconds: 600),
                   perspective: 0.0008,
@@ -102,7 +99,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               CredSlideIn(
                 delay: const Duration(milliseconds: 300),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
                   duration: const Duration(milliseconds: 700),
                   perspective: 0.0008,
@@ -111,7 +107,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               CredSlideIn(
                 delay: const Duration(milliseconds: 400),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
                   duration: const Duration(milliseconds: 800),
                   perspective: 0.0008,
@@ -142,13 +137,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: AppTheme.credMediumGray.withOpacity(0.2),
-          width: 1,
         ),
       ),
       child: Row(
         children: [
           PulseAnimation(
-            duration: const Duration(seconds: 2),
             minScale: 0.98,
             maxScale: 1.02,
             child: Container(
@@ -161,7 +154,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   BoxShadow(
                     color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                     blurRadius: 16,
-                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -209,8 +201,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await HapticService.mediumImpact();
               _showEditDialog();
             },
-            child: IconButton(
-              icon: const Icon(Icons.edit, color: AppTheme.credOrangeSunshine),
+            child: const IconButton(
+              icon: Icon(Icons.edit, color: AppTheme.credOrangeSunshine),
               onPressed: null,
             ),
           ),
@@ -231,12 +223,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        content: SingleChildScrollView(
+        content: const SingleChildScrollView(
           child: Text(
             'FinPay respects your privacy. We collect and use your information to provide and improve our services. Your data is stored locally on your device and is never shared with third parties without your consent.\n\n'
             'For the complete privacy policy, please visit our website or contact us at privacy@finpay.app.\n\n'
             'By using FinPay, you agree to our privacy practices as described in our Privacy Policy.',
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.credTextSecondary,
               fontSize: 14,
             ),
@@ -313,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAccountInfo(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -357,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildHelpSupport(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -418,7 +410,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppTheme.credMediumGray.withOpacity(0.2),
-            width: 1,
           ),
         ),
         child: Row(
@@ -433,7 +424,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   BoxShadow(
                     color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                     blurRadius: 8,
-                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -463,7 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildLogoutButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       child: SizedBox(
         width: double.infinity,
         child: RippleEffect(
@@ -514,7 +504,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           },
           child: SpringAnimation(
             startOffset: const Offset(0, 20),
-            endOffset: Offset.zero,
             child: Container(
               decoration: BoxDecoration(
                 color: AppTheme.credError,
@@ -523,7 +512,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   BoxShadow(
                     color: AppTheme.credError.withOpacity(0.4),
                     blurRadius: 16,
-                    spreadRadius: 0,
                     offset: const Offset(0, 8),
                   ),
                 ],

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/notification_item.dart';
+import 'package:fin_pay/models/notification_item.dart';
 
 /// Base class for all notification-related events
 abstract class NotificationEvent extends Equatable {
@@ -16,9 +16,9 @@ class LoadNotificationsEvent extends NotificationEvent {
 
 /// Event to add a new notification
 class AddNotificationEvent extends NotificationEvent {
-  final NotificationItem notification;
 
   const AddNotificationEvent(this.notification);
+  final NotificationItem notification;
 
   @override
   List<Object?> get props => [notification];
@@ -26,9 +26,9 @@ class AddNotificationEvent extends NotificationEvent {
 
 /// Event to delete a notification
 class DeleteNotificationEvent extends NotificationEvent {
-  final String notificationId;
 
   const DeleteNotificationEvent(this.notificationId);
+  final String notificationId;
 
   @override
   List<Object?> get props => [notificationId];

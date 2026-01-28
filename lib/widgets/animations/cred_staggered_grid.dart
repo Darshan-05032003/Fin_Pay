@@ -2,17 +2,9 @@ import 'package:flutter/material.dart';
 
 /// CRED-style staggered grid animation
 class CredStaggeredGrid extends StatelessWidget {
-  final List<Widget> children;
-  final int crossAxisCount;
-  final double mainAxisSpacing;
-  final double crossAxisSpacing;
-  final Duration staggerDuration;
-  final Duration itemDuration;
-  final Curve curve;
 
   const CredStaggeredGrid({
-    super.key,
-    required this.children,
+    required this.children, super.key,
     this.crossAxisCount = 2,
     this.mainAxisSpacing = 16,
     this.crossAxisSpacing = 16,
@@ -20,6 +12,13 @@ class CredStaggeredGrid extends StatelessWidget {
     this.itemDuration = const Duration(milliseconds: 400),
     this.curve = Curves.easeOutCubic,
   });
+  final List<Widget> children;
+  final int crossAxisCount;
+  final double mainAxisSpacing;
+  final double crossAxisSpacing;
+  final Duration staggerDuration;
+  final Duration itemDuration;
+  final Curve curve;
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +44,6 @@ class CredStaggeredGrid extends StatelessWidget {
 }
 
 class _StaggeredItem extends StatefulWidget {
-  final Widget child;
-  final Duration delay;
-  final Duration duration;
-  final Curve curve;
 
   const _StaggeredItem({
     required this.child,
@@ -56,6 +51,10 @@ class _StaggeredItem extends StatefulWidget {
     required this.duration,
     required this.curve,
   });
+  final Widget child;
+  final Duration delay;
+  final Duration duration;
+  final Curve curve;
 
   @override
   State<_StaggeredItem> createState() => _StaggeredItemState();
@@ -77,15 +76,15 @@ class _StaggeredItemState extends State<_StaggeredItem>
 
     _scaleAnimation = Tween<double>(
       begin: 0.8,
-      end: 1.0,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
     ));
 
     _opacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
+      begin: 0,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,

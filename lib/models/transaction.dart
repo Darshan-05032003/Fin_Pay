@@ -1,11 +1,4 @@
 class Transaction {
-  final String id;
-  final String title;
-  final double amount;
-  final DateTime date;
-  final TransactionType type;
-  final String icon;
-  final String? recipient;
 
   Transaction({
     required this.id,
@@ -16,6 +9,13 @@ class Transaction {
     required this.icon,
     this.recipient,
   });
+  final String id;
+  final String title;
+  final double amount;
+  final DateTime date;
+  final TransactionType type;
+  final String icon;
+  final String? recipient;
 }
 
 enum TransactionType {

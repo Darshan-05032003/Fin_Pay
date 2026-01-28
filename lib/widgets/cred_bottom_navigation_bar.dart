@@ -1,18 +1,16 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/services/haptic_service.dart';
 import 'package:flutter/material.dart';
-import '../constants/theme.dart';
-import '../services/haptic_service.dart';
 
 /// CRED-style bottom navigation bar with "Light Switch" effect
 /// Selected items "light up" with bright colors against dark background
 class CredBottomNavigationBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
 
   const CredBottomNavigationBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
+    required this.currentIndex, required this.onTap, super.key,
   });
+  final int currentIndex;
+  final Function(int) onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +20,6 @@ class CredBottomNavigationBar extends StatelessWidget {
         border: Border(
           top: BorderSide(
             color: AppTheme.credMediumGray.withOpacity(0.3),
-            width: 1,
           ),
         ),
       ),
@@ -34,7 +31,6 @@ class CredBottomNavigationBar extends StatelessWidget {
         selectedItemColor: AppTheme.credOrangeSunshine, // "Lights up" with orange
         unselectedItemColor: AppTheme.credTextTertiary, // Dim grey when not selected
         selectedFontSize: 12,
-        unselectedFontSize: 12,
         selectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,

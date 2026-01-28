@@ -2,27 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class SkeletonLoader extends StatelessWidget {
+
+  const SkeletonLoader({
+    required this.width, required this.height, super.key,
+    this.borderRadius,
+    this.baseColor,
+    this.highlightColor,
+  });
   final double width;
   final double height;
   final BorderRadius? borderRadius;
   final Color? baseColor;
   final Color? highlightColor;
 
-  const SkeletonLoader({
-    super.key,
-    required this.width,
-    required this.height,
-    this.borderRadius,
-    this.baseColor,
-    this.highlightColor,
-  });
-
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
       baseColor: baseColor ?? const Color(0xFF1A1A1A),
       highlightColor: highlightColor ?? const Color(0xFF2A2A2A),
-      period: const Duration(milliseconds: 1500),
       child: Container(
         width: width,
         height: height,
@@ -47,16 +44,16 @@ class SkeletonCard extends StatelessWidget {
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          const SkeletonLoader(width: 48, height: 48, borderRadius: BorderRadius.all(Radius.circular(24))),
-          const SizedBox(width: 16),
+          SkeletonLoader(width: 48, height: 48, borderRadius: BorderRadius.all(Radius.circular(24))),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonLoader(width: double.infinity, height: 16),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 SkeletonLoader(width: 100, height: 12),
               ],
             ),
@@ -69,9 +66,9 @@ class SkeletonCard extends StatelessWidget {
 }
 
 class SkeletonList extends StatelessWidget {
-  final int itemCount;
   
   const SkeletonList({super.key, this.itemCount = 5});
+  final int itemCount;
 
   @override
   Widget build(BuildContext context) {

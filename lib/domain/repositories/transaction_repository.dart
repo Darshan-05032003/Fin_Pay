@@ -1,5 +1,5 @@
-import '../../models/transaction.dart' as models;
-import '../../core/result/result.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/models/transaction.dart' as models;
 
 /// Repository interface for transaction operations
 abstract class ITransactionRepository {

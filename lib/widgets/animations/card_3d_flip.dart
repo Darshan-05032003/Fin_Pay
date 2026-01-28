@@ -1,19 +1,19 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+
 class Card3DFlip extends StatefulWidget {
-  final Widget frontChild;
-  final Widget? backChild;
-  final bool flipOnTap;
-  final double perspective;
 
   const Card3DFlip({
-    super.key,
-    required this.frontChild,
+    required this.frontChild, super.key,
     this.backChild,
     this.flipOnTap = true,
     this.perspective = 0.001,
   });
+  final Widget frontChild;
+  final Widget? backChild;
+  final bool flipOnTap;
+  final double perspective;
 
   @override
   State<Card3DFlip> createState() => _Card3DFlipState();

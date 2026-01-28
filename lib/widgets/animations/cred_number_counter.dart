@@ -2,17 +2,9 @@ import 'package:flutter/material.dart';
 
 /// CRED-style animated number counter with smooth transitions
 class CredNumberCounter extends StatefulWidget {
-  final double value;
-  final TextStyle? style;
-  final String? prefix;
-  final String? suffix;
-  final Duration duration;
-  final int decimalPlaces;
-  final Curve curve;
 
   const CredNumberCounter({
-    super.key,
-    required this.value,
+    required this.value, super.key,
     this.style,
     this.prefix,
     this.suffix,
@@ -20,6 +12,13 @@ class CredNumberCounter extends StatefulWidget {
     this.decimalPlaces = 2,
     this.curve = Curves.easeOutCubic,
   });
+  final double value;
+  final TextStyle? style;
+  final String? prefix;
+  final String? suffix;
+  final Duration duration;
+  final int decimalPlaces;
+  final Curve curve;
 
   @override
   State<CredNumberCounter> createState() => _CredNumberCounterState();

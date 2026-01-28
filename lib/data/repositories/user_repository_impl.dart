@@ -1,44 +1,44 @@
-import '../../models/user.dart';
-import '../../core/result/result.dart';
-import '../../data/datasources/local_datasource.dart';
-import '../../services/user_service.dart';
-import 'user_repository.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/data/datasources/local_datasource.dart';
+import 'package:fin_pay/domain/repositories/user_repository.dart';
+import 'package:fin_pay/models/user.dart';
+import 'package:fin_pay/services/user_service.dart';
 
 /// Implementation of IUserRepository
 class UserRepositoryImpl implements IUserRepository {
-  final LocalDataSource _localDataSource;
 
   UserRepositoryImpl(this._localDataSource);
+  final LocalDataSource _localDataSource;
 
   @override
   Future<Result<User?>> getCurrentUser() async {
-    return await _localDataSource.getUser();
+    return _localDataSource.getUser();
   }
 
   @override
   Future<Result<void>> saveUser(User user) async {
-    return await _localDataSource.saveUser(user);
+    return _localDataSource.saveUser(user);
   }
 
   @override
   Future<Result<void>> updateUser(User user) async {
-    return await _localDataSource.updateUser(user);
+    return _localDataSource.updateUser(user);
   }
 
   @override
   Future<Result<void>> deleteUser() async {
-    return await _localDataSource.deleteUser();
+    return _localDataSource.deleteUser();
   }
 
   @override
   Future<Result<void>> updateBalance(double balance) async {
     final userResult = await getCurrentUser();
-    return await userResult.flatMapAsync((user) async {
+    return userResult.flatMapAsync((user) async {
       if (user == null) {
         return const Failure('No user found');
       }
       final updatedUser = user.copyWith(balance: balance);
-      return await updateUser(updatedUser);
+      return updateUser(updatedUser);
     });
   }
 

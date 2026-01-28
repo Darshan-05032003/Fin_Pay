@@ -1,9 +1,4 @@
 class NotificationItem {
-  final String id;
-  final String title;
-  final String message;
-  final DateTime time;
-  final NotificationType type;
 
   NotificationItem({
     required this.id,
@@ -12,6 +7,11 @@ class NotificationItem {
     required this.time,
     required this.type,
   });
+  final String id;
+  final String title;
+  final String message;
+  final DateTime time;
+  final NotificationType type;
 }
 
 enum NotificationType {

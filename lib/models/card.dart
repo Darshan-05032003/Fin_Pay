@@ -1,11 +1,4 @@
 class Card {
-  final String id;
-  final String cardNumber;
-  final String cardHolderName;
-  final String expireDate;
-  final String cvv;
-  final CardType cardType;
-  final double balance;
 
   Card({
     required this.id,
@@ -16,6 +9,13 @@ class Card {
     required this.cardType,
     required this.balance,
   });
+  final String id;
+  final String cardNumber;
+  final String cardHolderName;
+  final String expireDate;
+  final String cvv;
+  final CardType cardType;
+  final double balance;
 
   String get maskedNumber {
     final parts = cardNumber.split(' ');

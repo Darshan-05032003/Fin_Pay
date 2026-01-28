@@ -1,16 +1,16 @@
-import '../../core/result/result.dart';
-import '../../models/transaction.dart' as models;
-import '../repositories/transaction_repository.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/domain/repositories/transaction_repository.dart';
+import 'package:fin_pay/models/transaction.dart' as models;
 
 /// Use case for getting transactions
 class GetTransactionsUseCase {
-  final ITransactionRepository _transactionRepository;
 
   GetTransactionsUseCase(this._transactionRepository);
+  final ITransactionRepository _transactionRepository;
 
   /// Execute the use case
   Future<Result<List<models.Transaction>>> call({int? limit}) async {
-    return await _transactionRepository.getTransactions(limit: limit);
+    return _transactionRepository.getTransactions(limit: limit);
   }
 }
 

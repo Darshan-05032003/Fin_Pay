@@ -1,23 +1,22 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+
 class IconMorph extends StatefulWidget {
+
+  const IconMorph({
+    required this.startIcon, required this.endIcon, super.key,
+    this.duration = const Duration(milliseconds: 500),
+    this.color,
+    this.size = 24.0,
+    this.animateOnTap = true,
+  });
   final IconData startIcon;
   final IconData endIcon;
   final Duration duration;
   final Color? color;
   final double size;
   final bool animateOnTap;
-
-  const IconMorph({
-    super.key,
-    required this.startIcon,
-    required this.endIcon,
-    this.duration = const Duration(milliseconds: 500),
-    this.color,
-    this.size = 24.0,
-    this.animateOnTap = true,
-  });
 
   @override
   State<IconMorph> createState() => _IconMorphState();

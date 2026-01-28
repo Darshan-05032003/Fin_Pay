@@ -26,8 +26,8 @@ class AppConstants {
   static const int maxPasswordLength = 20;
   
   // Limits
-  static const double minTransferAmount = 1.0;
-  static const double maxTransferAmount = 100000.0;
+  static const double minTransferAmount = 1;
+  static const double maxTransferAmount = 100000;
   
   // Date Formats
   static const String dateFormat = 'dd/MM/yyyy';

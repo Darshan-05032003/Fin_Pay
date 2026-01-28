@@ -1,4 +1,4 @@
-import '../services/user_service.dart';
+import 'package:fin_pay/services/user_service.dart';
 
 /// Route guard for authentication
 class RouteGuard {

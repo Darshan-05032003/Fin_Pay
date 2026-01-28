@@ -1,13 +1,13 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/fade_in_animation.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -58,14 +58,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CredSlideIn(
-                delay: const Duration(milliseconds: 100),
-                offset: const Offset(0, 30),
-                child: const Text(
+              const CredSlideIn(
+                delay: Duration(milliseconds: 100),
+                child: Text(
                   'Welcome Back',
                   style: TextStyle(
                     fontSize: 36,
@@ -76,10 +75,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               ),
               const SizedBox(height: 12),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 200),
-                offset: const Offset(0, 20),
-                child: const Text(
+              const CredSlideIn(
+                delay: Duration(milliseconds: 200),
+                offset: Offset(0, 20),
+                child: Text(
                   'Log in to securely access your account and manage your money anytime.',
                   style: TextStyle(
                     fontSize: 16,
@@ -91,9 +90,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               const SizedBox(height: 40),
               CredSlideIn(
                 delay: const Duration(milliseconds: 300),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
-                  duration: const Duration(milliseconds: 500),
                   perspective: 0.0008,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,17 +138,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: AppTheme.credOrangeSunshine.withOpacity(0.3),
-                              width: 1,
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             children: [
-                              const Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
-                              const SizedBox(width: 8),
+                              Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
+                              SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Use: ${UserService.defaultEmail} / ${UserService.defaultPassword}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppTheme.credTextSecondary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -169,7 +165,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               const SizedBox(height: 20),
               CredSlideIn(
                 delay: const Duration(milliseconds: 400),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
                   duration: const Duration(milliseconds: 600),
                   perspective: 0.0008,
@@ -249,7 +244,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               const SizedBox(height: 32),
               CredSlideIn(
                 delay: const Duration(milliseconds: 600),
-                offset: const Offset(0, 30),
                 child: CredButtonPress(
                   onTap: () async {
                     if (_emailController.text.trim().isEmpty ||
@@ -289,7 +283,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   },
                   child: SpringAnimation(
                     startOffset: const Offset(0, 20),
-                    endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: AppTheme.credOrangeGradient,
@@ -298,7 +291,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           BoxShadow(
                             color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
-                            spreadRadius: 0,
                             offset: const Offset(0, 10),
                           ),
                         ],
@@ -326,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   children: [
                     Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'Or continue with',
                         style: TextStyle(color: AppTheme.credTextTertiary),
@@ -385,12 +377,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       delay: const Duration(milliseconds: 850),
       offset: const Offset(0, 20),
       child: CredButtonPress(
-        onTap: () => HapticService.selection(),
+        onTap: HapticService.selection,
         child: SpringAnimation(
           startOffset: const Offset(0, 10),
-          endOffset: Offset.zero,
           child: PulseAnimation(
-            duration: const Duration(seconds: 2),
             minScale: 0.98,
             maxScale: 1.02,
             child: Container(
@@ -401,7 +391,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: AppTheme.credMediumGray.withOpacity(0.3),
-                  width: 1,
                 ),
               ),
               child: Icon(icon, color: color, size: 28),

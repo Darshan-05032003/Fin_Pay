@@ -2,23 +2,22 @@ import 'package:flutter/material.dart';
 
 /// Optimized animation widget that uses RepaintBoundary for better performance
 class OptimizedAnimation extends StatelessWidget {
+
+  const OptimizedAnimation({
+    required this.child, super.key,
+    this.duration = const Duration(milliseconds: 300),
+    this.curve = Curves.easeOutCubic,
+    this.useRepaintBoundary = true,
+  });
   final Widget child;
   final Duration duration;
   final Curve curve;
   final bool useRepaintBoundary;
 
-  const OptimizedAnimation({
-    super.key,
-    required this.child,
-    this.duration = const Duration(milliseconds: 300),
-    this.curve = Curves.easeOutCubic,
-    this.useRepaintBoundary = true,
-  });
-
   @override
   Widget build(BuildContext context) {
     Widget animatedChild = TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
+      tween: Tween(begin: 0, end: 1),
       duration: duration,
       curve: curve,
       builder: (context, value, child) {
@@ -43,23 +42,21 @@ class OptimizedAnimation extends StatelessWidget {
 
 /// Optimized list animation with lazy loading
 class OptimizedListAnimation extends StatelessWidget {
+
+  const OptimizedListAnimation({
+    required this.child, required this.index, super.key,
+    this.duration = const Duration(milliseconds: 300),
+    this.curve = Curves.easeOutCubic,
+  });
   final Widget child;
   final int index;
   final Duration duration;
   final Curve curve;
 
-  const OptimizedListAnimation({
-    super.key,
-    required this.child,
-    required this.index,
-    this.duration = const Duration(milliseconds: 300),
-    this.curve = Curves.easeOutCubic,
-  });
-
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
+      tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: duration.inMilliseconds + (index * 50)),
       curve: curve,
       builder: (context, value, child) {
@@ -78,16 +75,15 @@ class OptimizedListAnimation extends StatelessWidget {
 
 /// Performance-optimized fade animation
 class OptimizedFadeIn extends StatelessWidget {
-  final Widget child;
-  final Duration delay;
-  final Duration duration;
 
   const OptimizedFadeIn({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.delay = Duration.zero,
     this.duration = const Duration(milliseconds: 300),
   });
+  final Widget child;
+  final Duration delay;
+  final Duration duration;
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +94,7 @@ class OptimizedFadeIn extends StatelessWidget {
           return Opacity(opacity: 0, child: child);
         }
         return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
+          tween: Tween(begin: 0, end: 1),
           duration: duration,
           curve: Curves.easeOut,
           builder: (context, value, child) {

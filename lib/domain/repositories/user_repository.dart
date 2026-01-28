@@ -1,5 +1,5 @@
-import '../../models/user.dart';
-import '../../core/result/result.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/models/user.dart';
 
 /// Repository interface for user operations
 /// 

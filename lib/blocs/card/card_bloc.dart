@@ -1,8 +1,8 @@
+import 'package:fin_pay/blocs/card/card_event.dart';
+import 'package:fin_pay/blocs/card/card_state.dart';
+import 'package:fin_pay/core/logger.dart';
+import 'package:fin_pay/services/database_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/logger.dart';
-import '../../services/database_service.dart';
-import 'card_event.dart';
-import 'card_state.dart';
 
 /// BLoC for managing card state
 /// 
@@ -11,13 +11,13 @@ import 'card_state.dart';
 /// - Adding new cards
 /// - Deleting cards
 class CardBloc extends Bloc<CardEvent, CardState> {
-  final DatabaseService _db = DatabaseService();
 
-  CardBloc() : super(const CardInitial()) {
+  CardBloc({required DatabaseService db}) : _db = db, super(const CardInitial()) {
     on<LoadCardsEvent>(_onLoadCards);
     on<AddCardEvent>(_onAddCard);
     on<DeleteCardEvent>(_onDeleteCard);
   }
+  final DatabaseService _db;
 
   /// Handle loading cards
   Future<void> _onLoadCards(
@@ -31,7 +31,7 @@ class CardBloc extends Bloc<CardEvent, CardState> {
       emit(CardLoaded(cards));
       Logger.info('Loaded ${cards.length} cards');
     } catch (e) {
-      emit(CardError('Failed to load cards: ${e.toString()}'));
+      emit(CardError('Failed to load cards: $e'));
       Logger.error('Error loading cards', e);
     }
   }
@@ -52,7 +52,7 @@ class CardBloc extends Bloc<CardEvent, CardState> {
       }
       Logger.info('Card added successfully');
     } catch (e) {
-      emit(CardError('Failed to add card: ${e.toString()}'));
+      emit(CardError('Failed to add card: $e'));
       Logger.error('Error adding card', e);
     }
   }
@@ -73,7 +73,7 @@ class CardBloc extends Bloc<CardEvent, CardState> {
       }
       Logger.info('Card deleted successfully');
     } catch (e) {
-      emit(CardError('Failed to delete card: ${e.toString()}'));
+      emit(CardError('Failed to delete card: $e'));
       Logger.error('Error deleting card', e);
     }
   }

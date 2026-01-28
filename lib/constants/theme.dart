@@ -98,14 +98,10 @@ class AppTheme {
         BoxShadow(
           color: Colors.white.withOpacity(0.05),
           offset: const Offset(2, 2),
-          blurRadius: 0,
-          spreadRadius: 0,
         ),
         BoxShadow(
           color: color,
           offset: const Offset(-2, -2),
-          blurRadius: 0,
-          spreadRadius: 0,
         ),
       ];
     }
@@ -114,14 +110,10 @@ class AppTheme {
       BoxShadow(
         color: color,
         offset: Offset(depth, depth), // 45-degree hard shadow
-        blurRadius: 0, // Hard shadow, no blur
-        spreadRadius: 0,
       ),
       BoxShadow(
         color: Colors.white.withOpacity(0.05),
         offset: Offset(-depth * 0.5, -depth * 0.5),
-        blurRadius: 0,
-        spreadRadius: 0,
       ),
     ];
   }
@@ -355,13 +347,11 @@ class AppTheme {
         secondary: credNeonGreen,
         tertiary: credPinkPong,
         surface: credSurfaceCard,
-        background: credPureBackground,
         error: credError,
         onPrimary: credPureBackground,
         onSecondary: credPureBackground,
         onTertiary: credPopWhite,
         onSurface: credPopWhite,
-        onBackground: credPopWhite,
         onError: credPopWhite,
       ),
     );

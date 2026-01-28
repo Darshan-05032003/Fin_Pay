@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 
 class PulseAnimation extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-  final double minScale;
-  final double maxScale;
 
   const PulseAnimation({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.duration = const Duration(seconds: 2),
     this.minScale = 0.95,
     this.maxScale = 1.0,
   });
+  final Widget child;
+  final Duration duration;
+  final double minScale;
+  final double maxScale;
 
   @override
   State<PulseAnimation> createState() => _PulseAnimationState();

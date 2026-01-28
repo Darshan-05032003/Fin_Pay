@@ -1,27 +1,24 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/notification_item.dart';
+import 'package:fin_pay/models/transaction.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/draggable_card.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../models/transaction.dart';
-import '../../models/notification_item.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
-import '../../widgets/animations/draggable_card.dart';
 
 class TransferReviewScreen extends StatelessWidget {
+
+  const TransferReviewScreen({
+    required this.recipientName, required this.recipientAccount, required this.amount, super.key,
+  });
   final String recipientName;
   final String recipientAccount;
   final String amount;
-
-  const TransferReviewScreen({
-    super.key,
-    required this.recipientName,
-    required this.recipientAccount,
-    required this.amount,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +35,14 @@ class TransferReviewScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CredSlideIn(
-              delay: const Duration(milliseconds: 100),
-              offset: const Offset(0, 20),
-              child: const Text(
+            const CredSlideIn(
+              delay: Duration(milliseconds: 100),
+              offset: Offset(0, 20),
+              child: Text(
                 'Confirm To Transfer Money',
                 style: TextStyle(
                   fontSize: 24,
@@ -59,7 +56,6 @@ class TransferReviewScreen extends StatelessWidget {
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 200),
-              offset: const Offset(0, 30),
               child: CredCardReveal(
                 duration: const Duration(milliseconds: 600),
                 perspective: 0.0008,
@@ -73,7 +69,6 @@ class TransferReviewScreen extends StatelessWidget {
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 300),
-              offset: const Offset(0, 30),
               child: CredCardReveal(
                 duration: const Duration(milliseconds: 700),
                 perspective: 0.0008,
@@ -84,7 +79,6 @@ class TransferReviewScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: AppTheme.credMediumGray.withOpacity(0.2),
-                      width: 1,
                     ),
                   ),
                   child: Column(
@@ -95,7 +89,7 @@ class TransferReviewScreen extends StatelessWidget {
                       const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
                       _buildDetailRow('Amount', '\$$amount'),
                       const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
-                      _buildDetailRow('Fees', '\$0.00'),
+                      _buildDetailRow('Fees', r'$0.00'),
                       const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
                       _buildDetailRow(
                         'Total Amount',
@@ -110,7 +104,6 @@ class TransferReviewScreen extends StatelessWidget {
             const SizedBox(height: 24),
             CredSlideIn(
               delay: const Duration(milliseconds: 400),
-              offset: const Offset(0, 30),
               child: CredCardReveal(
                 duration: const Duration(milliseconds: 800),
                 perspective: 0.0008,
@@ -131,16 +124,16 @@ class TransferReviewScreen extends StatelessWidget {
                             width: hasFocus ? 2 : 1,
                           ),
                         ),
-                        child: TextField(
+                        child: const TextField(
                           maxLines: 3,
                           maxLength: 50,
-                          style: const TextStyle(color: AppTheme.credTextPrimary),
+                          style: TextStyle(color: AppTheme.credTextPrimary),
                           decoration: InputDecoration(
                             labelText: 'Reference',
                             hintText: 'Tap to add a note',
                             counterText: '0/50',
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(20),
+                            contentPadding: EdgeInsets.all(20),
                           ),
                         ),
                       );
@@ -152,7 +145,6 @@ class TransferReviewScreen extends StatelessWidget {
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 500),
-              offset: const Offset(0, 30),
               child: CredButtonPress(
                 onTap: () async {
                     final transferAmount = double.tryParse(amount);
@@ -215,7 +207,6 @@ class TransferReviewScreen extends StatelessWidget {
                   },
                   child: SpringAnimation(
                     startOffset: const Offset(0, 20),
-                    endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: AppTheme.credOrangeGradient,
@@ -224,7 +215,6 @@ class TransferReviewScreen extends StatelessWidget {
                           BoxShadow(
                             color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
-                            spreadRadius: 0,
                             offset: const Offset(0, 10),
                           ),
                         ],
@@ -261,10 +251,10 @@ class TransferReviewScreen extends StatelessWidget {
           child: _buildAvatar('A', 'Amir'),
         ),
         const SizedBox(width: 16),
-        CredSlideIn(
-          delay: const Duration(milliseconds: 300),
-          offset: const Offset(0, 10),
-          child: const Text(
+        const CredSlideIn(
+          delay: Duration(milliseconds: 300),
+          offset: Offset(0, 10),
+          child: Text(
             'To',
             style: TextStyle(
               fontSize: 18,
@@ -287,7 +277,6 @@ class TransferReviewScreen extends StatelessWidget {
     return Column(
       children: [
         PulseAnimation(
-          duration: const Duration(seconds: 2),
           minScale: 0.98,
           maxScale: 1.02,
           child: Container(
@@ -300,7 +289,6 @@ class TransferReviewScreen extends StatelessWidget {
                 BoxShadow(
                   color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                   blurRadius: 16,
-                  spreadRadius: 0,
                 ),
               ],
             ),
@@ -331,7 +319,7 @@ class TransferReviewScreen extends StatelessWidget {
 
   Widget _buildDetailRow(String label, String value, {bool isTotal = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

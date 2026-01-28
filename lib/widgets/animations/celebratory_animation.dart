@@ -1,25 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:confetti/confetti.dart';
 import 'dart:math' as math;
-import '../../services/haptic_service.dart';
+
+import 'package:confetti/confetti.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:flutter/material.dart';
 
 class CelebratoryAnimation extends StatefulWidget {
+
+  const CelebratoryAnimation({
+    required this.child, required this.title, required this.icon, super.key,
+    this.subtitle,
+    this.color = Colors.green,
+    this.onComplete,
+  });
   final Widget child;
   final String title;
   final String? subtitle;
   final IconData icon;
   final Color color;
   final VoidCallback? onComplete;
-
-  const CelebratoryAnimation({
-    super.key,
-    required this.child,
-    required this.title,
-    this.subtitle,
-    required this.icon,
-    this.color = Colors.green,
-    this.onComplete,
-  });
 
   @override
   State<CelebratoryAnimation> createState() => _CelebratoryAnimationState();
@@ -46,11 +44,11 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
     );
 
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
+    _rotationAnimation = Tween<double>(begin: 0, end: 2 * math.pi).animate(
       CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
     );
 
@@ -94,7 +92,6 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
             emissionFrequency: 0.05,
             numberOfParticles: 60,
             gravity: 0.3,
-            shouldLoop: false,
             colors: [
               widget.color,
               widget.color.withOpacity(0.7),
@@ -105,7 +102,6 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
           ),
         ),
         Align(
-          alignment: Alignment.center,
           child: AnimatedBuilder(
             animation: Listenable.merge([_scaleAnimation, _rotationAnimation]),
             builder: (context, child) {

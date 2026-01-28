@@ -1,21 +1,19 @@
+import 'package:fin_pay/services/haptic_service.dart';
 import 'package:flutter/material.dart';
-import '../../services/haptic_service.dart';
 
 class SwipeToDismiss extends StatefulWidget {
+
+  const SwipeToDismiss({
+    required this.child, required this.uniqueKey, super.key,
+    this.onDismiss,
+    this.background,
+    this.icon,
+  });
   final Widget child;
   final VoidCallback? onDismiss;
   final Color? background;
   final IconData? icon;
   final String uniqueKey;
-
-  const SwipeToDismiss({
-    super.key,
-    required this.child,
-    required this.uniqueKey,
-    this.onDismiss,
-    this.background,
-    this.icon,
-  });
 
   @override
   State<SwipeToDismiss> createState() => _SwipeToDismissState();
@@ -45,8 +43,8 @@ class _SwipeToDismissState extends State<SwipeToDismiss>
     ));
 
     _opacityAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
+      begin: 1,
+      end: 0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
@@ -73,7 +71,7 @@ class _SwipeToDismissState extends State<SwipeToDismiss>
     return Dismissible(
       key: Key(widget.uniqueKey),
       direction: DismissDirection.endToStart,
-      onDismissed: (direction) => _handleDismiss(direction),
+      onDismissed: _handleDismiss,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),

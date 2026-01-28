@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ScalePageRoute<T> extends PageRouteBuilder<T> {
-  final Widget page;
 
   ScalePageRoute({required this.page})
       : super(
@@ -11,15 +10,15 @@ class ScalePageRoute<T> extends PageRouteBuilder<T> {
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final scaleAnimation = Tween<double>(
               begin: 0.8,
-              end: 1.0,
+              end: 1,
             ).animate(CurvedAnimation(
               parent: animation,
               curve: Curves.easeOutCubic,
             ));
 
             final fadeAnimation = Tween<double>(
-              begin: 0.0,
-              end: 1.0,
+              begin: 0,
+              end: 1,
             ).animate(CurvedAnimation(
               parent: animation,
               curve: Curves.easeOut,
@@ -34,5 +33,6 @@ class ScalePageRoute<T> extends PageRouteBuilder<T> {
             );
           },
         );
+  final Widget page;
 }
 

@@ -1,17 +1,17 @@
-import '../../models/user.dart';
-import '../../models/transaction.dart' as models;
-import '../../models/card.dart' as card_models;
-import '../../models/notification_item.dart';
-import '../../core/result/result.dart';
-import '../../core/errors/app_exception.dart';
-import '../../services/database_service.dart';
-import 'local_datasource.dart';
+import 'package:fin_pay/core/errors/app_exception.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/data/datasources/local_datasource.dart';
+import 'package:fin_pay/models/card.dart' as card_models;
+import 'package:fin_pay/models/notification_item.dart';
+import 'package:fin_pay/models/transaction.dart' as models;
+import 'package:fin_pay/models/user.dart';
+import 'package:fin_pay/services/database_service.dart';
 
 /// Concrete implementation of LocalDataSource using SQLite
 class LocalDataSourceImpl implements LocalDataSource {
-  final DatabaseService _db;
 
   LocalDataSourceImpl(this._db);
+  final DatabaseService _db;
 
   @override
   Future<Result<User?>> getUser() async {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 class SlidePageRoute<T> extends PageRouteBuilder<T> {
-  final Widget page;
-  final SlideDirection direction;
 
   SlidePageRoute({
     required this.page,
@@ -13,12 +11,12 @@ class SlidePageRoute<T> extends PageRouteBuilder<T> {
           reverseTransitionDuration: const Duration(milliseconds: 300),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final offset = direction == SlideDirection.rightToLeft
-                ? const Offset(1.0, 0.0)
+                ? const Offset(1, 0)
                 : direction == SlideDirection.leftToRight
-                    ? const Offset(-1.0, 0.0)
+                    ? const Offset(-1, 0)
                     : direction == SlideDirection.bottomToTop
-                        ? const Offset(0.0, 1.0)
-                        : const Offset(0.0, -1.0);
+                        ? const Offset(0, 1)
+                        : const Offset(0, -1);
 
             final slideAnimation = Tween<Offset>(
               begin: offset,
@@ -29,8 +27,8 @@ class SlidePageRoute<T> extends PageRouteBuilder<T> {
             ));
 
             final fadeAnimation = Tween<double>(
-              begin: 0.0,
-              end: 1.0,
+              begin: 0,
+              end: 1,
             ).animate(CurvedAnimation(
               parent: animation,
               curve: Curves.easeOut,
@@ -45,6 +43,8 @@ class SlidePageRoute<T> extends PageRouteBuilder<T> {
             );
           },
         );
+  final Widget page;
+  final SlideDirection direction;
 }
 
 enum SlideDirection {

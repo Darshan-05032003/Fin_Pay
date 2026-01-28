@@ -1,14 +1,14 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_number_counter.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/skeleton_loader_full.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/cred_number_counter.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -20,7 +20,7 @@ class TransferScreen extends StatefulWidget {
 class _TransferScreenState extends State<TransferScreen> {
   final TextEditingController _amountController = TextEditingController();
   String? selectedRecipient;
-  double _balance = 0.0;
+  double _balance = 0;
   bool _isLoading = true;
 
   final List<Map<String, dynamic>> recipients = [
@@ -73,7 +73,7 @@ class _TransferScreenState extends State<TransferScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -107,7 +107,7 @@ class _TransferScreenState extends State<TransferScreen> {
                             delay: Duration(milliseconds: 150 + (index * 50)),
                             offset: const Offset(20, 0),
                             child: Padding(
-                              padding: const EdgeInsets.only(right: 12.0),
+                              padding: const EdgeInsets.only(right: 12),
                               child: CredButtonPress(
                                 onTap: () async {
                                   await HapticService.selection();
@@ -117,9 +117,7 @@ class _TransferScreenState extends State<TransferScreen> {
                                 },
                                 child: SpringAnimation(
                                   startOffset: const Offset(0, 10),
-                                  endOffset: Offset.zero,
                                   child: PulseAnimation(
-                                    duration: const Duration(seconds: 2),
                                     minScale: isSelected ? 0.98 : 1.0,
                                     maxScale: isSelected ? 1.02 : 1.0,
                                     child: Container(
@@ -141,7 +139,6 @@ class _TransferScreenState extends State<TransferScreen> {
                                                 BoxShadow(
                                                   color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                                   blurRadius: 12,
-                                                  spreadRadius: 0,
                                                 ),
                                               ]
                                             : null,
@@ -177,7 +174,6 @@ class _TransferScreenState extends State<TransferScreen> {
                 delay: const Duration(milliseconds: 300),
                 offset: const Offset(0, 20),
                 child: CredCardReveal(
-                  duration: const Duration(milliseconds: 500),
                   perspective: 0.0008,
                   child: _buildSelectedRecipient(),
                 ),
@@ -186,7 +182,6 @@ class _TransferScreenState extends State<TransferScreen> {
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 200),
-              offset: const Offset(0, 30),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -220,7 +215,7 @@ class _TransferScreenState extends State<TransferScreen> {
                               textAlign: TextAlign.center,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               decoration: InputDecoration(
-                                prefixText: '\$',
+                                prefixText: r'$',
                                 prefixStyle: const TextStyle(
                                   fontSize: 42,
                                   fontWeight: FontWeight.w800,
@@ -256,13 +251,12 @@ class _TransferScreenState extends State<TransferScreen> {
                           CredNumberCounter(
                             value: _balance,
                             duration: const Duration(milliseconds: 1000),
-                            curve: Curves.easeOutCubic,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.credOrangeSunshine,
                             ),
-                            prefix: '\$',
+                            prefix: r'$',
                             suffix: ' (Available)',
                           ),
                         ],
@@ -275,7 +269,6 @@ class _TransferScreenState extends State<TransferScreen> {
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 500),
-              offset: const Offset(0, 30),
               child: CredButtonPress(
                 onTap: selectedRecipient != null && _amountController.text.isNotEmpty
                     ? () async {
@@ -309,7 +302,7 @@ class _TransferScreenState extends State<TransferScreen> {
                           context,
                           '/transfer-review',
                           arguments: {
-                            'recipientName': selectedRecipient!,
+                            'recipientName': selectedRecipient,
                             'recipientAccount': recipient['account'],
                             'amount': amount.toStringAsFixed(2),
                           },
@@ -318,7 +311,6 @@ class _TransferScreenState extends State<TransferScreen> {
                     : null,
                 child: SpringAnimation(
                   startOffset: const Offset(0, 20),
-                  endOffset: Offset.zero,
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: (selectedRecipient != null && _amountController.text.isNotEmpty)
@@ -333,7 +325,6 @@ class _TransferScreenState extends State<TransferScreen> {
                               BoxShadow(
                                 color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                 blurRadius: 16,
-                                spreadRadius: 0,
                                 offset: const Offset(0, 8),
                               ),
                             ]
@@ -376,7 +367,6 @@ class _TransferScreenState extends State<TransferScreen> {
           BoxShadow(
             color: AppTheme.credOrangeSunshine.withOpacity(0.4),
             blurRadius: 12,
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -400,13 +390,11 @@ class _TransferScreenState extends State<TransferScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: AppTheme.credOrangeSunshine.withOpacity(0.3),
-          width: 1,
         ),
       ),
       child: Row(
         children: [
           PulseAnimation(
-            duration: const Duration(seconds: 2),
             minScale: 0.98,
             maxScale: 1.02,
             child: Container(
@@ -419,7 +407,6 @@ class _TransferScreenState extends State<TransferScreen> {
                   BoxShadow(
                     color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                     blurRadius: 12,
-                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -468,9 +455,9 @@ class _TransferScreenState extends State<TransferScreen> {
                 _amountController.clear();
               });
             },
-            child: TextButton(
+            child: const TextButton(
               onPressed: null,
-              child: const Text(
+              child: Text(
                 'Change',
                 style: TextStyle(
                   color: AppTheme.credOrangeSunshine,
@@ -546,7 +533,6 @@ class _TransferScreenState extends State<TransferScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: AppTheme.credMediumGray.withOpacity(0.2),
-                width: 1,
               ),
             ),
             child: Center(

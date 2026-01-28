@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 /// CRED-style page transition with scale and fade
 class CredPageTransition extends PageRouteBuilder {
-  final Widget page;
-  final Duration transitionDuration;
-  final Curve curve;
 
   CredPageTransition({
     required this.page,
@@ -16,19 +13,19 @@ class CredPageTransition extends PageRouteBuilder {
           reverseTransitionDuration: const Duration(milliseconds: 250),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final fadeAnimation = Tween<double>(
-              begin: 0.0,
-              end: 1.0,
+              begin: 0,
+              end: 1,
             ).animate(CurvedAnimation(
               parent: animation,
-              curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+              curve: const Interval(0, 0.6, curve: Curves.easeOut),
             ));
 
             final scaleAnimation = Tween<double>(
               begin: 0.96,
-              end: 1.0,
+              end: 1,
             ).animate(CurvedAnimation(
               parent: animation,
-              curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
+              curve: const Interval(0, 0.8, curve: Curves.easeOutCubic),
             ));
 
             final slideAnimation = Tween<Offset>(
@@ -36,7 +33,7 @@ class CredPageTransition extends PageRouteBuilder {
               end: Offset.zero,
             ).animate(CurvedAnimation(
               parent: animation,
-              curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
+              curve: const Interval(0, 0.7, curve: Curves.easeOutCubic),
             ));
 
             return RepaintBoundary(
@@ -53,5 +50,9 @@ class CredPageTransition extends PageRouteBuilder {
             );
           },
         );
+  final Widget page;
+  @override
+  final Duration transitionDuration;
+  final Curve curve;
 }
 

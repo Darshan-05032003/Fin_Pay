@@ -1,15 +1,15 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/transaction.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
+import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
+import 'package:fin_pay/widgets/animations/swipe_to_dismiss.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import '../../constants/theme.dart';
-import '../../models/transaction.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/swipe_to_dismiss.dart';
-import '../../widgets/animations/skeleton_loader_full.dart';
-import '../../widgets/animations/pull_to_refresh_custom.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -67,7 +67,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             delay: const Duration(milliseconds: 100),
             offset: const Offset(0, 20),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Expanded(
@@ -131,7 +131,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: AppTheme.credMediumGray.withOpacity(0.2),
-                              width: 1,
                             ),
                           ),
                           child: const Icon(Icons.filter_list, color: AppTheme.credOrangeSunshine, size: 24),
@@ -148,7 +147,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         await HapticService.mediumImpact();
                       },
                       child: CredCardReveal(
-                        duration: const Duration(milliseconds: 500),
                         perspective: 0.0006,
                         child: Container(
                           padding: const EdgeInsets.all(12),
@@ -159,7 +157,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               BoxShadow(
                                 color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                                 blurRadius: 8,
-                                spreadRadius: 0,
                               ),
                             ],
                           ),
@@ -174,7 +171,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const SkeletonList(itemCount: 5)
+                ? const SkeletonList()
                 : _filteredTransactions.isEmpty
                     ? Center(
                         child: Column(
@@ -209,7 +206,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               final transaction = _filteredTransactions[index];
                               return CredSlideIn(
                                 delay: Duration(milliseconds: 300 + (index * 50)),
-                                offset: const Offset(0, 30),
                                 child: CredCardReveal(
                                   duration: Duration(milliseconds: 400 + (index * 30)),
                                   perspective: 0.0006,
@@ -255,7 +251,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: AppTheme.credMediumGray.withOpacity(0.2),
-          width: 1,
         ),
       ),
       child: Row(

@@ -1,19 +1,18 @@
+import 'package:fin_pay/services/haptic_service.dart';
 import 'package:flutter/material.dart';
-import '../../services/haptic_service.dart';
 
 class DraggableCard extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onSwipeLeft;
-  final VoidCallback? onSwipeRight;
-  final double threshold;
 
   const DraggableCard({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.onSwipeLeft,
     this.onSwipeRight,
     this.threshold = 100.0,
   });
+  final Widget child;
+  final VoidCallback? onSwipeLeft;
+  final VoidCallback? onSwipeRight;
+  final double threshold;
 
   @override
   State<DraggableCard> createState() => _DraggableCardState();
@@ -46,16 +45,16 @@ class _DraggableCardState extends State<DraggableCard>
     ));
 
     _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.0,
+      begin: 0,
+      end: 0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOut,
     ));
 
     _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.0,
+      begin: 1,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOut,
@@ -81,10 +80,10 @@ class _DraggableCardState extends State<DraggableCard>
     final shouldSwipeRight = _position.dx > widget.threshold;
 
     if (shouldSwipeLeft) {
-      _animateOut(const Offset(-2.0, 0));
+      _animateOut(const Offset(-2, 0));
       widget.onSwipeLeft?.call();
     } else if (shouldSwipeRight) {
-      _animateOut(const Offset(2.0, 0));
+      _animateOut(const Offset(2, 0));
       widget.onSwipeRight?.call();
     } else {
       _animateBack();
@@ -114,7 +113,7 @@ class _DraggableCardState extends State<DraggableCard>
     ));
 
     _scaleAnimation = Tween<double>(
-      begin: 1.0,
+      begin: 1,
       end: 0.8,
     ).animate(CurvedAnimation(
       parent: _controller,
@@ -136,15 +135,15 @@ class _DraggableCardState extends State<DraggableCard>
 
     _rotationAnimation = Tween<double>(
       begin: _position.dx / screenWidth * 0.1,
-      end: 0.0,
+      end: 0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.elasticOut,
     ));
 
     _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.0,
+      begin: 1,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.elasticOut,

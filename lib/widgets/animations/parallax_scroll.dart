@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
 class ParallaxScroll extends StatelessWidget {
-  final Widget child;
-  final double parallaxFactor;
 
   const ParallaxScroll({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.parallaxFactor = 0.5,
   });
+  final Widget child;
+  final double parallaxFactor;
 
   @override
   Widget build(BuildContext context) {
@@ -36,16 +35,14 @@ class ParallaxScroll extends StatelessWidget {
 }
 
 class ParallaxWidget extends StatelessWidget {
+
+  const ParallaxWidget({
+    required this.child, required this.scrollController, super.key,
+    this.parallaxFactor = 0.5,
+  });
   final Widget child;
   final ScrollController scrollController;
   final double parallaxFactor;
-
-  const ParallaxWidget({
-    super.key,
-    required this.child,
-    required this.scrollController,
-    this.parallaxFactor = 0.5,
-  });
 
   @override
   Widget build(BuildContext context) {

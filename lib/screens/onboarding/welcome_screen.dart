@@ -1,7 +1,7 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../widgets/animations/fade_in_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -24,11 +24,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
 
-    _slideAnimation = Tween<double>(begin: 50.0, end: 0.0).animate(
+    _slideAnimation = Tween<double>(begin: 50, end: 0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
 
@@ -57,11 +57,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Spacer(),
-                    PulseAnimation(
-                      duration: const Duration(seconds: 2),
+                    const PulseAnimation(
                       minScale: 0.98,
                       maxScale: 1.02,
-                      child: const Text(
+                      child: Text(
                         'FinPay',
                         style: TextStyle(
                           color: AppTheme.credWhite,
@@ -72,9 +71,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                     ),
                     const SizedBox(height: 24),
-                    FadeInAnimation(
-                      delay: const Duration(milliseconds: 500),
-                      child: const Text(
+                    const FadeInAnimation(
+                      delay: Duration(milliseconds: 500),
+                      child: Text(
                         'Your money. Your move',
                         style: TextStyle(
                           color: AppTheme.credTextSecondary,
@@ -88,9 +87,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     FadeInAnimation(
                       delay: const Duration(milliseconds: 800),
                       child: Padding(
-                        padding: const EdgeInsets.all(32.0),
+                        padding: const EdgeInsets.all(32),
                         child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.0, end: 1.0),
+                          tween: Tween(begin: 0, end: 1),
                           duration: const Duration(milliseconds: 600),
                           curve: Curves.easeOutCubic,
                           builder: (context, value, child) {

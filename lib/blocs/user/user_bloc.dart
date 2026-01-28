@@ -1,13 +1,12 @@
+import 'package:fin_pay/blocs/user/user_event.dart';
+import 'package:fin_pay/blocs/user/user_state.dart';
+import 'package:fin_pay/core/logger.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/domain/usecases/authenticate_user_usecase.dart';
+import 'package:fin_pay/domain/usecases/get_user_usecase.dart';
+import 'package:fin_pay/domain/usecases/update_user_usecase.dart';
+import 'package:fin_pay/services/user_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/result/result.dart';
-import '../../core/di/dependency_injection.dart';
-import '../../core/logger.dart';
-import '../../domain/usecases/get_user_usecase.dart';
-import '../../domain/usecases/update_user_usecase.dart';
-import '../../domain/usecases/authenticate_user_usecase.dart';
-import '../../services/user_service.dart';
-import 'user_event.dart';
-import 'user_state.dart';
 
 /// BLoC for managing user state
 /// 
@@ -18,14 +17,14 @@ import 'user_state.dart';
 /// - Logout
 /// - Balance updates
 class UserBloc extends Bloc<UserEvent, UserState> {
-  final GetUserUseCase _getUserUseCase;
-  final UpdateUserUseCase _updateUserUseCase;
-  final AuthenticateUserUseCase _authenticateUserUseCase;
 
-  UserBloc()
-      : _getUserUseCase = DependencyInjection.get<GetUserUseCase>(),
-        _updateUserUseCase = DependencyInjection.get<UpdateUserUseCase>(),
-        _authenticateUserUseCase = DependencyInjection.get<AuthenticateUserUseCase>(),
+  UserBloc({
+    required GetUserUseCase getUserUseCase,
+    required UpdateUserUseCase updateUserUseCase,
+    required AuthenticateUserUseCase authenticateUserUseCase,
+  })  : _getUserUseCase = getUserUseCase,
+        _updateUserUseCase = updateUserUseCase,
+        _authenticateUserUseCase = authenticateUserUseCase,
         super(const UserInitial()) {
     on<LoadUserEvent>(_onLoadUser);
     on<UpdateUserEvent>(_onUpdateUser);
@@ -33,6 +32,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<LoginEvent>(_onLogin);
     on<LogoutEvent>(_onLogout);
   }
+  final GetUserUseCase _getUserUseCase;
+  final UpdateUserUseCase _updateUserUseCase;
+  final AuthenticateUserUseCase _authenticateUserUseCase;
 
   /// Handle loading user data
   Future<void> _onLoadUser(
@@ -65,7 +67,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         Logger.error('Failed to load user: $message', error);
       });
     } catch (e) {
-      emit(UserError('Unexpected error: ${e.toString()}'));
+      emit(UserError('Unexpected error: $e'));
       Logger.error('Unexpected error loading user', e);
     }
   }
@@ -90,7 +92,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             Logger.error('Failed to update user: $message', error);
           });
     } catch (e) {
-      emit(UserError('Unexpected error: ${e.toString()}'));
+      emit(UserError('Unexpected error: $e'));
       Logger.error('Unexpected error updating user', e);
     }
   }
@@ -127,7 +129,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             Logger.error('Authentication failed: $message', error);
           });
     } catch (e) {
-      emit(UserError('Unexpected error: ${e.toString()}'));
+      emit(UserError('Unexpected error: $e'));
       Logger.error('Unexpected error during login', e);
     }
   }

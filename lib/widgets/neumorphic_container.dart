@@ -1,21 +1,12 @@
+import 'package:fin_pay/constants/theme.dart';
 import 'package:flutter/material.dart';
-import '../constants/theme.dart';
 
 /// Neumorphic container widget that creates 3D shadow effects
 /// Supports both extruded (popping out) and inset (pressed in) styles
 class NeumorphicContainer extends StatelessWidget {
-  final Widget child;
-  final bool isExtruded; // true = popping out, false = pressed in
-  final double borderRadius;
-  final Color? color;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
-  final double blurRadius;
-  final double spreadRadius;
 
   const NeumorphicContainer({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.isExtruded = true,
     this.borderRadius = 20.0,
     this.color,
@@ -24,6 +15,14 @@ class NeumorphicContainer extends StatelessWidget {
     this.blurRadius = 15.0,
     this.spreadRadius = 1.0,
   });
+  final Widget child;
+  final bool isExtruded; // true = popping out, false = pressed in
+  final double borderRadius;
+  final Color? color;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final double blurRadius;
+  final double spreadRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -65,22 +64,21 @@ class NeumorphicContainer extends StatelessWidget {
 
 /// Neumorphic button with press animation
 class NeumorphicButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onPressed;
-  final double borderRadius;
-  final Color? color;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
 
   const NeumorphicButton({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.onPressed,
     this.borderRadius = 16.0,
     this.color,
     this.padding,
     this.margin,
   });
+  final Widget child;
+  final VoidCallback? onPressed;
+  final double borderRadius;
+  final Color? color;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
 
   @override
   State<NeumorphicButton> createState() => _NeumorphicButtonState();
@@ -99,7 +97,7 @@ class _NeumorphicButtonState extends State<NeumorphicButton>
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+    _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }

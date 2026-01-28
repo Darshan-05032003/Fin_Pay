@@ -1,14 +1,14 @@
-import 'package:sqflite/sqflite.dart' as sqflite;
+import 'package:fin_pay/models/card.dart' as card_models;
+import 'package:fin_pay/models/notification_item.dart';
+import 'package:fin_pay/models/transaction.dart' as models;
+import 'package:fin_pay/models/user.dart';
 import 'package:path/path.dart';
-import '../models/user.dart';
-import '../models/transaction.dart' as models;
-import '../models/card.dart' as card_models;
-import '../models/notification_item.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
 
 class DatabaseService {
-  static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
+  static final DatabaseService _instance = DatabaseService._internal();
 
   static sqflite.Database? _database;
 
@@ -22,7 +22,7 @@ class DatabaseService {
     final dbPath = await sqflite.getDatabasesPath();
     final path = join(dbPath, 'finpay.db');
 
-    return await sqflite.openDatabase(
+    return sqflite.openDatabase(
       path,
       version: 1,
       onCreate: _onCreate,

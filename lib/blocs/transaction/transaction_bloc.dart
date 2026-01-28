@@ -1,11 +1,10 @@
+import 'package:fin_pay/blocs/transaction/transaction_event.dart';
+import 'package:fin_pay/blocs/transaction/transaction_state.dart';
+import 'package:fin_pay/core/logger.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/domain/usecases/add_transaction_usecase.dart';
+import 'package:fin_pay/domain/usecases/get_transactions_usecase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/result/result.dart';
-import '../../core/di/dependency_injection.dart';
-import '../../core/logger.dart';
-import '../../domain/usecases/get_transactions_usecase.dart';
-import '../../domain/usecases/add_transaction_usecase.dart';
-import 'transaction_event.dart';
-import 'transaction_state.dart';
 
 /// BLoC for managing transaction state
 /// 
@@ -14,17 +13,19 @@ import 'transaction_state.dart';
 /// - Adding new transactions
 /// - Deleting transactions
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
-  final GetTransactionsUseCase _getTransactionsUseCase;
-  final AddTransactionUseCase _addTransactionUseCase;
 
-  TransactionBloc()
-      : _getTransactionsUseCase = DependencyInjection.get<GetTransactionsUseCase>(),
-        _addTransactionUseCase = DependencyInjection.get<AddTransactionUseCase>(),
+  TransactionBloc({
+    required GetTransactionsUseCase getTransactionsUseCase,
+    required AddTransactionUseCase addTransactionUseCase,
+  })  : _getTransactionsUseCase = getTransactionsUseCase,
+        _addTransactionUseCase = addTransactionUseCase,
         super(const TransactionInitial()) {
     on<LoadTransactionsEvent>(_onLoadTransactions);
     on<AddTransactionEvent>(_onAddTransaction);
     on<DeleteTransactionEvent>(_onDeleteTransaction);
   }
+  final GetTransactionsUseCase _getTransactionsUseCase;
+  final AddTransactionUseCase _addTransactionUseCase;
 
   /// Handle loading transactions
   Future<void> _onLoadTransactions(
@@ -46,7 +47,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             Logger.error('Failed to load transactions: $message', error);
           });
     } catch (e) {
-      emit(TransactionError('Unexpected error: ${e.toString()}'));
+      emit(TransactionError('Unexpected error: $e'));
       Logger.error('Unexpected error loading transactions', e);
     }
   }
@@ -70,7 +71,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             Logger.error('Failed to add transaction: $message', error);
           });
     } catch (e) {
-      emit(TransactionError('Unexpected error: ${e.toString()}'));
+      emit(TransactionError('Unexpected error: $e'));
       Logger.error('Unexpected error adding transaction', e);
     }
   }
@@ -88,7 +89,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         add(const LoadTransactionsEvent());
         Logger.info('Transaction deleted successfully');
       } catch (e) {
-        emit(TransactionError('Failed to delete transaction: ${e.toString()}'));
+        emit(TransactionError('Failed to delete transaction: $e'));
         Logger.error('Error deleting transaction', e);
       }
     }

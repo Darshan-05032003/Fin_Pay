@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 
 class DelayedAnimation extends StatefulWidget {
-  final Widget child;
-  final Duration delay;
-  final Duration duration;
-  final Curve curve;
-  final Offset offset;
 
   const DelayedAnimation({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.delay = Duration.zero,
     this.duration = const Duration(milliseconds: 600),
     this.curve = Curves.easeOutCubic,
     this.offset = const Offset(0, 20),
   });
+  final Widget child;
+  final Duration delay;
+  final Duration duration;
+  final Curve curve;
+  final Offset offset;
 
   @override
   State<DelayedAnimation> createState() => _DelayedAnimationState();

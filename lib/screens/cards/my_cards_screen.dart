@@ -1,14 +1,14 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/card.dart' as models;
+import 'package:fin_pay/screens/cards/add_card_screen.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/card_3d_flip.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
+import 'package:fin_pay/widgets/animations/ripple_effect.dart';
+import 'package:fin_pay/widgets/animations/staggered_list_animation.dart';
+import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../models/card.dart' as models;
-import '../../services/user_service.dart';
-import '../../widgets/animations/staggered_list_animation.dart';
-import '../../widgets/animations/card_3d_flip.dart';
-import '../../widgets/animations/ripple_effect.dart';
-import '../../widgets/animations/fade_in_animation.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/cred_bottom_navigation_bar.dart';
-import 'add_card_screen.dart';
 
 class MyCardsScreen extends StatefulWidget {
   const MyCardsScreen({super.key});
@@ -49,14 +49,14 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (_cards.isEmpty)
                     const Center(
                       child: Padding(
-                        padding: EdgeInsets.all(32.0),
+                        padding: EdgeInsets.all(32),
                         child: Text(
                           'No cards added yet',
                           style: TextStyle(
@@ -76,7 +76,6 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 24),
                           child: Card3DFlip(
-                            flipOnTap: true,
                             perspective: 0.0006,
                             frontChild: _buildCardDisplay(card),
                             backChild: _buildCardBack(card),
@@ -100,7 +99,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                         _loadCards();
                       },
                       child: TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.0, end: 1.0),
+                        tween: Tween(begin: 0, end: 1),
                         duration: const Duration(milliseconds: 500),
                         curve: Curves.easeOutBack,
                         builder: (context, value, child) {
@@ -144,7 +143,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   Widget _buildCardDisplay(models.Card card) {
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
+        tween: Tween(begin: 0, end: 1),
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOutCubic,
         builder: (context, value, _) {
@@ -368,7 +367,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

@@ -1,18 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:confetti/confetti.dart';
 import 'dart:math' as math;
 
+import 'package:confetti/confetti.dart';
+import 'package:flutter/material.dart';
+
 class ConfettiEffect extends StatefulWidget {
-  final Widget child;
-  final bool autoPlay;
-  final Duration duration;
 
   const ConfettiEffect({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.autoPlay = false,
     this.duration = const Duration(seconds: 3),
   });
+  final Widget child;
+  final bool autoPlay;
+  final Duration duration;
 
   @override
   State<ConfettiEffect> createState() => _ConfettiEffectState();
@@ -56,12 +56,9 @@ class _ConfettiEffectState extends State<ConfettiEffect> {
           child: ConfettiWidget(
             confettiController: _controller,
             blastDirection: math.pi / 2,
-            maxBlastForce: 20,
-            minBlastForce: 5,
             emissionFrequency: 0.05,
             numberOfParticles: 50,
             gravity: 0.3,
-            shouldLoop: false,
             colors: const [
               Colors.green,
               Colors.blue,
@@ -77,12 +74,9 @@ class _ConfettiEffectState extends State<ConfettiEffect> {
           child: ConfettiWidget(
             confettiController: _controller,
             blastDirection: -math.pi / 2,
-            maxBlastForce: 20,
-            minBlastForce: 5,
             emissionFrequency: 0.05,
             numberOfParticles: 50,
             gravity: 0.3,
-            shouldLoop: false,
             colors: const [
               Colors.green,
               Colors.blue,

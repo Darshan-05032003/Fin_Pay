@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 class SharedElementTransition extends StatelessWidget {
+
+  const SharedElementTransition({
+    required this.child, required this.tag, super.key,
+    this.duration = const Duration(milliseconds: 400),
+  });
   final Widget child;
   final String tag;
   final Duration duration;
-
-  const SharedElementTransition({
-    super.key,
-    required this.child,
-    required this.tag,
-    this.duration = const Duration(milliseconds: 400),
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +22,7 @@ class SharedElementTransition extends StatelessWidget {
         BuildContext fromHeroContext,
         BuildContext toHeroContext,
       ) {
-        final Hero toHero = toHeroContext.widget as Hero;
+        final toHero = toHeroContext.widget as Hero;
         return RotationTransition(
           turns: animation,
           child: toHero.child,

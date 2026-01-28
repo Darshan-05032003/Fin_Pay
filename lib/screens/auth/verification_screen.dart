@@ -1,13 +1,13 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/user.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../models/user.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -35,7 +35,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
       body: Center(
         child: CredSlideIn(
           delay: const Duration(milliseconds: 100),
-          offset: const Offset(0, 30),
           child: CredCardReveal(
             duration: const Duration(milliseconds: 600),
             perspective: 0.0008,
@@ -47,13 +46,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: AppTheme.credMediumGray.withOpacity(0.2),
-                  width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.credOrangeSunshine.withOpacity(0.2),
                     blurRadius: 24,
-                    spreadRadius: 0,
                     offset: const Offset(0, 12),
                   ),
                 ],
@@ -70,7 +67,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         delay: const Duration(milliseconds: 200),
                         offset: const Offset(0, 20),
                         child: PulseAnimation(
-                          duration: const Duration(seconds: 2),
                           minScale: 0.98,
                           maxScale: 1.02,
                           child: Container(
@@ -83,7 +79,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                 BoxShadow(
                                   color: AppTheme.credOrangeSunshine,
                                   blurRadius: 20,
-                                  spreadRadius: 0,
                                 ),
                               ],
                             ),
@@ -105,10 +100,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 300),
-                    offset: const Offset(0, 20),
-                    child: const Text(
+                  const CredSlideIn(
+                    delay: Duration(milliseconds: 300),
+                    offset: Offset(0, 20),
+                    child: Text(
                       'Enter Verification Code!',
                       style: TextStyle(
                         fontSize: 28,
@@ -120,10 +115,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 400),
-                    offset: const Offset(0, 10),
-                    child: const Text(
+                  const CredSlideIn(
+                    delay: Duration(milliseconds: 400),
+                    offset: Offset(0, 10),
+                    child: Text(
                       'Enter the 4-digit verification code sent to your email address.',
                       style: TextStyle(
                         fontSize: 14,
@@ -136,7 +131,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 32),
                   CredSlideIn(
                     delay: const Duration(milliseconds: 500),
-                    offset: const Offset(0, 30),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: List.generate(4, (index) {
@@ -230,7 +224,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 24),
                   CredSlideIn(
                     delay: const Duration(milliseconds: 900),
-                    offset: const Offset(0, 30),
                     child: CredButtonPress(
                       onTap: () async {
                         // Verify all fields are filled
@@ -284,7 +277,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       },
                       child: SpringAnimation(
                         startOffset: const Offset(0, 20),
-                        endOffset: Offset.zero,
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: AppTheme.credOrangeGradient,
@@ -293,7 +285,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                               BoxShadow(
                                 color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                 blurRadius: 20,
-                                spreadRadius: 0,
                                 offset: const Offset(0, 10),
                               ),
                             ],
@@ -325,10 +316,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   void dispose() {
-    for (var controller in _controllers) {
+    for (final controller in _controllers) {
       controller.dispose();
     }
-    for (var node in _focusNodes) {
+    for (final node in _focusNodes) {
       node.dispose();
     }
     super.dispose();

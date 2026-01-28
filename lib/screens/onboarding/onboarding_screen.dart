@@ -1,12 +1,12 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import '../../constants/theme.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
-import '../../services/haptic_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -54,9 +54,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     await HapticService.lightImpact();
                     Navigator.pushReplacementNamed(context, '/login');
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: const Text(
+                  child: const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
                       'Skip',
                       style: TextStyle(
                         color: AppTheme.credWhite,
@@ -93,16 +93,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   dotColor: AppTheme.credMediumGray,
                   dotHeight: 10,
                   dotWidth: 10,
-                  spacing: 8,
                 ),
               ),
             ),
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 400),
-              offset: const Offset(0, 30),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Row(
                   children: [
                     if (_currentPage < _pages.length - 1)
@@ -135,7 +133,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       },
                       child: SpringAnimation(
                         startOffset: const Offset(0, 20),
-                        endOffset: Offset.zero,
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: AppTheme.credOrangeGradient,
@@ -144,7 +141,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               BoxShadow(
                                 color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                 blurRadius: 20,
-                                spreadRadius: 0,
                                 offset: const Offset(0, 10),
                               ),
                             ],
@@ -178,7 +174,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: isCurrentPage ? 1.0 : 0.0),
+        tween: Tween(begin: 0, end: isCurrentPage ? 1.0 : 0.0),
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOutCubic,
         builder: (context, value, _) {
@@ -187,14 +183,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Transform.translate(
               offset: Offset(30 * (1 - value), 0),
               child: Padding(
-                padding: const EdgeInsets.all(32.0),
+                padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 40),
                     CredSlideIn(
                       delay: Duration(milliseconds: 200 + (index * 100)),
-                      offset: const Offset(0, 30),
                       child: Text(
                         page.title,
                         style: const TextStyle(
@@ -230,7 +225,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         duration: const Duration(milliseconds: 800),
                         perspective: 0.0008,
                         child: PulseAnimation(
-                          duration: const Duration(seconds: 2),
                           minScale: 0.98,
                           maxScale: 1.02,
                           child: Container(
@@ -243,7 +237,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 BoxShadow(
                                   color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                                   blurRadius: 24,
-                                  spreadRadius: 0,
                                   offset: const Offset(0, 12),
                                 ),
                               ],
@@ -275,13 +268,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class OnboardingPage {
-  final String title;
-  final String subtitle;
-  final IconData image;
 
   OnboardingPage({
     required this.title,
     required this.subtitle,
     required this.image,
   });
+  final String title;
+  final String subtitle;
+  final IconData image;
 }

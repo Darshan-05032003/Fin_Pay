@@ -1,5 +1,5 @@
+import 'package:fin_pay/constants/theme.dart';
 import 'package:flutter/material.dart';
-import '../constants/theme.dart';
 
 /// Global error handler for the app
 class ErrorHandler {

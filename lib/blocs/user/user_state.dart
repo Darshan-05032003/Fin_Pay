@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/user.dart';
+import 'package:fin_pay/models/user.dart';
 
 /// Base class for all user-related states
 abstract class UserState extends Equatable {
@@ -21,9 +21,9 @@ class UserLoading extends UserState {
 
 /// State when user data is successfully loaded
 class UserLoaded extends UserState {
-  final User? user;
 
   const UserLoaded(this.user);
+  final User? user;
 
   @override
   List<Object?> get props => [user];
@@ -35,9 +35,9 @@ class UserLoaded extends UserState {
 
 /// State when an error occurs
 class UserError extends UserState {
-  final String message;
 
   const UserError(this.message);
+  final String message;
 
   @override
   List<Object?> get props => [message];

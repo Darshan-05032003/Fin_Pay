@@ -1,8 +1,8 @@
-import '../models/user.dart';
-import '../models/card.dart' as card_models;
-import '../models/transaction.dart';
-import '../models/notification_item.dart';
-import 'database_service.dart';
+import 'package:fin_pay/models/card.dart' as card_models;
+import 'package:fin_pay/models/notification_item.dart';
+import 'package:fin_pay/models/transaction.dart';
+import 'package:fin_pay/models/user.dart';
+import 'package:fin_pay/services/database_service.dart';
 
 class UserService {
   // Default credentials - ONLY these will work
@@ -34,7 +34,7 @@ class UserService {
   }
 
   static Future<User?> getCurrentUser() async {
-    return await _db.getUser();
+    return _db.getUser();
   }
   
   // Login method that only accepts default credentials
@@ -67,7 +67,7 @@ class UserService {
 
   // Cards Management - Now using database
   static Future<List<card_models.Card>> getCards() async {
-    return await _db.getCards();
+    return _db.getCards();
   }
 
   static Future<void> addCard(card_models.Card card) async {
@@ -76,7 +76,7 @@ class UserService {
 
   // Transactions Management - Now using database
   static Future<List<Transaction>> getTransactions() async {
-    return await _db.getTransactions();
+    return _db.getTransactions();
   }
 
   static Future<void> addTransaction(Transaction transaction) async {
@@ -93,17 +93,17 @@ class UserService {
   static Future<void> saveTransactions(List<Transaction> transactions) async {
     // Clear and re-insert all transactions
     final existing = await getTransactions();
-    for (var t in existing) {
+    for (final t in existing) {
       await _db.deleteTransaction(t.id);
     }
-    for (var t in transactions) {
+    for (final t in transactions) {
       await _db.insertTransaction(t);
     }
   }
 
   // Notifications Management - Now using database
   static Future<List<NotificationItem>> getNotifications() async {
-    return await _db.getNotifications();
+    return _db.getNotifications();
   }
 
   static Future<void> addNotification(NotificationItem notification) async {
@@ -113,10 +113,10 @@ class UserService {
   static Future<void> saveNotifications(List<NotificationItem> notifications) async {
     // Clear and re-insert all notifications
     final existing = await getNotifications();
-    for (var n in existing) {
+    for (final n in existing) {
       await _db.deleteNotification(n.id);
     }
-    for (var n in notifications) {
+    for (final n in notifications) {
       await _db.insertNotification(n);
     }
   }

@@ -1,42 +1,44 @@
+import 'package:fin_pay/blocs/transaction/transaction_bloc.dart';
+import 'package:fin_pay/blocs/transaction/transaction_event.dart';
+import 'package:fin_pay/blocs/transaction/transaction_state.dart';
+import 'package:fin_pay/blocs/user/user_bloc.dart';
+import 'package:fin_pay/blocs/user/user_event.dart';
+import 'package:fin_pay/blocs/user/user_state.dart';
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/transaction.dart' as models;
+import 'package:fin_pay/models/user.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_number_counter.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart' as custom;
+import 'package:fin_pay/widgets/animations/icon_morph.dart';
+import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/ripple_effect.dart';
+import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
+import 'package:fin_pay/widgets/animations/staggered_list_animation.dart';
+import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../constants/theme.dart';
-import '../../models/transaction.dart' as models;
-import '../../models/user.dart';
-import '../../blocs/user/user_bloc.dart';
-import '../../blocs/user/user_event.dart';
-import '../../blocs/user/user_state.dart';
-import '../../blocs/transaction/transaction_bloc.dart';
-import '../../blocs/transaction/transaction_event.dart';
-import '../../blocs/transaction/transaction_state.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/fade_in_animation.dart' as custom;
-import '../../widgets/animations/staggered_list_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
-import '../../widgets/animations/skeleton_loader_full.dart';
-import '../../widgets/animations/pull_to_refresh_custom.dart';
-import '../../widgets/animations/ripple_effect.dart';
-import '../../widgets/animations/icon_morph.dart';
-import '../../widgets/animations/cred_number_counter.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/cred_bottom_navigation_bar.dart';
 
 class _FloatingActionButtonWithDelay extends StatefulWidget {
-  final Widget child;
-  final Duration delay;
 
   const _FloatingActionButtonWithDelay({
     required this.child,
     required this.delay,
   });
+  final Widget child;
+  final Duration delay;
 
   @override
-  State<_FloatingActionButtonWithDelay> createState() => _FloatingActionButtonWithDelayState();
+  State<_FloatingActionButtonWithDelay> createState() =>
+      _FloatingActionButtonWithDelayState();
 }
 
-class _FloatingActionButtonWithDelayState extends State<_FloatingActionButtonWithDelay>
+class _FloatingActionButtonWithDelayState
+    extends State<_FloatingActionButtonWithDelay>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -53,7 +55,7 @@ class _FloatingActionButtonWithDelayState extends State<_FloatingActionButtonWit
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    
+
     Future.delayed(widget.delay, () {
       if (mounted) {
         setState(() => _isVisible = true);
@@ -72,10 +74,7 @@ class _FloatingActionButtonWithDelayState extends State<_FloatingActionButtonWit
   Widget build(BuildContext context) {
     if (!_isVisible) return const SizedBox.shrink();
     return RepaintBoundary(
-      child: ScaleTransition(
-        scale: _animation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _animation, child: widget.child),
     );
   }
 }
@@ -98,7 +97,9 @@ class _HomeScreenState extends State<HomeScreen> {
             final recentTransactions = transactionState is TransactionLoaded
                 ? transactionState.recentTransactions
                 : <models.Transaction>[];
-            final isLoading = userState is UserLoading || transactionState is TransactionLoading;
+            final isLoading =
+                userState is UserLoading ||
+                transactionState is TransactionLoading;
 
             if (isLoading) {
               return Scaffold(
@@ -117,7 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: CustomPullToRefresh(
                         onRefresh: () async {
                           context.read<UserBloc>().add(const LoadUserEvent());
-                          context.read<TransactionBloc>().add(const LoadTransactionsEvent());
+                          context.read<TransactionBloc>().add(
+                            const LoadTransactionsEvent(),
+                          );
                         },
                         child: SingleChildScrollView(
                           physics: const BouncingScrollPhysics(),
@@ -127,7 +130,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               _buildQuickActions(),
                               _buildPaymentList(context),
                               _buildPromoSection(),
-                              _buildRecentTransactions(context, recentTransactions),
+                              _buildRecentTransactions(
+                                context,
+                                recentTransactions,
+                              ),
                             ],
                           ),
                         ),
@@ -156,18 +162,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 duration: const Duration(milliseconds: 600),
                 curve: Curves.elasticOut,
                 child: PulseAnimation(
-                  duration: const Duration(seconds: 2),
-                  minScale: 0.95,
                   maxScale: 1.05,
                   child: CredButtonPress(
                     onTap: () async {
                       await HapticService.mediumImpact();
                       Navigator.pushNamed(context, '/transfer').then((_) {
                         context.read<UserBloc>().add(const LoadUserEvent());
-                        context.read<TransactionBloc>().add(const LoadTransactionsEvent());
+                        context.read<TransactionBloc>().add(
+                          const LoadTransactionsEvent(),
+                        );
                       });
                     },
-                    child: FloatingActionButton(
+                    child: const FloatingActionButton(
                       onPressed: null,
                       backgroundColor: AppTheme.credOrangeSunshine,
                       elevation: 12,
@@ -176,13 +182,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         endIcon: Icons.send,
                         color: AppTheme.credWhite,
                         size: 28,
-                        animateOnTap: true,
                       ),
                     ),
                   ),
                 ),
               ),
-              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.centerDocked,
             );
           },
         );
@@ -196,16 +202,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final greeting = hour < 12
         ? 'Good Morning'
         : hour < 17
-            ? 'Good Afternoon'
-            : 'Good Evening';
+        ? 'Good Afternoon'
+        : 'Good Evening';
 
     final firstName = user?.fullName.split(' ').first ?? 'User';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: const BoxDecoration(
         gradient: AppTheme.credOrangeGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
@@ -225,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       RepaintBoundary(
                         child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.0, end: 1.0),
+                          tween: Tween(begin: 0, end: 1),
                           duration: const Duration(milliseconds: 500),
                           curve: Curves.easeOutCubic,
                           builder: (context, value, child) {
@@ -247,20 +253,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                const SizedBox(height: 4),
-                custom.FadeInAnimation(
-                  delay: const Duration(milliseconds: 100),
-                  child: Text(
-                    'Hello $firstName',
-                    style: const TextStyle(
-                      color: AppTheme.credWhite,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+                      const SizedBox(height: 4),
+                      custom.FadeInAnimation(
+                        delay: const Duration(milliseconds: 100),
+                        child: Text(
+                          'Hello $firstName',
+                          style: const TextStyle(
+                            color: AppTheme.credWhite,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -273,12 +279,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         await HapticService.lightImpact();
                         Navigator.pushNamed(context, '/notifications');
                       },
-                      child: IconButton(
+                      child: const IconButton(
                         icon: IconMorph(
                           startIcon: Icons.notifications_outlined,
                           endIcon: Icons.notifications,
                           color: AppTheme.credSurfaceCard,
-                          size: 24,
                           animateOnTap: false,
                         ),
                         onPressed: null,
@@ -290,12 +295,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         await HapticService.lightImpact();
                         Navigator.pushNamed(context, '/profile');
                       },
-                      child: IconButton(
+                      child: const IconButton(
                         icon: IconMorph(
                           startIcon: Icons.settings_outlined,
                           endIcon: Icons.settings,
                           color: AppTheme.credSurfaceCard,
-                          size: 24,
                           animateOnTap: false,
                         ),
                         onPressed: null,
@@ -312,42 +316,40 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                          const Text(
-                            'Available Balance',
-                            style: TextStyle(
-                              color: AppTheme.credTextSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          CredNumberCounter(
-                            value: balance,
-                            prefix: '\$',
-                            decimalPlaces: 2,
-                            duration: const Duration(milliseconds: 1500),
-                            style: const TextStyle(
-                              color: AppTheme.credWhite,
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1,
-                            ),
-                          ),
+                const Text(
+                  'Available Balance',
+                  style: TextStyle(
+                    color: AppTheme.credTextSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                CredNumberCounter(
+                  value: balance,
+                  prefix: r'$',
+                  style: const TextStyle(
+                    color: AppTheme.credWhite,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildQuickActionIcon(Icons.directions_car, 'Transport', 0),
-                _buildQuickActionIcon(Icons.shopping_cart, 'Shopping', 1),
-                _buildQuickActionIcon(Icons.card_giftcard, 'Gift', 2),
-                _buildQuickActionIcon(Icons.account_balance, 'Finance', 3),
-                _buildQuickActionIcon(Icons.add, 'More', 4),
-              ],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildQuickActionIcon(Icons.directions_car, 'Transport', 0),
+              _buildQuickActionIcon(Icons.shopping_cart, 'Shopping', 1),
+              _buildQuickActionIcon(Icons.card_giftcard, 'Gift', 2),
+              _buildQuickActionIcon(Icons.account_balance, 'Finance', 3),
+              _buildQuickActionIcon(Icons.add, 'More', 4),
+            ],
+          ),
           const SizedBox(height: 8),
         ],
       ),
@@ -357,7 +359,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildQuickActionIcon(IconData icon, String label, int index) {
     return CredSlideIn(
       delay: Duration(milliseconds: 400 + (index * 50)),
-      offset: const Offset(0, 30),
       child: CredButtonPress(
         onTap: () async {
           await HapticService.selection();
@@ -367,7 +368,6 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             PulseAnimation(
-              duration: const Duration(seconds: 2),
               minScale: 0.98,
               maxScale: 1.02,
               child: Container(
@@ -378,13 +378,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: AppTheme.credMediumGray.withOpacity(0.3),
-                    width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: AppTheme.credOrangeSunshine.withOpacity(0.1),
                       blurRadius: 8,
-                      spreadRadius: 0,
                     ),
                   ],
                 ),
@@ -411,19 +409,14 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (label) {
       case 'Transport':
         _showComingSoonSnackBar(context, 'Transport booking coming soon!');
-        break;
       case 'Shopping':
         _showComingSoonSnackBar(context, 'Shopping features coming soon!');
-        break;
       case 'Gift':
         _showComingSoonSnackBar(context, 'Gift cards coming soon!');
-        break;
       case 'Finance':
         Navigator.pushNamed(context, '/statistics');
-        break;
       case 'More':
         _showMoreOptions(context);
-        break;
     }
   }
 
@@ -465,7 +458,10 @@ class _HomeScreenState extends State<HomeScreen> {
             }),
             _buildMoreOption(Icons.request_quote, 'Request Money', () {
               Navigator.pop(context);
-              _showComingSoonSnackBar(context, 'Request money feature coming soon!');
+              _showComingSoonSnackBar(
+                context,
+                'Request money feature coming soon!',
+              );
             }),
             _buildMoreOption(Icons.account_balance_wallet, 'Top Up', () {
               Navigator.pop(context);
@@ -481,8 +477,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMoreOption(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.credOrangeSunshine),
-      title: Text(label, style: const TextStyle(color: AppTheme.credTextPrimary)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppTheme.credTextSecondary),
+      title: Text(
+        label,
+        style: const TextStyle(color: AppTheme.credTextPrimary),
+      ),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: AppTheme.credTextSecondary,
+      ),
       onTap: () async {
         await HapticService.selection();
         onTap();
@@ -498,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return custom.FadeInAnimation(
       delay: const Duration(milliseconds: 200),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -520,14 +523,54 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisSpacing: 12,
               childAspectRatio: 0.85,
               children: [
-                _buildAnimatedPaymentItem(Icons.wifi, 'Internet', AppTheme.credOrange, 0),
-                _buildAnimatedPaymentItem(Icons.bolt, 'Electricity', AppTheme.credError, 1),
-                _buildAnimatedPaymentItem(Icons.phone, 'Mobile', AppTheme.credOrangeSunshine, 2),
-                _buildAnimatedPaymentItem(Icons.water_drop, 'Water', AppTheme.credBlue, 3),
-                _buildAnimatedPaymentItem(Icons.local_gas_station, 'Gas', AppTheme.credNeoPaccha, 4),
-                _buildAnimatedPaymentItem(Icons.tv, 'TV', AppTheme.credOrangeSunshine.withOpacity(0.7), 5),
-                _buildAnimatedPaymentItem(Icons.store, 'Merchant', AppTheme.credOrangeSunshine, 6),
-                _buildAnimatedPaymentItem(Icons.more_horiz, 'More', AppTheme.credTextSecondary, 7),
+                _buildAnimatedPaymentItem(
+                  Icons.wifi,
+                  'Internet',
+                  AppTheme.credOrange,
+                  0,
+                ),
+                _buildAnimatedPaymentItem(
+                  Icons.bolt,
+                  'Electricity',
+                  AppTheme.credError,
+                  1,
+                ),
+                _buildAnimatedPaymentItem(
+                  Icons.phone,
+                  'Mobile',
+                  AppTheme.credOrangeSunshine,
+                  2,
+                ),
+                _buildAnimatedPaymentItem(
+                  Icons.water_drop,
+                  'Water',
+                  AppTheme.credBlue,
+                  3,
+                ),
+                _buildAnimatedPaymentItem(
+                  Icons.local_gas_station,
+                  'Gas',
+                  AppTheme.credNeoPaccha,
+                  4,
+                ),
+                _buildAnimatedPaymentItem(
+                  Icons.tv,
+                  'TV',
+                  AppTheme.credOrangeSunshine.withOpacity(0.7),
+                  5,
+                ),
+                _buildAnimatedPaymentItem(
+                  Icons.store,
+                  'Merchant',
+                  AppTheme.credOrangeSunshine,
+                  6,
+                ),
+                _buildAnimatedPaymentItem(
+                  Icons.more_horiz,
+                  'More',
+                  AppTheme.credTextSecondary,
+                  7,
+                ),
               ],
             ),
           ],
@@ -536,10 +579,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAnimatedPaymentItem(IconData icon, String label, Color color, int index) {
+  Widget _buildAnimatedPaymentItem(
+    IconData icon,
+    String label,
+    Color color,
+    int index,
+  ) {
     return CredSlideIn(
       delay: Duration(milliseconds: 500 + (index * 60)),
-      offset: const Offset(0, 30),
       duration: Duration(milliseconds: 500 + (index * 50)),
       curve: Curves.easeOutBack,
       child: CredCardReveal(
@@ -566,13 +613,11 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: AppTheme.credMediumGray.withOpacity(0.3),
-                width: 1,
               ),
               boxShadow: [
                 BoxShadow(
                   color: color.withOpacity(0.2),
                   blurRadius: 12,
-                  spreadRadius: 0,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -608,13 +653,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Gas':
       case 'TV':
         _navigateToBillPayment(context, label);
-        break;
       case 'Merchant':
         _showComingSoonSnackBar(context, 'Merchant payments coming soon!');
-        break;
       case 'More':
         _showMorePaymentOptions(context);
-        break;
     }
   }
 
@@ -684,14 +726,13 @@ class _HomeScreenState extends State<HomeScreen> {
       delay: const Duration(milliseconds: 600),
       offset: const Offset(0, 40),
       duration: const Duration(milliseconds: 700),
-      curve: Curves.easeOutCubic,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: CredCardReveal(
           duration: const Duration(milliseconds: 600),
           perspective: 0.0008,
           child: Container(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: AppTheme.credOrangeGradient,
               borderRadius: BorderRadius.circular(24),
@@ -699,18 +740,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 BoxShadow(
                   color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                   blurRadius: 24,
-                  spreadRadius: 0,
                   offset: const Offset(0, 12),
                 ),
               ],
             ),
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CredSlideIn(
-                  delay: const Duration(milliseconds: 100),
-                  offset: const Offset(-20, 0),
-                  child: const Text(
+                  delay: Duration(milliseconds: 100),
+                  offset: Offset(-20, 0),
+                  child: Text(
                     "Today's Promo",
                     style: TextStyle(
                       color: AppTheme.credWhite,
@@ -719,12 +759,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 PulseAnimation(
-                  duration: const Duration(seconds: 2),
                   minScale: 0.98,
                   maxScale: 1.02,
-                  child: const Text(
+                  child: Text(
                     '40%',
                     style: TextStyle(
                       color: AppTheme.credWhite,
@@ -733,16 +772,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 CredSlideIn(
-                  delay: const Duration(milliseconds: 200),
-                  offset: const Offset(0, 10),
-                  child: const Text(
+                  delay: Duration(milliseconds: 200),
+                  offset: Offset(0, 10),
+                  child: Text(
                     'Get discount for every top-up, transfer and payment',
-                    style: TextStyle(
-                      color: AppTheme.credWhite,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: AppTheme.credWhite, fontSize: 12),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -755,12 +791,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRecentTransactions(BuildContext context, List<models.Transaction> transactions) {
+  Widget _buildRecentTransactions(
+    BuildContext context,
+    List<models.Transaction> transactions,
+  ) {
     return CredSlideIn(
       delay: const Duration(milliseconds: 800),
-      offset: const Offset(0, 30),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -782,12 +820,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: () {
                       Navigator.pushNamed(context, '/transactions').then((_) {
                         context.read<UserBloc>().add(const LoadUserEvent());
-                        context.read<TransactionBloc>().add(const LoadTransactionsEvent());
+                        context.read<TransactionBloc>().add(
+                          const LoadTransactionsEvent(),
+                        );
                       });
                     },
-                    child: TextButton(
+                    child: const TextButton(
                       onPressed: null,
-                      child: const Text(
+                      child: Text(
                         'See All',
                         style: TextStyle(color: AppTheme.credOrangeSunshine),
                       ),
@@ -796,33 +836,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-          const SizedBox(height: 16),
-          if (transactions.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Center(
-                child: Text(
-                  'No recent transactions',
-                  style: TextStyle(
-                    color: AppTheme.credTextSecondary,
-                    fontSize: 14,
+            const SizedBox(height: 16),
+            if (transactions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(
+                  child: Text(
+                    'No recent transactions',
+                    style: TextStyle(
+                      color: AppTheme.credTextSecondary,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-              ),
-            )
-          else
-            ...transactions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final transaction = entry.value;
-              return StaggeredListAnimation(
-                index: index,
-                child: _buildTransactionItem(transaction),
-              );
-            }),
-          const SizedBox(height: 16),
-        ],
+              )
+            else
+              ...transactions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final transaction = entry.value;
+                return StaggeredListAnimation(
+                  index: index,
+                  child: _buildTransactionItem(transaction),
+                );
+              }),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -839,7 +879,6 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: AppTheme.credMediumGray.withOpacity(0.2),
-            width: 1,
           ),
         ),
         child: Row(
@@ -848,16 +887,22 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: (transaction.type == models.TransactionType.receiveMoney || transaction.amount > 0
-                        ? AppTheme.credNeoPaccha
-                        : AppTheme.credError).withOpacity(0.15),
+                color:
+                    (transaction.type == models.TransactionType.receiveMoney ||
+                                transaction.amount > 0
+                            ? AppTheme.credNeoPaccha
+                            : AppTheme.credError)
+                        .withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   transaction.icon,
                   style: TextStyle(
-                    color: transaction.type == models.TransactionType.receiveMoney || transaction.amount > 0
+                    color:
+                        transaction.type ==
+                                models.TransactionType.receiveMoney ||
+                            transaction.amount > 0
                         ? AppTheme.credNeoPaccha
                         : AppTheme.credError,
                     fontWeight: FontWeight.w700,
@@ -899,14 +944,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: transaction.amount < 0 ? AppTheme.credError : AppTheme.credNeoPaccha,
+                    color: transaction.amount < 0
+                        ? AppTheme.credError
+                        : AppTheme.credNeoPaccha,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: (transaction.amount < 0 ? AppTheme.credError : AppTheme.credNeoPaccha).withOpacity(0.15),
+                    color:
+                        (transaction.amount < 0
+                                ? AppTheme.credError
+                                : AppTheme.credNeoPaccha)
+                            .withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -914,7 +968,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: transaction.amount < 0 ? AppTheme.credError : AppTheme.credNeoPaccha,
+                      color: transaction.amount < 0
+                          ? AppTheme.credError
+                          : AppTheme.credNeoPaccha,
                     ),
                   ),
                 ),
@@ -944,9 +1000,13 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppTheme.credPureBackground,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           children: [
-            SkeletonLoader(width: double.infinity, height: 180, borderRadius: BorderRadius.circular(24)),
+            SkeletonLoader(
+              width: double.infinity,
+              height: 180,
+              borderRadius: BorderRadius.circular(24),
+            ),
             const SizedBox(height: 24),
             const SkeletonList(itemCount: 3),
           ],
@@ -954,5 +1014,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 }

@@ -1,11 +1,11 @@
+import 'package:fin_pay/utils/constants.dart';
 import 'package:intl/intl.dart';
-import '../utils/constants.dart';
 
 /// Helper utility functions
 class Helpers {
   /// Format currency
   static String formatCurrency(double amount) {
-    return NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(amount);
+    return NumberFormat.currency(symbol: r'$', decimalDigits: 2).format(amount);
   }
 
   /// Format date

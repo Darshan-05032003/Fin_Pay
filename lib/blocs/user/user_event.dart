@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/user.dart';
+import 'package:fin_pay/models/user.dart';
 
 /// Base class for all user-related events
 abstract class UserEvent extends Equatable {
@@ -16,9 +16,9 @@ class LoadUserEvent extends UserEvent {
 
 /// Event to update user information
 class UpdateUserEvent extends UserEvent {
-  final User user;
 
   const UpdateUserEvent(this.user);
+  final User user;
 
   @override
   List<Object?> get props => [user];
@@ -26,9 +26,9 @@ class UpdateUserEvent extends UserEvent {
 
 /// Event to update user balance
 class UpdateBalanceEvent extends UserEvent {
-  final double newBalance;
 
   const UpdateBalanceEvent(this.newBalance);
+  final double newBalance;
 
   @override
   List<Object?> get props => [newBalance];
@@ -36,13 +36,13 @@ class UpdateBalanceEvent extends UserEvent {
 
 /// Event to authenticate user (login)
 class LoginEvent extends UserEvent {
-  final String email;
-  final String password;
 
   const LoginEvent({
     required this.email,
     required this.password,
   });
+  final String email;
+  final String password;
 
   @override
   List<Object?> get props => [email, password];

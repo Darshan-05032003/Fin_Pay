@@ -1,12 +1,12 @@
-import '../../core/result/result.dart';
-import '../../models/user.dart';
-import '../repositories/user_repository.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/domain/repositories/user_repository.dart';
+import 'package:fin_pay/models/user.dart';
 
 /// Use case for user authentication
 class AuthenticateUserUseCase {
-  final IUserRepository _userRepository;
 
   AuthenticateUserUseCase(this._userRepository);
+  final IUserRepository _userRepository;
 
   /// Execute the use case
   Future<Result<User>> call(String email, String password) async {
@@ -16,7 +16,7 @@ class AuthenticateUserUseCase {
     }
 
     // Authenticate
-    return await _userRepository.authenticate(email, password);
+    return _userRepository.authenticate(email, password);
   }
 }
 

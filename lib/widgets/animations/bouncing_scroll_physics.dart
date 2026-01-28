@@ -16,8 +16,8 @@ class BouncingScrollPhysics extends ScrollPhysics {
   @override
   SpringDescription get spring => const SpringDescription(
         mass: 0.5,
-        stiffness: 100.0,
-        damping: 15.0,
+        stiffness: 100,
+        damping: 15,
       );
 }
 

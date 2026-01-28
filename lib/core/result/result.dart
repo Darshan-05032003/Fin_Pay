@@ -8,15 +8,15 @@ sealed class Result<T> {
 
 /// Represents a successful operation
 final class Success<T> extends Result<T> {
-  final T data;
   const Success(this.data);
+  final T data;
 }
 
 /// Represents a failed operation
 final class Failure<T> extends Result<T> {
+  const Failure(this.message, [this.error]);
   final String message;
   final Object? error;
-  const Failure(this.message, [this.error]);
 }
 
 /// Extension methods for Result

@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 
 class StaggeredListAnimation extends StatelessWidget {
+
+  const StaggeredListAnimation({
+    required this.child, required this.index, super.key,
+    this.duration = const Duration(milliseconds: 300),
+  });
   final Widget child;
   final int index;
   final Duration duration;
 
-  const StaggeredListAnimation({
-    super.key,
-    required this.child,
-    required this.index,
-    this.duration = const Duration(milliseconds: 300),
-  });
-
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: duration + (Duration(milliseconds: 100) * index),
+      tween: Tween(begin: 0, end: 1),
+      duration: duration + (const Duration(milliseconds: 100) * index),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Opacity(

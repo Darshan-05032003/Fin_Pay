@@ -1,22 +1,22 @@
+import 'package:fin_pay/screens/auth/create_account_screen.dart';
+import 'package:fin_pay/screens/auth/fingerprint_setup_screen.dart';
+import 'package:fin_pay/screens/auth/forgot_password_screen.dart';
+import 'package:fin_pay/screens/auth/login_screen.dart';
+import 'package:fin_pay/screens/auth/verification_screen.dart';
+import 'package:fin_pay/screens/cards/add_card_screen.dart';
+import 'package:fin_pay/screens/cards/my_cards_screen.dart';
+import 'package:fin_pay/screens/home/home_screen.dart';
+import 'package:fin_pay/screens/notifications/notifications_screen.dart';
+import 'package:fin_pay/screens/onboarding/onboarding_screen.dart';
+import 'package:fin_pay/screens/onboarding/welcome_screen.dart';
+import 'package:fin_pay/screens/profile/profile_screen.dart';
+import 'package:fin_pay/screens/statistics/statistics_screen.dart';
+import 'package:fin_pay/screens/transactions/transactions_screen.dart';
+import 'package:fin_pay/screens/transfer/transfer_review_screen.dart';
+import 'package:fin_pay/screens/transfer/transfer_screen.dart';
+import 'package:fin_pay/screens/transfer/transfer_success_screen.dart';
+import 'package:fin_pay/widgets/animations/cred_page_transition.dart';
 import 'package:flutter/material.dart';
-import '../screens/onboarding/welcome_screen.dart';
-import '../screens/onboarding/onboarding_screen.dart';
-import '../screens/auth/login_screen.dart';
-import '../screens/auth/create_account_screen.dart';
-import '../screens/auth/verification_screen.dart';
-import '../screens/auth/fingerprint_setup_screen.dart';
-import '../screens/auth/forgot_password_screen.dart';
-import '../screens/home/home_screen.dart';
-import '../screens/transactions/transactions_screen.dart';
-import '../screens/transfer/transfer_screen.dart';
-import '../screens/transfer/transfer_review_screen.dart';
-import '../screens/transfer/transfer_success_screen.dart';
-import '../screens/cards/my_cards_screen.dart';
-import '../screens/cards/add_card_screen.dart';
-import '../screens/profile/profile_screen.dart';
-import '../screens/statistics/statistics_screen.dart';
-import '../screens/notifications/notifications_screen.dart';
-import '../widgets/animations/cred_page_transition.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {

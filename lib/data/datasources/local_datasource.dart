@@ -1,8 +1,8 @@
-import '../../models/user.dart';
-import '../../models/transaction.dart' as models;
-import '../../models/card.dart' as card_models;
-import '../../models/notification_item.dart';
-import '../../core/result/result.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/models/card.dart' as card_models;
+import 'package:fin_pay/models/notification_item.dart';
+import 'package:fin_pay/models/transaction.dart' as models;
+import 'package:fin_pay/models/user.dart';
 
 /// Abstract interface for local data source
 abstract class LocalDataSource {

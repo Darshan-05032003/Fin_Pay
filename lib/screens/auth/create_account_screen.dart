@@ -1,13 +1,13 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
+import 'package:fin_pay/widgets/animations/ripple_effect.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/fade_in_animation.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/ripple_effect.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -39,14 +39,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CredSlideIn(
-                delay: const Duration(milliseconds: 100),
-                offset: const Offset(0, 30),
-                child: const Text(
+              const CredSlideIn(
+                delay: Duration(milliseconds: 100),
+                child: Text(
                   'Create An Account',
                   style: TextStyle(
                     fontSize: 36,
@@ -57,10 +56,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 200),
-                offset: const Offset(0, 20),
-                child: const Text(
+              const CredSlideIn(
+                delay: Duration(milliseconds: 200),
+                offset: Offset(0, 20),
+                child: Text(
                   'Create an account to securely manage your money and access essential banking features.',
                   style: TextStyle(
                     fontSize: 16,
@@ -72,9 +71,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const SizedBox(height: 40),
               CredSlideIn(
                 delay: const Duration(milliseconds: 300),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
-                  duration: const Duration(milliseconds: 500),
                   perspective: 0.0008,
                   child: Focus(
                     child: Builder(
@@ -113,7 +110,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const SizedBox(height: 20),
               CredSlideIn(
                 delay: const Duration(milliseconds: 400),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
                   duration: const Duration(milliseconds: 600),
                   perspective: 0.0008,
@@ -163,17 +159,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: AppTheme.credOrangeSunshine.withOpacity(0.3),
-                              width: 1,
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             children: [
-                              const Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
-                              const SizedBox(width: 8),
+                              Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
+                              SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Only default credentials work: ${UserService.defaultEmail} / ${UserService.defaultPassword}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppTheme.credTextSecondary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -191,7 +186,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const SizedBox(height: 20),
               CredSlideIn(
                 delay: const Duration(milliseconds: 500),
-                offset: const Offset(0, 30),
                 child: CredCardReveal(
                   duration: const Duration(milliseconds: 700),
                   perspective: 0.0008,
@@ -246,9 +240,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              FadeInAnimation(
-                delay: const Duration(milliseconds: 600),
-                child: const Text(
+              const FadeInAnimation(
+                delay: Duration(milliseconds: 600),
+                child: Text(
                   "By starting my application, I agree to FinPay's Terms of service and Privacy Policy.",
                   style: TextStyle(
                     fontSize: 12,
@@ -260,7 +254,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const SizedBox(height: 32),
               CredSlideIn(
                 delay: const Duration(milliseconds: 600),
-                offset: const Offset(0, 30),
                 child: CredButtonPress(
                   onTap: () async {
                     if (_nameController.text.trim().isEmpty ||
@@ -292,7 +285,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   },
                   child: SpringAnimation(
                     startOffset: const Offset(0, 20),
-                    endOffset: Offset.zero,
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: AppTheme.credOrangeGradient,
@@ -301,7 +293,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           BoxShadow(
                             color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                             blurRadius: 20,
-                            spreadRadius: 0,
                             offset: const Offset(0, 10),
                           ),
                         ],
@@ -327,7 +318,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 children: [
                   Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'Or continue with',
                       style: TextStyle(color: AppTheme.credTextTertiary),
@@ -376,7 +367,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   Widget _buildSocialIcon(IconData icon, Color color) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
+      tween: Tween(begin: 0, end: 1),
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeOutBack,
       builder: (context, value, child) {
@@ -384,7 +375,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           scale: value,
           child: RippleEffect(
             borderRadius: 28,
-            onTap: () => HapticService.selection(),
+            onTap: HapticService.selection,
             child: Container(
               width: 56,
               height: 56,
@@ -393,7 +384,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: AppTheme.credMediumGray.withOpacity(0.3),
-                  width: 1,
                 ),
               ),
               child: Icon(icon, color: color, size: 28),

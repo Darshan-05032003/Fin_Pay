@@ -1,5 +1,5 @@
-import '../core/logger.dart';
-import '../core/error_handler.dart';
+import 'package:fin_pay/core/error_handler.dart';
+import 'package:fin_pay/core/logger.dart';
 import 'package:flutter/material.dart';
 
 /// Exception handling for the app
@@ -8,7 +8,7 @@ class ExceptionHandler {
     Logger.error('Exception occurred', exception, stackTrace);
     
     if (context != null) {
-      String message = 'An error occurred. Please try again.';
+      var message = 'An error occurred. Please try again.';
       
       if (exception is FormatException) {
         message = 'Invalid data format. Please check your input.';

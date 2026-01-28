@@ -1,17 +1,16 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+
 class AnimatedGradient extends StatefulWidget {
+
+  const AnimatedGradient({
+    required this.child, required this.colors, super.key,
+    this.duration = const Duration(seconds: 3),
+  });
   final Widget child;
   final List<Color> colors;
   final Duration duration;
-
-  const AnimatedGradient({
-    super.key,
-    required this.child,
-    required this.colors,
-    this.duration = const Duration(seconds: 3),
-  });
 
   @override
   State<AnimatedGradient> createState() => _AnimatedGradientState();

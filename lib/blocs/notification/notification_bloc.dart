@@ -1,8 +1,8 @@
+import 'package:fin_pay/blocs/notification/notification_event.dart';
+import 'package:fin_pay/blocs/notification/notification_state.dart';
+import 'package:fin_pay/core/logger.dart';
+import 'package:fin_pay/services/database_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/logger.dart';
-import '../../services/database_service.dart';
-import 'notification_event.dart';
-import 'notification_state.dart';
 
 /// BLoC for managing notification state
 /// 
@@ -11,13 +11,13 @@ import 'notification_state.dart';
 /// - Adding new notifications
 /// - Deleting notifications
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
-  final DatabaseService _db = DatabaseService();
 
-  NotificationBloc() : super(const NotificationInitial()) {
+  NotificationBloc({required DatabaseService db}) : _db = db, super(const NotificationInitial()) {
     on<LoadNotificationsEvent>(_onLoadNotifications);
     on<AddNotificationEvent>(_onAddNotification);
     on<DeleteNotificationEvent>(_onDeleteNotification);
   }
+  final DatabaseService _db;
 
   /// Handle loading notifications
   Future<void> _onLoadNotifications(
@@ -31,7 +31,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       emit(NotificationLoaded(notifications));
       Logger.info('Loaded ${notifications.length} notifications');
     } catch (e) {
-      emit(NotificationError('Failed to load notifications: ${e.toString()}'));
+      emit(NotificationError('Failed to load notifications: $e'));
       Logger.error('Error loading notifications', e);
     }
   }
@@ -52,7 +52,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       }
       Logger.info('Notification added successfully');
     } catch (e) {
-      emit(NotificationError('Failed to add notification: ${e.toString()}'));
+      emit(NotificationError('Failed to add notification: $e'));
       Logger.error('Error adding notification', e);
     }
   }
@@ -73,7 +73,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       }
       Logger.info('Notification deleted successfully');
     } catch (e) {
-      emit(NotificationError('Failed to delete notification: ${e.toString()}'));
+      emit(NotificationError('Failed to delete notification: $e'));
       Logger.error('Error deleting notification', e);
     }
   }

@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 
 class SpringAnimation extends StatefulWidget {
-  final Widget child;
-  final double damping;
-  final double stiffness;
-  final double mass;
-  final Offset startOffset;
-  final Offset endOffset;
 
   const SpringAnimation({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.damping = 15.0,
     this.stiffness = 200.0,
     this.mass = 1.0,
     this.startOffset = Offset.zero,
     this.endOffset = Offset.zero,
   });
+  final Widget child;
+  final double damping;
+  final double stiffness;
+  final double mass;
+  final Offset startOffset;
+  final Offset endOffset;
 
   @override
   State<SpringAnimation> createState() => _SpringAnimationState();
@@ -48,10 +47,10 @@ class _SpringAnimationState extends State<SpringAnimation>
 
     _scaleAnimation = Tween<double>(
       begin: 0.85,
-      end: 1.0,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
+      curve: const Interval(0, 0.8, curve: Curves.easeOutCubic),
     ));
 
     _controller.forward();

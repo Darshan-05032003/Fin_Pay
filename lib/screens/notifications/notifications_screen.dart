@@ -1,16 +1,16 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/notification_item.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart' as custom;
+import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
+import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
+import 'package:fin_pay/widgets/animations/swipe_to_dismiss.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import '../../constants/theme.dart';
-import '../../models/notification_item.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/swipe_to_dismiss.dart';
-import '../../widgets/animations/skeleton_loader_full.dart';
-import '../../widgets/animations/pull_to_refresh_custom.dart';
-import '../../widgets/animations/fade_in_animation.dart' as custom;
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/cred_button_press.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -88,7 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             delay: const Duration(milliseconds: 100),
             offset: const Offset(0, 20),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Expanded(
@@ -143,7 +143,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         await HapticService.mediumImpact();
                       },
                       child: CredCardReveal(
-                        duration: const Duration(milliseconds: 500),
                         perspective: 0.0006,
                         child: Container(
                           padding: const EdgeInsets.all(12),
@@ -154,7 +153,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               BoxShadow(
                                 color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                                 blurRadius: 8,
-                                spreadRadius: 0,
                               ),
                             ],
                           ),
@@ -169,7 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const SkeletonList(itemCount: 5)
+                ? const SkeletonList()
                 : _allNotifications.isEmpty
                     ? Center(
                         child: Column(
@@ -209,7 +207,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   final notification = entry.value;
                                   return CredSlideIn(
                                     delay: Duration(milliseconds: 300 + (index * 50)),
-                                    offset: const Offset(0, 30),
                                     child: CredCardReveal(
                                       duration: Duration(milliseconds: 400 + (index * 30)),
                                       perspective: 0.0006,
@@ -248,7 +245,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     position: index + _filteredToday.length,
                                     duration: const Duration(milliseconds: 375),
                                     child: SlideAnimation(
-                                      verticalOffset: 50.0,
+                                      verticalOffset: 50,
                                       child: custom.FadeInAnimation(
                                         child: SwipeToDismiss(
                                           uniqueKey: notification.id,
@@ -279,7 +276,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Text(
         title,
         style: const TextStyle(
@@ -293,27 +290,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNotificationItem(NotificationItem notification) {
     IconData icon;
-    Color iconColor = AppTheme.primaryGreen;
+    const iconColor = AppTheme.primaryGreen;
 
     switch (notification.type) {
       case NotificationType.cashback:
         icon = Icons.attach_money;
-        break;
       case NotificationType.paymentReminder:
         icon = Icons.access_time;
-        break;
       case NotificationType.profileUpdate:
         icon = Icons.person;
-        break;
       case NotificationType.paymentRequest:
         icon = Icons.request_quote;
-        break;
       case NotificationType.cardLinked:
         icon = Icons.credit_card;
-        break;
       case NotificationType.billDue:
         icon = Icons.receipt;
-        break;
     }
 
     return Container(

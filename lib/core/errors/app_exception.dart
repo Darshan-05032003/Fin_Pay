@@ -1,9 +1,9 @@
 /// Base exception class for the application
 abstract class AppException implements Exception {
-  final String message;
-  final Object? originalError;
   
   const AppException(this.message, [this.originalError]);
+  final String message;
+  final Object? originalError;
   
   @override
   String toString() => message;

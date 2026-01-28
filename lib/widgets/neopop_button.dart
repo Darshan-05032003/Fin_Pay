@@ -1,23 +1,13 @@
+import 'package:fin_pay/constants/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../constants/theme.dart';
 
 /// CRED NeoPOP Button - 100% Authentic Implementation
 /// Features hard 45-degree shadows (8dp depth) and haptic feedback
 class NeoPopButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onTapUp;
-  final VoidCallback? onTapDown;
-  final Color? color;
-  final Color? borderColor;
-  final double? borderWidth;
-  final EdgeInsetsGeometry? padding;
-  final double? depth;
-  final bool isDisabled;
 
   const NeoPopButton({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.onTapUp,
     this.onTapDown,
     this.color,
@@ -27,6 +17,15 @@ class NeoPopButton extends StatefulWidget {
     this.depth,
     this.isDisabled = false,
   });
+  final Widget child;
+  final VoidCallback? onTapUp;
+  final VoidCallback? onTapDown;
+  final Color? color;
+  final Color? borderColor;
+  final double? borderWidth;
+  final EdgeInsetsGeometry? padding;
+  final double? depth;
+  final bool isDisabled;
 
   @override
   State<NeoPopButton> createState() => _NeoPopButtonState();
@@ -45,7 +44,7 @@ class _NeoPopButtonState extends State<NeoPopButton>
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
+    _scaleAnimation = Tween<double>(begin: 1, end: 0.96).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -132,18 +131,17 @@ class _NeoPopButtonState extends State<NeoPopButton>
 
 /// NeoPOP Button with Orange Sunshine accent (Primary CTA)
 class NeoPopPrimaryButton extends StatelessWidget {
-  final String text;
-  final VoidCallback? onTap;
-  final bool isDisabled;
-  final EdgeInsetsGeometry? padding;
 
   const NeoPopPrimaryButton({
-    super.key,
-    required this.text,
+    required this.text, super.key,
     this.onTap,
     this.isDisabled = false,
     this.padding,
   });
+  final String text;
+  final VoidCallback? onTap;
+  final bool isDisabled;
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
@@ -168,16 +166,15 @@ class NeoPopPrimaryButton extends StatelessWidget {
 
 /// NeoPOP Button with Neon Green (Success/Cash)
 class NeoPopSuccessButton extends StatelessWidget {
-  final String text;
-  final VoidCallback? onTap;
-  final bool isDisabled;
 
   const NeoPopSuccessButton({
-    super.key,
-    required this.text,
+    required this.text, super.key,
     this.onTap,
     this.isDisabled = false,
   });
+  final String text;
+  final VoidCallback? onTap;
+  final bool isDisabled;
 
   @override
   Widget build(BuildContext context) {
@@ -201,20 +198,19 @@ class NeoPopSuccessButton extends StatelessWidget {
 
 /// NeoPOP Card with hard shadows
 class NeoPopCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
-  final Color? color;
-  final double? depth;
 
   const NeoPopCard({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.padding,
     this.margin,
     this.color,
     this.depth,
   });
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final Color? color;
+  final double? depth;
 
   @override
   Widget build(BuildContext context) {

@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AnimatedButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onPressed;
-  final Color? backgroundColor;
-  final EdgeInsetsGeometry? padding;
-  final double borderRadius;
 
   const AnimatedButton({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.onPressed,
     this.backgroundColor,
     this.padding,
     this.borderRadius = 8,
   });
+  final Widget child;
+  final VoidCallback? onPressed;
+  final Color? backgroundColor;
+  final EdgeInsetsGeometry? padding;
+  final double borderRadius;
 
   @override
   State<AnimatedButton> createState() => _AnimatedButtonState();
@@ -33,7 +32,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+    _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }

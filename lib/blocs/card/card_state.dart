@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/card.dart';
+import 'package:fin_pay/models/card.dart';
 
 /// Base class for all card-related states
 abstract class CardState extends Equatable {
@@ -21,9 +21,9 @@ class CardLoading extends CardState {
 
 /// State when cards are successfully loaded
 class CardLoaded extends CardState {
-  final List<Card> cards;
 
   const CardLoaded(this.cards);
+  final List<Card> cards;
 
   @override
   List<Object?> get props => [cards];
@@ -31,9 +31,9 @@ class CardLoaded extends CardState {
 
 /// State when an error occurs
 class CardError extends CardState {
-  final String message;
 
   const CardError(this.message);
+  final String message;
 
   @override
   List<Object?> get props => [message];

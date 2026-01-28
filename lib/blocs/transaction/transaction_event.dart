@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/transaction.dart';
+import 'package:fin_pay/models/transaction.dart';
 
 /// Base class for all transaction-related events
 abstract class TransactionEvent extends Equatable {
@@ -11,9 +11,9 @@ abstract class TransactionEvent extends Equatable {
 
 /// Event to load transactions
 class LoadTransactionsEvent extends TransactionEvent {
-  final int? limit;
 
   const LoadTransactionsEvent({this.limit});
+  final int? limit;
 
   @override
   List<Object?> get props => [limit];
@@ -21,9 +21,9 @@ class LoadTransactionsEvent extends TransactionEvent {
 
 /// Event to add a new transaction
 class AddTransactionEvent extends TransactionEvent {
-  final Transaction transaction;
 
   const AddTransactionEvent(this.transaction);
+  final Transaction transaction;
 
   @override
   List<Object?> get props => [transaction];
@@ -31,9 +31,9 @@ class AddTransactionEvent extends TransactionEvent {
 
 /// Event to delete a transaction
 class DeleteTransactionEvent extends TransactionEvent {
-  final String transactionId;
 
   const DeleteTransactionEvent(this.transactionId);
+  final String transactionId;
 
   @override
   List<Object?> get props => [transactionId];

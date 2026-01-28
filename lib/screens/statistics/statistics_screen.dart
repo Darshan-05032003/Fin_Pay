@@ -1,18 +1,18 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/transaction.dart';
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_number_counter.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/fade_in_animation.dart' as custom;
+import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
+import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import '../../constants/theme.dart';
-import '../../models/transaction.dart';
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/fade_in_animation.dart' as custom;
-import '../../widgets/animations/skeleton_loader_full.dart';
-import '../../widgets/animations/pull_to_refresh_custom.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/cred_number_counter.dart';
-import '../../widgets/animations/pulse_animation.dart';
-import '../../widgets/cred_bottom_navigation_bar.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -22,9 +22,9 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  double _totalSpending = 0.0;
-  double _income = 0.0;
-  double _expenses = 0.0;
+  double _totalSpending = 0;
+  double _income = 0;
+  double _expenses = 0;
   List<Transaction> _recentTransactions = [];
   bool _isLoading = true;
 
@@ -37,11 +37,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Future<void> _loadStatistics() async {
     final transactions = await UserService.getTransactions();
     
-    double totalSpending = 0.0;
-    double income = 0.0;
-    double expenses = 0.0;
+    var totalSpending = 0;
+    var income = 0;
+    var expenses = 0;
 
-    for (var transaction in transactions) {
+    for (final transaction in transactions) {
       if (transaction.amount < 0) {
         expenses += transaction.amount.abs();
         totalSpending += transaction.amount.abs();
@@ -74,12 +74,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       ),
       body: _isLoading
-          ? const SkeletonList(itemCount: 5)
+          ? const SkeletonList()
           : CustomPullToRefresh(
               onRefresh: _loadStatistics,
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(24),
                 child: AnimationLimiter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,7 +115,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: AppTheme.credMediumGray.withOpacity(0.2),
-                                  width: 1,
                                 ),
                               ),
                               child: const Row(
@@ -142,18 +141,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 16),
                   CredSlideIn(
                     delay: const Duration(milliseconds: 200),
-                    offset: const Offset(0, 30),
                     child: CredNumberCounter(
                       value: _totalSpending,
-                      duration: const Duration(milliseconds: 1500),
-                      curve: Curves.easeOutCubic,
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.credOrangeSunshine,
                         letterSpacing: -1,
                       ),
-                      prefix: '\$',
+                      prefix: r'$',
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -169,7 +165,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 32),
                   CredSlideIn(
                     delay: const Duration(milliseconds: 400),
-                    offset: const Offset(0, 30),
                     child: Row(
                       children: [
                         Expanded(
@@ -191,13 +186,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  AnimationConfiguration.staggeredList(
+                  const AnimationConfiguration.staggeredList(
                     position: 3,
-                    duration: const Duration(milliseconds: 375),
+                    duration: Duration(milliseconds: 375),
                     child: SlideAnimation(
-                      verticalOffset: 50.0,
+                      verticalOffset: 50,
                       child: custom.FadeInAnimation(
-                        child: const Text(
+                        child: Text(
                           'Recent Transaction',
                           style: TextStyle(
                             fontSize: 18,
@@ -210,14 +205,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                   const SizedBox(height: 16),
                   if (_recentTransactions.isEmpty)
-                    AnimationConfiguration.staggeredList(
+                    const AnimationConfiguration.staggeredList(
                       position: 4,
-                      duration: const Duration(milliseconds: 375),
+                      duration: Duration(milliseconds: 375),
                       child: SlideAnimation(
-                        verticalOffset: 50.0,
+                        verticalOffset: 50,
                         child: custom.FadeInAnimation(
-                          child: const Padding(
-                            padding: EdgeInsets.all(24.0),
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
                             child: Center(
                               child: Text(
                                 'No recent transactions',
@@ -236,7 +231,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       position: 4,
                       duration: const Duration(milliseconds: 375),
                       child: SlideAnimation(
-                        verticalOffset: 50.0,
+                        verticalOffset: 50,
                         child: custom.FadeInAnimation(
                           child: _buildRecentTransaction(_recentTransactions.first),
                         ),
@@ -262,9 +257,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text('10K', style: TextStyle(fontSize: 12, color: AppTheme.credTextSecondary)),
               Text('20K', style: TextStyle(fontSize: 12, color: AppTheme.credTextSecondary)),
               Text('30K', style: TextStyle(fontSize: 12, color: AppTheme.credTextSecondary)),
@@ -276,7 +271,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final maxHeight = constraints.maxHeight - 25; // Reserve space for label and spacing
-                final maxBarHeight = 160.0;
+                const maxBarHeight = 160.0;
                 final scaleFactor = maxHeight / maxBarHeight;
                 
                 return Row(
@@ -306,9 +301,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Container(
             width: 50,
             height: height.clamp(0.0, double.infinity),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppTheme.credOrangeSunshine,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(4),
                 topRight: Radius.circular(4),
               ),
@@ -331,7 +326,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildStatCard(IconData icon, String title, double value) {
     return CredCardReveal(
-      duration: const Duration(milliseconds: 500),
       perspective: 0.0006,
       child: CredButtonPress(
         onTap: () async {
@@ -344,14 +338,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: AppTheme.credMediumGray.withOpacity(0.2),
-              width: 1,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               PulseAnimation(
-                duration: const Duration(seconds: 2),
                 minScale: 0.98,
                 maxScale: 1.02,
                 child: Container(
@@ -364,7 +356,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       BoxShadow(
                         color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                         blurRadius: 8,
-                        spreadRadius: 0,
                       ),
                     ],
                   ),
@@ -384,14 +375,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               CredNumberCounter(
                 value: value,
                 duration: const Duration(milliseconds: 1200),
-                curve: Curves.easeOutCubic,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.credOrangeSunshine,
                   letterSpacing: -0.5,
                 ),
-                prefix: '\$',
+                prefix: r'$',
               ),
             ],
           ),

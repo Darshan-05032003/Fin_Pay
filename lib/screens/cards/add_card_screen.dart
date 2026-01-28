@@ -1,13 +1,13 @@
+import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/models/card.dart' as models;
+import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/widgets/animations/cred_button_press.dart';
+import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
+import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
+import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
-import '../../models/card.dart' as models;
-import '../../services/user_service.dart';
-import '../../services/haptic_service.dart';
-import '../../widgets/animations/cred_slide_in.dart';
-import '../../widgets/animations/cred_card_reveal.dart';
-import '../../widgets/animations/cred_button_press.dart';
-import '../../widgets/animations/spring_animation.dart';
-import '../../widgets/animations/pulse_animation.dart';
 
 class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key});
@@ -36,13 +36,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             CredSlideIn(
               delay: const Duration(milliseconds: 100),
-              offset: const Offset(0, 30),
               child: CredCardReveal(
                 duration: const Duration(milliseconds: 600),
                 perspective: 0.0008,
@@ -52,7 +51,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 200),
-              offset: const Offset(0, 30),
               child: CredCardReveal(
                 duration: const Duration(milliseconds: 700),
                 perspective: 0.0008,
@@ -62,7 +60,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             const SizedBox(height: 16),
             CredSlideIn(
               delay: const Duration(milliseconds: 300),
-              offset: const Offset(0, 30),
               child: CredCardReveal(
                 duration: const Duration(milliseconds: 800),
                 perspective: 0.0008,
@@ -103,7 +100,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             const SizedBox(height: 16),
             CredSlideIn(
               delay: const Duration(milliseconds: 400),
-              offset: const Offset(0, 30),
               child: CredCardReveal(
                 duration: const Duration(milliseconds: 900),
                 perspective: 0.0008,
@@ -145,7 +141,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             const SizedBox(height: 16),
             CredSlideIn(
               delay: const Duration(milliseconds: 500),
-              offset: const Offset(0, 30),
               child: Row(
                 children: [
                   Expanded(
@@ -234,7 +229,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             const SizedBox(height: 32),
             CredSlideIn(
               delay: const Duration(milliseconds: 600),
-              offset: const Offset(0, 30),
               child: CredButtonPress(
                 onTap: () async {
                   if (_cardType == 'Select card type' ||
@@ -267,7 +261,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     expireDate: _expireController.text.trim(),
                     cvv: _cvvController.text.trim(),
                     cardType: cardType,
-                    balance: 0.0,
+                    balance: 0,
                   );
 
                   await UserService.addCard(newCard);
@@ -285,7 +279,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                 },
                 child: SpringAnimation(
                   startOffset: const Offset(0, 20),
-                  endOffset: Offset.zero,
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: AppTheme.credOrangeGradient,
@@ -294,7 +287,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                         BoxShadow(
                           color: AppTheme.credOrangeSunshine.withOpacity(0.4),
                           blurRadius: 20,
-                          spreadRadius: 0,
                           offset: const Offset(0, 10),
                         ),
                       ],
@@ -323,7 +315,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
   Widget _buildCardPreview() {
     return PulseAnimation(
-      duration: const Duration(seconds: 2),
       minScale: 0.98,
       maxScale: 1.02,
       child: Container(
@@ -336,7 +327,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
             BoxShadow(
               color: AppTheme.credOrangeSunshine.withOpacity(0.4),
               blurRadius: 24,
-              spreadRadius: 0,
               offset: const Offset(0, 12),
             ),
           ],
@@ -345,10 +335,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'VISA',
                 style: TextStyle(
                   color: AppTheme.credWhite,
@@ -562,7 +552,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppTheme.credMediumGray.withOpacity(0.2),
-            width: 1,
           ),
         ),
         child: Row(
@@ -577,7 +566,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   BoxShadow(
                     color: AppTheme.credOrangeSunshine.withOpacity(0.3),
                     blurRadius: 8,
-                    spreadRadius: 0,
                   ),
                 ],
               ),
