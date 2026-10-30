@@ -1,349 +1,243 @@
 import 'dart:async';
 
-import 'package:fin_pay/blocs/session/session_cubit.dart';
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:clock/clock.dart';
 import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
-import 'package:fin_pay/widgets/animations/spring_animation.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/auth/create_account/create_account_cubit.dart';
+import 'package:fin_pay/screens/auth/verification/otp_cubit.dart';
+import 'package:fin_pay/screens/auth/verification/otp_machine.dart';
+import 'package:fin_pay/screens/auth/widgets/auth_scaffold.dart';
+import 'package:fin_pay/screens/auth/widgets/inline_message.dart';
+import 'package:fin_pay/screens/auth/widgets/secure_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
-class VerificationScreen extends StatefulWidget {
+/// Six-digit code entry for the sign-up flow. Reads the pending sign-up
+/// from the shared [CreateAccountCubit]; opened without one (deep link,
+/// process death) it shows a "start again" guard instead of inventing a
+/// session.
+class VerificationScreen extends StatelessWidget {
   const VerificationScreen({super.key});
 
-  @override
-  State<VerificationScreen> createState() => _VerificationScreenState();
-}
-
-class _VerificationScreenState extends State<VerificationScreen> {
-  final List<TextEditingController> _controllers = List.generate(
-    4,
-    (index) => TextEditingController(),
-  );
-  final List<FocusNode> _focusNodes = List.generate(4, (index) => FocusNode());
+  static Clock _clock() =>
+      GetIt.I.isRegistered<Clock>() ? GetIt.I<Clock>() : const Clock();
 
   @override
   Widget build(BuildContext context) {
-    final userData = GoRouterState.of(context).extra as Map<String, dynamic>?;
+    final signUp = context.watch<CreateAccountCubit>();
+    final code = signUp.expectedOtp;
+    if (code.isEmpty) return const _ExpiredView();
+    return SecureScreen(
+      child: BlocProvider(
+        key: ValueKey('otp-${signUp.state.phone}'),
+        create: (_) => OtpCubit(expectedCode: code, clock: _clock()),
+        child: const _VerificationView(),
+      ),
+    );
+  }
+}
 
+class _ExpiredView extends StatelessWidget {
+  const _ExpiredView();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      body: Center(
-        child: CredSlideIn(
-          delay: const Duration(milliseconds: 100),
-          child: CredCardReveal(
-            duration: const Duration(milliseconds: 600),
-            perspective: 0.0008,
-            child: Container(
-              margin: const EdgeInsets.all(24),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppTheme.credSurfaceCard,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppTheme.credMediumGray.withValues(alpha: 0.2),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.credOrangeSunshine.withValues(alpha: 0.2),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox(width: 40),
-                      CredSlideIn(
-                        delay: const Duration(milliseconds: 200),
-                        offset: const Offset(0, 20),
-                        child: PulseAnimation(
-                          minScale: 0.98,
-                          maxScale: 1.02,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: const BoxDecoration(
-                              gradient: AppTheme.credOrangeGradient,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.credOrangeSunshine,
-                                  blurRadius: 20,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: AppTheme.credWhite,
-                              size: 40,
-                            ),
-                          ),
-                        ),
-                      ),
-                      CredButtonPress(
-                        onTap: () async {
-                          await sl<HapticService>().light();
-                          if (!context.mounted) return;
-                          Navigator.pop(context);
-                        },
-                        child: const Icon(
-                          Icons.close,
-                          color: AppTheme.credTextPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const CredSlideIn(
-                    delay: Duration(milliseconds: 300),
-                    offset: Offset(0, 20),
-                    child: Text(
-                      'Enter Verification Code!',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.credTextPrimary,
-                        letterSpacing: -0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const CredSlideIn(
-                    delay: Duration(milliseconds: 400),
-                    offset: Offset(0, 10),
-                    child: Text(
-                      'Enter the 4-digit verification code sent to your '
-                      'email address.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.credTextSecondary,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 500),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(4, (index) {
-                        return CredSlideIn(
-                          delay: Duration(milliseconds: 600 + (index * 50)),
-                          offset: const Offset(0, 20),
-                          child: CredCardReveal(
-                            duration: Duration(
-                              milliseconds: 400 + (index * 50),
-                            ),
-                            perspective: 0.0006,
-                            child: SizedBox(
-                              width: 60,
-                              child: Focus(
-                                child: Builder(
-                                  builder: (context) {
-                                    final hasFocus = Focus.of(context).hasFocus;
-                                    return AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeOutCubic,
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.credPureBackground,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: hasFocus
-                                              ? AppTheme.credOrangeSunshine
-                                              : AppTheme.credMediumGray
-                                                    .withValues(alpha: 0.2),
-                                          width: hasFocus ? 2 : 1,
-                                        ),
-                                      ),
-                                      child: TextField(
-                                        controller: _controllers[index],
-                                        focusNode: _focusNodes[index],
-                                        textAlign: TextAlign.center,
-                                        keyboardType: TextInputType.number,
-                                        maxLength: 1,
-                                        style: const TextStyle(
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppTheme.credOrangeSunshine,
-                                          letterSpacing: -1,
-                                        ),
-                                        decoration: const InputDecoration(
-                                          counterText: '',
-                                          border: InputBorder.none,
-                                          contentPadding: EdgeInsets.all(16),
-                                        ),
-                                        onChanged: (value) {
-                                          unawaited(
-                                            sl<HapticService>().selection(),
-                                          );
-                                          if (value.isNotEmpty && index < 3) {
-                                            _focusNodes[index + 1]
-                                                .requestFocus();
-                                          } else if (value.isEmpty &&
-                                              index > 0) {
-                                            _focusNodes[index - 1]
-                                                .requestFocus();
-                                          }
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 800),
-                    offset: const Offset(0, 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Didn't get the code ",
-                          style: TextStyle(color: AppTheme.credTextSecondary),
-                        ),
-                        CredButtonPress(
-                          onTap: () async {
-                            await sl<HapticService>().light();
-                          },
-                          child: const Text(
-                            'Resend It',
-                            style: TextStyle(
-                              color: AppTheme.credOrangeSunshine,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 900),
-                    child: CredButtonPress(
-                      onTap: () async {
-                        // Verify all fields are filled
-                        final code = _controllers.map((c) => c.text).join();
-                        if (code.length != 4) {
-                          await sl<HapticService>().error();
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Please enter the complete verification code',
-                              ),
-                              backgroundColor: AppTheme.credError,
-                            ),
-                          );
-                          return;
-                        }
-
-                        await sl<HapticService>().medium();
-
-                        // Only allow creating account with default credentials
-                        if (userData != null) {
-                          final email =
-                              userData['email']
-                                  ?.toString()
-                                  .trim()
-                                  .toLowerCase() ??
-                              '';
-                          final password =
-                              userData['password']?.toString() ?? '';
-
-                          // Only the seeded demo account can sign up.
-                          final session = sl<SessionCubit>();
-                          await session.signIn(email, password);
-                          if (session.isAuthenticated) {
-                            await sl<HapticService>().success();
-                          } else {
-                            await sl<HapticService>().error();
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Only the demo account can sign up: '
-                                  'user@finpay.com (password in the README)',
-                                ),
-                                backgroundColor: AppTheme.credError,
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                            return;
-                          }
-                        }
-
-                        if (!context.mounted) return;
-                        context.go('/fingerprint-setup');
-                      },
-                      child: SpringAnimation(
-                        startOffset: const Offset(0, 20),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.credOrangeGradient,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withValues(
-                                  alpha: 0.4,
-                                ),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: const Center(
-                            child: Text(
-                              'Verify',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.credWhite,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      backgroundColor: context.fp.colors.background,
+      body: SafeArea(
+        child: Center(
+          child: FpErrorState(
+            icon: Icons.timer_off_outlined,
+            title: 'Start again',
+            message:
+                'Your sign-up session has ended. Enter your details once '
+                'more to get a new code.',
+            retryLabel: 'Create account',
+            onRetry: () => context.go(AppRoutes.createAccount),
           ),
         ),
       ),
     );
   }
+}
+
+class _VerificationView extends StatelessWidget {
+  const _VerificationView();
 
   @override
-  void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    for (final node in _focusNodes) {
-      node.dispose();
-    }
-    super.dispose();
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final otp = context.read<OtpCubit>();
+    final signUp = context.read<CreateAccountCubit>();
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<OtpCubit, OtpState>(
+          listenWhen: (p, n) => p.phase != n.phase,
+          listener: (context, state) {
+            if (state.phase == OtpPhase.verified) {
+              playHaptic(null, HapticType.success);
+              unawaited(signUp.completeSignUp());
+            } else if (state.phase == OtpPhase.locked) {
+              playHaptic(null, HapticType.error);
+            }
+          },
+        ),
+        BlocListener<CreateAccountCubit, CreateAccountState>(
+          listenWhen: (p, n) => p.status != n.status,
+          listener: (context, state) {
+            if (state.status == CreateAccountStatus.completed) {
+              context.go(AppRoutes.fingerprintSetup);
+            } else if (state.status == CreateAccountStatus.failed) {
+              playHaptic(null, HapticType.error);
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<CreateAccountCubit, CreateAccountState>(
+        builder: (context, signUpState) => BlocBuilder<OtpCubit, OtpState>(
+          builder: (context, state) {
+            final verified = state.phase == OtpPhase.verified;
+            final locked = state.phase == OtpPhase.locked;
+            final seconds = state.resendRemaining.inSeconds;
+            return AuthScaffold(
+              title: 'Enter the code',
+              subtitle: 'We sent a 6-digit code to ${signUpState.maskedPhone}.',
+              onBack: () => context.pop(),
+              scrollKey: const ValueKey('verification-scroll'),
+              children: [
+                AnimatedSwitcher(
+                  duration: FpMotion.of(context).scaled(FpMotion.emphasized),
+                  switchInCurve: FpMotion.emphasizedDecelerate,
+                  switchOutCurve: FpMotion.emphasizedAccelerate,
+                  child: verified
+                      ? const _VerifiedBlock()
+                      : Column(
+                          key: const ValueKey('otp-entry'),
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FpOtpField(
+                              key: const ValueKey('otp-field'),
+                              value: state.digits,
+                              error: state.phase == OtpPhase.wrong,
+                              enabled: state.acceptsInput,
+                              autofocus: true,
+                              onChanged: otp.input,
+                              onCompleted: (_) => otp.submit(),
+                            ),
+                            const SizedBox(height: FpSpacing.md),
+                            if (state.attempts > 0 && !locked)
+                              Text(
+                                state.remainingAttempts == 1
+                                    ? 'Wrong code. 1 attempt left.'
+                                    : 'Wrong code. '
+                                          '${state.remainingAttempts} '
+                                          'attempts left.',
+                                key: const ValueKey('otp-attempts'),
+                                style: fp.text.caption.copyWith(color: c.alert),
+                                textAlign: TextAlign.center,
+                              ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: FpSpacing.xl),
+                InlineMessage(
+                  message: locked
+                      ? 'Too many wrong codes. Go back and start again.'
+                      : signUpState.status == CreateAccountStatus.failed
+                      ? signUpState.errorMessage
+                      : null,
+                ),
+                if (!verified) ...[
+                  Row(
+                    children: [
+                      FpCountdownRing(
+                        key: const ValueKey('otp-countdown'),
+                        progress: state.resendProgress,
+                        label: '$seconds',
+                        size: 48,
+                        semanticLabel: state.canResend
+                            ? 'You can resend the code now'
+                            : 'Resend available in $seconds seconds',
+                      ),
+                      const SizedBox(width: FpSpacing.md),
+                      Expanded(
+                        child: FpButton(
+                          key: const ValueKey('otp-resend'),
+                          label: 'Resend code',
+                          variant: FpButtonVariant.ghost,
+                          size: FpButtonSize.small,
+                          enabled: state.canResend,
+                          onPressed: () {
+                            otp.resend();
+                            FpToast.show(
+                              context,
+                              message: 'A new code is on its way.',
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: FpSpacing.xl),
+                  FpButton(
+                    key: const ValueKey('otp-verify'),
+                    label: 'Verify',
+                    size: FpButtonSize.large,
+                    isLoading: state.phase == OtpPhase.verifying,
+                    enabled: state.complete && state.acceptsInput,
+                    onPressed: otp.submit,
+                  ),
+                ] else if (signUpState.status ==
+                    CreateAccountStatus.failed) ...[
+                  FpButton(
+                    key: const ValueKey('otp-retry'),
+                    label: 'Try again',
+                    size: FpButtonSize.large,
+                    onPressed: signUp.completeSignUp,
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _VerifiedBlock extends StatelessWidget {
+  const _VerifiedBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final busy = context.select<CreateAccountCubit, bool>(
+      (cubit) => cubit.state.isBusy,
+    );
+    return Column(
+      key: const ValueKey('otp-verified'),
+      children: [
+        const FpSurface(
+          width: 112,
+          height: 112,
+          padding: EdgeInsets.zero,
+          child: Center(
+            child: FpDrawnCheck(size: 72, semanticLabel: 'Code verified'),
+          ),
+        ),
+        const SizedBox(height: FpSpacing.lg),
+        Text('Verified', style: fp.text.title),
+        const SizedBox(height: FpSpacing.xs),
+        Text(
+          busy ? 'Setting up your account…' : 'All set.',
+          style: fp.text.bodySmall.copyWith(color: c.textSecondary),
+        ),
+      ],
+    );
   }
 }

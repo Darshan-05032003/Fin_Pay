@@ -33,7 +33,11 @@ class FinPayApp extends StatefulWidget {
 
 class _FinPayAppState extends State<FinPayApp> {
   late final GoRouter _router =
-      widget.router ?? AppRouter.build(session: di.sl<SessionCubit>());
+      widget.router ??
+      AppRouter.build(
+        session: di.sl<SessionCubit>(),
+        settings: di.sl<SettingsCubit>(),
+      );
 
   @override
   void dispose() {

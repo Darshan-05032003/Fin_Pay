@@ -1,9 +1,12 @@
 import 'package:fin_pay/blocs/session/session_cubit.dart';
+import 'package:fin_pay/core/di/injection_container.dart' as di;
+import 'package:fin_pay/core/settings/settings_cubit.dart';
 import 'package:fin_pay/routes/app_page_transitions.dart';
 import 'package:fin_pay/routes/app_redirect.dart';
 import 'package:fin_pay/routes/app_routes.dart';
 import 'package:fin_pay/routes/go_router_refresh_stream.dart';
 import 'package:fin_pay/routes/transfer_draft.dart';
+import 'package:fin_pay/screens/auth/create_account/create_account_cubit.dart';
 import 'package:fin_pay/screens/auth/create_account_screen.dart';
 import 'package:fin_pay/screens/auth/fingerprint_setup_screen.dart';
 import 'package:fin_pay/screens/auth/forgot_password_screen.dart';
@@ -23,35 +26,67 @@ import 'package:fin_pay/screens/transfer/transfer_screen.dart';
 import 'package:fin_pay/screens/transfer/transfer_success_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
+/// Creates the sign-up flow object for the auth shell route.
+typedef CreateAccountCubitFactory =
+    CreateAccountCubit Function(BuildContext context);
 
 /// Builds the app's [GoRouter].
 abstract final class AppRouter {
-  /// Creates the router. [session] drives the auth redirect; [gallery]
-  /// supplies the debug-only widget gallery (null → placeholder);
-  /// [isDebug] defaults to [kDebugMode] and is overridable for tests.
+  /// Creates the router. [session] drives the auth redirect and [settings]
+  /// (optional) the "onboarding seen" skip; [gallery] supplies the
+  /// debug-only widget gallery (null → placeholder); [isDebug] defaults to
+  /// [kDebugMode] and is overridable for tests; [createAccount] overrides
+  /// the sign-up flow object (defaults to the GetIt repositories).
   static GoRouter build({
     required SessionCubit session,
+    SettingsCubit? settings,
     WidgetBuilder? gallery,
     bool? isDebug,
     String initialLocation = AppRoutes.welcome,
+    CreateAccountCubitFactory? createAccount,
   }) {
     final debug = isDebug ?? kDebugMode;
+    final refresh = GoRouterRefreshStream(session.stream);
+    final settingsRefresh = settings == null
+        ? null
+        : GoRouterRefreshStream(settings.stream);
+    final createAccountCubit =
+        createAccount ??
+        (context) => CreateAccountCubit(
+          auth: di.sl(),
+          users: di.sl(),
+          session: context.read<SessionCubit>(),
+          clock: di.sl(),
+        );
     return GoRouter(
       initialLocation: initialLocation,
-      refreshListenable: GoRouterRefreshStream(session.stream),
+      refreshListenable: settingsRefresh == null
+          ? refresh
+          : Listenable.merge([refresh, settingsRefresh]),
       redirect: (context, state) => AppRedirect.resolve(
         location: state.uri.toString(),
         session: session.state,
         isDebug: debug,
+        onboardingSeen: settings?.state.onboardingSeen ?? false,
       ),
       errorBuilder: (context, state) => _NotFoundScreen(path: state.uri.path),
       routes: [
         _route(AppRoutes.welcome, (_) => const WelcomeScreen()),
         _route(AppRoutes.onboarding, (_) => const OnboardingScreen()),
         _route(AppRoutes.login, (_) => const LoginScreen()),
-        _route(AppRoutes.createAccount, (_) => const CreateAccountScreen()),
-        _route(AppRoutes.verification, (_) => const VerificationScreen()),
+        // The sign-up steps share one CreateAccountCubit scoped to this
+        // shell, so the password never travels through route `extra`.
+        ShellRoute(
+          builder: (context, state, child) =>
+              BlocProvider(create: createAccountCubit, child: child),
+          routes: [
+            _route(AppRoutes.createAccount, (_) => const CreateAccountScreen()),
+            _route(AppRoutes.verification, (_) => const VerificationScreen()),
+          ],
+        ),
         _route(
           AppRoutes.fingerprintSetup,
           (_) => const FingerprintSetupScreen(),

@@ -1,139 +1,122 @@
-import 'dart:async';
-
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
+import 'package:fin_pay/blocs/session/session_cubit.dart';
+import 'package:fin_pay/blocs/session/session_state.dart';
+import 'package:fin_pay/core/settings/settings_cubit.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/auth/widgets/spring_rise.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class WelcomeScreen extends StatefulWidget {
+/// The root splash: the brand mark reveals once, then the calls to action
+/// rise in. A returning user (onboarding already seen) is offered "sign in"
+/// first; a new one is sent through the onboarding pages.
+class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final seen = context.select<SettingsCubit, bool>(
+      (cubit) => cubit.state.onboardingSeen,
+    );
+    final ready = context.select<SessionCubit, bool>(
+      (cubit) => cubit.state is! SessionUnknown,
+    );
+    return Scaffold(
+      backgroundColor: c.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(FpSpacing.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Spacer(),
+              FpStaggeredEntrance(
+                children: [
+                  const _BrandMark(),
+                  const SizedBox(height: FpSpacing.xl),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      'FinPay',
+                      style: fp.text.displayLarge,
+                      maxLines: 1,
+                    ),
+                  ),
+                  const SizedBox(height: FpSpacing.sm),
+                  Text('Your money. Your move.', style: fp.text.displayItalic),
+                  const SizedBox(height: FpSpacing.lg),
+                  Text(
+                    'Pay, track and protect, from one place.',
+                    style: fp.text.bodySmall,
+                  ),
+                ],
+              ),
+              const Spacer(),
+              if (ready)
+                SpringRise(
+                  key: const ValueKey('welcome-cta'),
+                  delay: FpMotion.emphasized,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FpButton(
+                        label: seen ? 'Sign in' : 'Get started',
+                        size: FpButtonSize.large,
+                        onPressed: () => context.go(
+                          seen ? AppRoutes.login : AppRoutes.onboarding,
+                        ),
+                      ),
+                      const SizedBox(height: FpSpacing.md),
+                      FpButton(
+                        label: seen
+                            ? 'Create an account'
+                            : 'I already have an account',
+                        variant: FpButtonVariant.ghost,
+                        onPressed: () => context.go(
+                          seen ? AppRoutes.createAccount : AppRoutes.login,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-
-    _slideAnimation = Tween<double>(
-      begin: 50,
-      end: 0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+/// The code-drawn mark: an accent NeoPOP tile with a rupee glyph.
+class _BrandMark extends StatelessWidget {
+  const _BrandMark();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      body: SafeArea(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeAnimation.value,
-              child: Transform.translate(
-                offset: Offset(0, _slideAnimation.value),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Spacer(),
-                    const PulseAnimation(
-                      minScale: 0.98,
-                      maxScale: 1.02,
-                      child: Text(
-                        'FinPay',
-                        style: TextStyle(
-                          color: AppTheme.credWhite,
-                          fontSize: 56,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const FadeInAnimation(
-                      delay: Duration(milliseconds: 500),
-                      child: Text(
-                        'Your money. Your move',
-                        style: TextStyle(
-                          color: AppTheme.credTextSecondary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    FadeInAnimation(
-                      delay: const Duration(milliseconds: 800),
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 600),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Transform.scale(
-                              scale: value,
-                              child: Opacity(opacity: value, child: child),
-                            );
-                          },
-                          child: ElevatedButton(
-                            onPressed: () {
-                              unawaited(context.push('/onboarding'));
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.credOrangeSunshine,
-                              foregroundColor: AppTheme.credWhite,
-                              minimumSize: const Size(double.infinity, 60),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 8,
-                            ),
-                            child: const Text(
-                              'Get Started',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
+    final fp = context.fp;
+    final c = fp.colors;
+    return Semantics(
+      label: 'FinPay logo',
+      image: true,
+      child: ExcludeSemantics(
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: FpSurface(
+            color: c.accent,
+            edge: FpEdge.accent,
+            width: 72,
+            height: 72,
+            padding: EdgeInsets.zero,
+            child: Center(
+              child: Text(
+                '₹',
+                style: fp.text.headline.copyWith(fontSize: 32, color: c.onPop),
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );

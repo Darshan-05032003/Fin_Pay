@@ -29,7 +29,6 @@ dependencies:
   sensors_plus: ^7.1.1
   shared_preferences: ^2.3.2
   shimmer: ^4.0.0
-  smooth_page_indicator: ^3.0.0
   sqflite: ^2.3.3+2
   url_launcher: ^6.2.5
   vibration: ^3.1.5

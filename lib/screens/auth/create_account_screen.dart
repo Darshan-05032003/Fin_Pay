@@ -1,451 +1,205 @@
 import 'dart:async';
 
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
 import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
-import 'package:fin_pay/widgets/animations/ripple_effect.dart';
-import 'package:fin_pay/widgets/animations/spring_animation.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/auth/create_account/create_account_cubit.dart';
+import 'package:fin_pay/screens/auth/widgets/auth_scaffold.dart';
+import 'package:fin_pay/screens/auth/widgets/inline_message.dart';
+import 'package:fin_pay/screens/auth/widgets/password_strength_meter.dart';
+import 'package:fin_pay/screens/auth/widgets/secure_screen.dart';
+import 'package:fin_pay/utils/validators.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class CreateAccountScreen extends StatefulWidget {
+/// Sign-up form. The [CreateAccountCubit] is provided by the auth shell
+/// route and shared with the verification step, so the password never
+/// travels through route arguments.
+class CreateAccountScreen extends StatelessWidget {
   const CreateAccountScreen({super.key});
 
   @override
-  State<CreateAccountScreen> createState() => _CreateAccountScreenState();
+  Widget build(BuildContext context) =>
+      const SecureScreen(child: _CreateAccountView());
 }
 
-class _CreateAccountScreenState extends State<CreateAccountScreen> {
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+class _CreateAccountView extends StatefulWidget {
+  const _CreateAccountView();
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      appBar: AppBar(
-        backgroundColor: AppTheme.credPureBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: AppTheme.credTextPrimary),
-          onPressed: () async {
-            await sl<HapticService>().light();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const CredSlideIn(
-                delay: Duration(milliseconds: 100),
-                child: Text(
-                  'Create An Account',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.credTextPrimary,
-                    letterSpacing: -1,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const CredSlideIn(
-                delay: Duration(milliseconds: 200),
-                offset: Offset(0, 20),
-                child: Text(
-                  'Create an account to securely manage your money and '
-                  'access essential banking features.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.credTextSecondary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 300),
-                child: CredCardReveal(
-                  perspective: 0.0008,
-                  child: Focus(
-                    child: Builder(
-                      builder: (context) {
-                        final hasFocus = Focus.of(context).hasFocus;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            color: AppTheme.credSurfaceCard,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: hasFocus
-                                  ? AppTheme.credOrangeSunshine
-                                  : AppTheme.credMediumGray.withValues(
-                                      alpha: 0.2,
-                                    ),
-                              width: hasFocus ? 2 : 1,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _nameController,
-                            style: const TextStyle(
-                              color: AppTheme.credTextPrimary,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Full Name',
-                              hintText: 'Full name',
-                              prefixIcon: Icon(
-                                Icons.person_outline,
-                                color: AppTheme.credTextSecondary,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.all(20),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 400),
-                child: CredCardReveal(
-                  duration: const Duration(milliseconds: 600),
-                  perspective: 0.0008,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Focus(
-                        child: Builder(
-                          builder: (context) {
-                            final hasFocus = Focus.of(context).hasFocus;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOutCubic,
-                              decoration: BoxDecoration(
-                                color: AppTheme.credSurfaceCard,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: hasFocus
-                                      ? AppTheme.credOrangeSunshine
-                                      : AppTheme.credMediumGray.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                  width: hasFocus ? 2 : 1,
-                                ),
-                              ),
-                              child: TextField(
-                                controller: _emailController,
-                                style: const TextStyle(
-                                  color: AppTheme.credTextPrimary,
-                                ),
-                                decoration: const InputDecoration(
-                                  labelText: 'Email or phone',
-                                  hintText: 'user@finpay.com',
-                                  prefixIcon: Icon(
-                                    Icons.email_outlined,
-                                    color: AppTheme.credTextSecondary,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.all(20),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      CredSlideIn(
-                        delay: const Duration(milliseconds: 450),
-                        offset: const Offset(0, 10),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.credOrangeSunshine.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppTheme.credOrangeSunshine.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: AppTheme.credOrangeSunshine,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Only the demo account can sign up: '
-                                  'user@finpay.com (password in the README)',
-                                  style: TextStyle(
-                                    color: AppTheme.credTextSecondary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 500),
-                child: CredCardReveal(
-                  duration: const Duration(milliseconds: 700),
-                  perspective: 0.0008,
-                  child: Focus(
-                    child: Builder(
-                      builder: (context) {
-                        final hasFocus = Focus.of(context).hasFocus;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            color: AppTheme.credSurfaceCard,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: hasFocus
-                                  ? AppTheme.credOrangeSunshine
-                                  : AppTheme.credMediumGray.withValues(
-                                      alpha: 0.2,
-                                    ),
-                              width: hasFocus ? 2 : 1,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            style: const TextStyle(
-                              color: AppTheme.credTextPrimary,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              hintText: 'Enter password',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: AppTheme.credTextSecondary,
-                              ),
-                              suffixIcon: CredButtonPress(
-                                onTap: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                  unawaited(sl<HapticService>().selection());
-                                },
-                                child: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                    color: AppTheme.credTextSecondary,
-                                  ),
-                                  onPressed: null,
-                                ),
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(20),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const FadeInAnimation(
-                delay: Duration(milliseconds: 600),
-                child: Text(
-                  "By starting my application, I agree to FinPay's Terms "
-                  'of service and Privacy Policy.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.credTextTertiary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 600),
-                child: CredButtonPress(
-                  onTap: () async {
-                    if (_nameController.text.trim().isEmpty ||
-                        _emailController.text.trim().isEmpty ||
-                        _passwordController.text.trim().isEmpty) {
-                      await sl<HapticService>().error();
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please fill all fields'),
-                          backgroundColor: AppTheme.credError,
-                        ),
-                      );
-                      return;
-                    }
+  State<_CreateAccountView> createState() => _CreateAccountViewState();
+}
 
-                    await sl<HapticService>().medium();
-                    // Save user data temporarily to pass to verification
-                    final userData = {
-                      'fullName': _nameController.text.trim(),
-                      'email': _emailController.text.trim(),
-                      'password': _passwordController.text.trim(),
-                    };
+class _CreateAccountViewState extends State<_CreateAccountView>
+    with WidgetsBindingObserver {
+  final FpShakeController _shake = FpShakeController();
 
-                    if (!context.mounted) return;
-                    unawaited(context.push('/verification', extra: userData));
-                  },
-                  child: SpringAnimation(
-                    startOffset: const Offset(0, 20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.credOrangeGradient,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withValues(
-                              alpha: 0.4,
-                            ),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: const Center(
-                        child: Text(
-                          'Create Account',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: AppTheme.credWhite,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(
-                      color: AppTheme.credMediumGray.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'Or continue with',
-                      style: TextStyle(color: AppTheme.credTextTertiary),
-                    ),
-                  ),
-                  Expanded(
-                    child: Divider(
-                      color: AppTheme.credMediumGray.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildSocialIcon(Icons.g_mobiledata, Colors.red),
-                  const SizedBox(width: 24),
-                  _buildSocialIcon(Icons.facebook, Colors.blue),
-                  const SizedBox(width: 24),
-                  _buildSocialIcon(Icons.send, Colors.lightBlue),
-                ],
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Already have an account? ',
-                    style: TextStyle(color: AppTheme.credTextSecondary),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      await sl<HapticService>().light();
-                      if (!context.mounted) return;
-                      context.go('/login');
-                    },
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(color: AppTheme.credOrangeSunshine),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  Widget _buildSocialIcon(IconData icon, Color color) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutBack,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: RippleEffect(
-            borderRadius: 28,
-            onTap: sl<HapticService>().selection,
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppTheme.credSurfaceCard,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppTheme.credMediumGray.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-          ),
-        );
-      },
-    );
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      context.read<CreateAccountCubit>().hidePassword();
+    }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _shake.dispose();
     super.dispose();
+  }
+
+  void _continue(BuildContext context) {
+    final cubit = context.read<CreateAccountCubit>()..submit();
+    if (cubit.state.status == CreateAccountStatus.pendingVerification) {
+      playHaptic(null, HapticType.medium);
+      unawaited(context.push(AppRoutes.verification));
+    } else {
+      _shake.shake();
+      playHaptic(null, HapticType.error);
+    }
+  }
+
+  void _back(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.login);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final cubit = context.read<CreateAccountCubit>();
+    return BlocBuilder<CreateAccountCubit, CreateAccountState>(
+      builder: (context, state) => AuthScaffold(
+        title: 'Create your account',
+        subtitle: 'A minute now, a lifetime of tap-to-pay.',
+        onBack: () => _back(context),
+        scrollKey: const ValueKey('create-account-scroll'),
+        children: [
+          FpShake(
+            controller: _shake,
+            child: AutofillGroup(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FpTextField(
+                    key: const ValueKey('create-name'),
+                    label: 'Full name',
+                    hint: 'As on your bank account',
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.name],
+                    maxLength: Validators.maxNameLength + 10,
+                    errorText: state.nameError,
+                    enabled: !state.isBusy,
+                    onChanged: cubit.nameChanged,
+                  ),
+                  const SizedBox(height: FpSpacing.lg),
+                  FpTextField(
+                    key: const ValueKey('create-email'),
+                    label: 'Email',
+                    hint: 'you@example.com',
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
+                    maxLength: Validators.maxEmailLength,
+                    errorText: state.emailError,
+                    enabled: !state.isBusy,
+                    onChanged: cubit.emailChanged,
+                  ),
+                  const SizedBox(height: FpSpacing.lg),
+                  FpTextField(
+                    key: const ValueKey('create-phone'),
+                    label: 'Mobile number',
+                    hint: '10-digit number',
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.telephoneNumber],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp('[0-9 +()-]')),
+                      LengthLimitingTextInputFormatter(18),
+                    ],
+                    prefix: const Icon(Icons.phone_outlined),
+                    helperText: 'Your verification code is sent here.',
+                    errorText: state.phoneError,
+                    enabled: !state.isBusy,
+                    onChanged: cubit.phoneChanged,
+                  ),
+                  const SizedBox(height: FpSpacing.lg),
+                  FpTextField(
+                    key: const ValueKey('create-password'),
+                    label: 'Password',
+                    hint: 'At least 8 characters',
+                    obscureText: !state.showPassword,
+                    obscureToggle: false,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.newPassword],
+                    maxLength: Validators.maxPasswordLength + 10,
+                    errorText: state.passwordError,
+                    enabled: !state.isBusy,
+                    suffix: IconButton(
+                      key: const ValueKey('create-password-toggle'),
+                      tooltip: state.showPassword
+                          ? 'Hide password'
+                          : 'Show password',
+                      constraints: const BoxConstraints(
+                        minWidth: FpSpacing.minTapTarget,
+                        minHeight: FpSpacing.minTapTarget,
+                      ),
+                      onPressed: cubit.togglePasswordVisibility,
+                      icon: Icon(
+                        state.showPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility_outlined,
+                      ),
+                    ),
+                    onChanged: cubit.passwordChanged,
+                    onSubmitted: (_) => _continue(context),
+                  ),
+                  const SizedBox(height: FpSpacing.sm),
+                  PasswordStrengthMeter(strength: state.strength),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: FpSpacing.xl),
+          Text(
+            'By continuing you agree to the FinPay terms of service and '
+            'privacy policy.',
+            style: fp.text.caption.copyWith(color: c.textTertiary),
+          ),
+          const SizedBox(height: FpSpacing.lg),
+          InlineMessage(
+            message: state.status == CreateAccountStatus.failed
+                ? state.errorMessage
+                : null,
+          ),
+          FpButton(
+            key: const ValueKey('create-submit'),
+            label: 'Continue',
+            size: FpButtonSize.large,
+            isLoading: state.isBusy,
+            onPressed: () => _continue(context),
+          ),
+          const SizedBox(height: FpSpacing.md),
+          FpButton(
+            label: 'I already have an account',
+            variant: FpButtonVariant.ghost,
+            onPressed: () => _back(context),
+          ),
+        ],
+      ),
+    );
   }
 }

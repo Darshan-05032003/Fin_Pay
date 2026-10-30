@@ -1,455 +1,190 @@
-import 'dart:async';
-
+import 'package:clock/clock.dart';
 import 'package:fin_pay/blocs/session/session_cubit.dart';
-import 'package:fin_pay/blocs/session/session_state.dart';
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
 import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
-import 'package:fin_pay/widgets/animations/spring_animation.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/auth/login/login_cubit.dart';
+import 'package:fin_pay/screens/auth/widgets/auth_scaffold.dart';
+import 'package:fin_pay/screens/auth/widgets/inline_message.dart';
+import 'package:fin_pay/screens/auth/widgets/secure_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
-class LoginScreen extends StatefulWidget {
+/// Email + password sign-in. Validation is inline after the first submit,
+/// typed failures (wrong credentials, lockout with a live countdown,
+/// storage errors) show under the form with a shake and an error haptic,
+/// and the button morphs into a spinner while the hash is checked. The
+/// screen is screenshot-protected and re-hides the password when the app
+/// goes to the background.
+class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
+  static Clock _clock() =>
+      GetIt.I.isRegistered<Clock>() ? GetIt.I<Clock>() : const Clock();
+
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  Widget build(BuildContext context) {
+    return SecureScreen(
+      child: BlocProvider(
+        create: (context) =>
+            LoginCubit(session: context.read<SessionCubit>(), clock: _clock()),
+        child: const _LoginView(),
+      ),
+    );
+  }
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  late AnimationController _controller;
+class _LoginView extends StatefulWidget {
+  const _LoginView();
+
+  @override
+  State<_LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<_LoginView> with WidgetsBindingObserver {
+  final FpShakeController _shake = FpShakeController();
+  final FocusNode _passwordFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _controller.forward();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.inactive) {
+      context.read<LoginCubit>().hidePassword();
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _passwordFocus.dispose();
+    _shake.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      appBar: AppBar(
-        backgroundColor: AppTheme.credPureBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.credTextPrimary),
-          onPressed: () async {
-            await sl<HapticService>().light();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const CredSlideIn(
-                delay: Duration(milliseconds: 100),
-                child: Text(
-                  'Welcome Back',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.credTextPrimary,
-                    letterSpacing: -1,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const CredSlideIn(
-                delay: Duration(milliseconds: 200),
-                offset: Offset(0, 20),
-                child: Text(
-                  'Log in to securely access your account and manage your '
-                  'money anytime.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.credTextSecondary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 300),
-                child: CredCardReveal(
-                  perspective: 0.0008,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Focus(
-                        child: Builder(
-                          builder: (context) {
-                            final hasFocus = Focus.of(context).hasFocus;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOutCubic,
-                              decoration: BoxDecoration(
-                                color: AppTheme.credSurfaceCard,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: hasFocus
-                                      ? AppTheme.credOrangeSunshine
-                                      : AppTheme.credMediumGray.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                  width: hasFocus ? 2 : 1,
-                                ),
-                              ),
-                              child: TextField(
-                                controller: _emailController,
-                                style: const TextStyle(
-                                  color: AppTheme.credTextPrimary,
-                                ),
-                                decoration: const InputDecoration(
-                                  labelText: 'Email or phone',
-                                  hintText: 'user@finpay.com',
-                                  prefixIcon: Icon(
-                                    Icons.email_outlined,
-                                    color: AppTheme.credTextSecondary,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.all(20),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      CredSlideIn(
-                        delay: const Duration(milliseconds: 350),
-                        offset: const Offset(0, 10),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.credOrangeSunshine.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppTheme.credOrangeSunshine.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: AppTheme.credOrangeSunshine,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Demo account: user@finpay.com '
-                                  '(password in the README)',
-                                  style: TextStyle(
-                                    color: AppTheme.credTextSecondary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 400),
-                child: CredCardReveal(
-                  duration: const Duration(milliseconds: 600),
-                  perspective: 0.0008,
-                  child: Focus(
-                    child: Builder(
-                      builder: (context) {
-                        final hasFocus = Focus.of(context).hasFocus;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            color: AppTheme.credSurfaceCard,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: hasFocus
-                                  ? AppTheme.credOrangeSunshine
-                                  : AppTheme.credMediumGray.withValues(
-                                      alpha: 0.2,
-                                    ),
-                              width: hasFocus ? 2 : 1,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            style: const TextStyle(
-                              color: AppTheme.credTextPrimary,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              hintText: 'Enter password',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline,
-                                color: AppTheme.credTextSecondary,
-                              ),
-                              suffixIcon: CredButtonPress(
-                                onTap: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                  unawaited(sl<HapticService>().selection());
-                                },
-                                child: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                    color: AppTheme.credTextSecondary,
-                                  ),
-                                  onPressed: null,
-                                ),
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(20),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              FadeInAnimation(
-                delay: const Duration(milliseconds: 500),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Biometric Login',
-                      style: TextStyle(color: AppTheme.credTextSecondary),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () async {
-                        await sl<HapticService>().light();
-                        if (!context.mounted) return;
-                        unawaited(context.push('/forgot-password'));
-                      },
-                      child: const Text(
-                        'Forgot Password',
-                        style: TextStyle(color: AppTheme.credOrangeSunshine),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 600),
-                child: CredButtonPress(
-                  onTap: () async {
-                    if (_emailController.text.trim().isEmpty ||
-                        _passwordController.text.trim().isEmpty) {
-                      await sl<HapticService>().error();
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please fill all fields'),
-                          backgroundColor: AppTheme.credError,
-                        ),
-                      );
-                      return;
-                    }
-
-                    await sl<HapticService>().medium();
-
-                    // Only accept default credentials
-                    final email = _emailController.text.trim();
-                    final password = _passwordController.text.trim();
-
-                    final session = sl<SessionCubit>();
-                    await session.signIn(email, password);
-
-                    if (!session.isAuthenticated) {
-                      await sl<HapticService>().error();
-                      if (!context.mounted) return;
-                      final state = session.state;
-                      final message = state is SessionUnauthenticated
-                          ? state.failure?.message ??
-                                'Invalid email or password.'
-                          : 'Invalid email or password.';
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(message),
-                          backgroundColor: AppTheme.credError,
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                      return;
-                    }
-
-                    await sl<HapticService>().success();
-                    if (!context.mounted) return;
-                    context.go('/home');
-                  },
-                  child: SpringAnimation(
-                    startOffset: const Offset(0, 20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.credOrangeGradient,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withValues(
-                              alpha: 0.4,
-                            ),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: const Center(
-                        child: Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: AppTheme.credWhite,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              FadeInAnimation(
-                delay: const Duration(milliseconds: 700),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: AppTheme.credMediumGray.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Or continue with',
-                        style: TextStyle(color: AppTheme.credTextTertiary),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: AppTheme.credMediumGray.withValues(alpha: 0.3),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              FadeInAnimation(
-                delay: const Duration(milliseconds: 800),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildSocialIcon(Icons.g_mobiledata, AppTheme.credError),
-                    const SizedBox(width: 24),
-                    _buildSocialIcon(Icons.facebook, AppTheme.credBlue),
-                    const SizedBox(width: 24),
-                    _buildSocialIcon(Icons.send, AppTheme.credOrangeSunshine),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              FadeInAnimation(
-                delay: const Duration(milliseconds: 900),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: AppTheme.credTextSecondary),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        await sl<HapticService>().light();
-                        if (!context.mounted) return;
-                        unawaited(context.push('/create-account'));
-                      },
-                      child: const Text(
-                        'Create Account',
-                        style: TextStyle(color: AppTheme.credOrangeSunshine),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    final fp = context.fp;
+    final c = fp.colors;
+    final cubit = context.read<LoginCubit>();
+    return BlocListener<LoginCubit, LoginState>(
+      listenWhen: (p, n) => p.failures != n.failures || p.status != n.status,
+      listener: (context, state) {
+        if (state.status == LoginStatus.failure) {
+          _shake.shake();
+          playHaptic(null, HapticType.error);
+        } else if (state.status == LoginStatus.success) {
+          playHaptic(null, HapticType.success);
+        }
+      },
+      child: BlocBuilder<LoginCubit, LoginState>(
+        builder: (context, state) => AuthScaffold(
+          title: 'Welcome back',
+          subtitle: 'Sign in to pick up where you left off.',
+          onBack: () => context.go(AppRoutes.welcome),
+          scrollKey: const ValueKey('login-scroll'),
+          footer: FpButton(
+            label: 'Create an account',
+            variant: FpButtonVariant.secondary,
+            onPressed: () => context.push(AppRoutes.createAccount),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialIcon(IconData icon, Color color) {
-    return CredSlideIn(
-      delay: const Duration(milliseconds: 850),
-      offset: const Offset(0, 20),
-      child: CredButtonPress(
-        onTap: sl<HapticService>().selection,
-        child: SpringAnimation(
-          startOffset: const Offset(0, 10),
-          child: PulseAnimation(
-            minScale: 0.98,
-            maxScale: 1.02,
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppTheme.credSurfaceCard,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppTheme.credMediumGray.withValues(alpha: 0.3),
+          children: [
+            FpShake(
+              controller: _shake,
+              child: AutofillGroup(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FpTextField(
+                      key: const ValueKey('login-email'),
+                      label: 'Email',
+                      hint: 'you@example.com',
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.email],
+                      errorText: state.emailError,
+                      enabled: !state.isLocked,
+                      prefix: const Icon(Icons.alternate_email),
+                      onChanged: cubit.emailChanged,
+                      onSubmitted: (_) => _passwordFocus.requestFocus(),
+                    ),
+                    const SizedBox(height: FpSpacing.lg),
+                    FpTextField(
+                      key: const ValueKey('login-password'),
+                      label: 'Password',
+                      hint: 'Your password',
+                      focusNode: _passwordFocus,
+                      obscureText: !state.showPassword,
+                      obscureToggle: false,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: const [AutofillHints.password],
+                      errorText: state.passwordError,
+                      enabled: !state.isLocked,
+                      prefix: const Icon(Icons.lock_outline),
+                      suffix: IconButton(
+                        key: const ValueKey('login-password-toggle'),
+                        tooltip: state.showPassword
+                            ? 'Hide password'
+                            : 'Show password',
+                        constraints: const BoxConstraints(
+                          minWidth: FpSpacing.minTapTarget,
+                          minHeight: FpSpacing.minTapTarget,
+                        ),
+                        onPressed: cubit.togglePasswordVisibility,
+                        icon: Icon(
+                          state.showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility_outlined,
+                        ),
+                      ),
+                      onChanged: cubit.passwordChanged,
+                      onSubmitted: (_) => cubit.submit(),
+                    ),
+                  ],
                 ),
               ),
-              child: Icon(icon, color: color, size: 28),
             ),
-          ),
+            const SizedBox(height: FpSpacing.sm),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FpButton(
+                label: 'Forgot password?',
+                variant: FpButtonVariant.ghost,
+                size: FpButtonSize.small,
+                expand: false,
+                onPressed: () => context.push(AppRoutes.passwordReset),
+              ),
+            ),
+            const SizedBox(height: FpSpacing.lg),
+            InlineMessage(
+              key: const ValueKey('login-message'),
+              message: state.status == LoginStatus.failure
+                  ? state.message
+                  : null,
+            ),
+            FpButton(
+              key: const ValueKey('login-submit'),
+              label: state.isLocked ? 'Locked' : 'Sign in',
+              size: FpButtonSize.large,
+              isLoading: state.status == LoginStatus.submitting,
+              enabled: state.canSubmit,
+              onPressed: cubit.submit,
+            ),
+            const SizedBox(height: FpSpacing.lg),
+            Text(
+              'Demo build: the sign-in details are in the README.',
+              style: fp.text.caption.copyWith(color: c.textTertiary),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
