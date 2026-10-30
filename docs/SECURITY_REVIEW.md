@@ -193,3 +193,35 @@ One entry per feature, appended after the feature's quality loop (spec §7a).
     (F2 note) and is not applied to the auth screens.
   - The forgot-password "sent" state is simulated; a real sender must keep
     the same constant-time, non-enumerating response.
+
+## Feature: F4 Home + Cards
+- Attacks tried:
+  - PAN/CVV in logs: a static scan of `lib/screens/home`, `lib/screens/cards`, `lib/screens/shell` and the new design-system files for `print`/`debugPrint`/`Logger` (none); `Logger.redact` asserted on `cvv: 987` and JSON form (`cvv_reveal_cubit_test.dart`); every `AddCardCubit` and `CvvRevealCubit` state searched for the typed CVV in `toString()` and `props` (`add_card_cubit_test.dart`, `cvv_reveal_cubit_test.dart`); `CardContent.toString()` searched for the PAN and CVV with `maskSensitive` (`card_bloc_test.dart`).
+  - Clipboard: `SystemChannels.platform` mocked; "Copy last 4" captured → `1111` only; no other clipboard call exists (`card_details_screen_test.dart`).
+  - Screenshots: `FakeScreenProtector` asserted enabled on home, cards, add card and details, and disabled on statistics/profile; counted across tab switches and pushes (`app_shell_test.dart`, screen tests).
+  - CVV lifetime: reveal → 5 s countdown → masked; `hide()`; close; a reveal that completes after `hide()` is discarded; 100 concurrent reveals read storage once; clock jumps forward/backward (`cvv_reveal_cubit_test.dart`, `my_cards_screen_test.dart`).
+  - Backgrounding: `inactive` → the CVV is masked and the card turned over on the stack and in details; the add-card preview flips to its front; checked again after `paused` → `resumed` (`my_cards_screen_test.dart`, `add_card_screen_test.dart`).
+  - Hostile input in add card: `\u202E` × 5,000, 😀 × 5,000, Devanagari / Arabic-Indic / fullwidth digits, NUL, `<script>`, `%s%n`, `' OR 1=1 --`, a 100,000-character paste, a 10,000-digit paste (`card_validators_test.dart` 24 groups / 90+ cases, `add_card_cubit_test.dart`, `add_card_screen_test.dart`).
+  - Double submit: 50 taps on "Add card" with a gated repository (widget), 1,000 `submit()` calls (unit) and 1,000 taps (stress) → one `addCard`; 100 concurrent `remove()` → one `deleteCard`; a finished form cannot submit again.
+  - Duplicate card: same last 4 + expiry refused before any write.
+  - Sensor: `FakeMotionSensor(available: false)` → drag fallback, no subscription; reduce motion → no subscription; a 50 g sample is clamped; listeners counted at 0 after leaving the tab and after dispose (`my_cards_screen_test.dart`, stress).
+  - Route bypass: `/cards/add`, `/cards/c1`, `/cards/a%20b` while signed out, authenticating and with an unknown session (pure matrix + live router); `/cards/nope` with a session shows "Card not found" and never touches storage (`app_redirect_test.dart`, `app_shell_test.dart`, `card_details_screen_test.dart`).
+  - Rapid taps on hide-balance: 1,000 → final state consistent, exactly 1,000 writes (stress).
+  - Secrets scan: `demo_credentials_test.dart` greps `lib/` (it caught a `maskSecrets` identifier in the first draft; renamed).
+  - Semantics guidelines (`androidTapTargetGuideline`, `labeledTapTargetGuideline`, `textContrastGuideline`) on home (expanded and collapsed), cards (pile, fanned, flipped), add card (with errors, back shown) and details at 1.3×.
+- What broke:
+  - **Medium** (carried from F1, listed there as scope) – the app-wide `CardBloc` kept every card's PAN and CVV in memory for the app's lifetime and `CardContent.toString()` printed them. Fixed: `CardBloc(maskSensitive: true)` strips both on load and in the `CardAdded` effect; the CVV is read on demand through `ICardRepository.readCvv` (D-041). Regression: `card_bloc_test.dart` "maskSensitive".
+  - **Medium** (UI audit 2.9) – the legacy card back printed the CVV in plain text, permanently. Fixed: masked by default, 5 s timed reveal from the keystore, re-masked on backgrounding (D-042). Regression: `cvv_reveal_cubit_test.dart`, `my_cards_screen_test.dart`.
+  - **Medium** (UI audit 2.10) – the legacy add-card form had no formatting, no Luhn/expiry/CVV checks, no `autofillHints` and the keyboard could learn the number. Fixed: formatters, validators, `enableSuggestions: false` / `autocorrect: false` on number and CVV, no autofill on the CVV, obscured CVV field, controllers cleared on dispose. Regression: `card_validators_test.dart`, `add_card_screen_test.dart` "content".
+  - **Low** – the first `FpRefreshIndicator` draft rethrew an `onRefresh` failure as an uncaught async error (a failed reload could take the screen down). Fixed: reported through `FlutterError.reportError`, glyph retracts. Regression: `fp_refresh_indicator_test.dart` "a throwing refresh".
+  - **Low** – the first draft kept a perspective matrix on flip/tilt cards at rest, which shifted the semantics rects and made the contrast guideline sample the wrong pixels (a screen reader would also get a skewed bounds box). Fixed: identity at rest (D-046).
+  - **Low** – the first `AddCardCubit` draft treated a *closed* `CardBloc` as a hang (`effects.first` threw `StateError` instead of timing out). Fixed: a closed or silent bloc is a failure the user can retry. Regression: "a bloc that never answers".
+  - Nothing Critical: the keystore path from F1 holds (PAN/CVV written once, read for the reveal, deleted with the card), the session guard covers the new routes, and no secret reaches a state, a log or the clipboard.
+- Fixed now: all of the above, each with the regression test named. Added: `filterTouchesWhenObscured` on the window's decor view in `MainActivity.onResume` (tapjacking on reveal-CVV / remove-card / the F5 pay button); not compiled on this machine (no Gradle), to be confirmed by the first device build.
+- Scope for improvement:
+  - The ledger has no card column, so card details lists all `payment` rows (D-047); a real card filter needs a schema change.
+  - Freeze is session-local (D-047).
+  - `TransactionBloc` loads the full ledger for home; F6 should page so a 100k-row ledger does not sit in memory behind five rows.
+  - The recents thumbnail is blank on home/cards (FLAG_SECURE) but statistics/profile are unprotected until Agent F decides; the hide-balance setting is respected wherever these screens render amounts, so a protected-less tab showing the balance would need the same mask.
+  - Dart strings cannot be zeroed (D-041); if the owner wants a stronger guarantee the CVV should stay native (platform channel returning a short-lived token) and never cross into Dart.
+  - `CvvRevealCubit` reads from secure storage on every reveal; on a device the keystore round trip is tens of milliseconds, acceptable, but it should not be made cheaper by caching.

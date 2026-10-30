@@ -15,8 +15,19 @@ import io.flutter.plugin.common.MethodChannel
  *  - `enable`: adds `FLAG_SECURE`, so screenshots and screen recording are
  *    blocked and the recents thumbnail is blank.
  *  - `disable`: clears the flag.
+ *
+ * Tapjacking: the window's decor view discards touches that arrive while
+ * another window overlaps it (`filterTouchesWhenObscured`), so an overlay
+ * cannot relay taps onto pay / reveal-CVV / remove-card controls. The flag
+ * is a `View` property (there is no manifest attribute for an activity),
+ * hence it is set here, once the decor view exists.
  */
 class MainActivity : FlutterFragmentActivity() {
+    override fun onResume() {
+        super.onResume()
+        window.decorView.filterTouchesWhenObscured = true
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
