@@ -13,6 +13,7 @@ import 'package:fin_pay/screens/auth/forgot_password_screen.dart';
 import 'package:fin_pay/screens/auth/login_screen.dart';
 import 'package:fin_pay/screens/auth/verification_screen.dart';
 import 'package:fin_pay/screens/cards/add_card_screen.dart';
+import 'package:fin_pay/screens/cards/card_details_screen.dart';
 import 'package:fin_pay/screens/cards/my_cards_screen.dart';
 import 'package:fin_pay/screens/home/home_screen.dart';
 import 'package:fin_pay/screens/notifications/notifications_screen.dart';
@@ -131,9 +132,7 @@ abstract final class AppRouter {
           parentNavigatorKey: rootKey,
           pageBuilder: (context, state) => AppPageTransitions.page(
             state: state,
-            child: _CardDetailsPlaceholder(
-              cardId: state.pathParameters['id'] ?? '',
-            ),
+            child: CardDetailsScreen(cardId: state.pathParameters['id'] ?? ''),
           ),
         ),
         _route(AppRoutes.transactions, (_) => const TransactionsScreen()),
@@ -196,16 +195,6 @@ class _MissingDraftScreen extends StatelessWidget {
   Widget build(BuildContext context) => const Scaffold(
     body: Center(child: Text('Start a transfer from the home screen.')),
   );
-}
-
-class _CardDetailsPlaceholder extends StatelessWidget {
-  const _CardDetailsPlaceholder({required this.cardId});
-
-  final String cardId;
-
-  @override
-  Widget build(BuildContext context) =>
-      Scaffold(body: Center(child: Text('Card $cardId')));
 }
 
 class _GalleryPlaceholder extends StatelessWidget {

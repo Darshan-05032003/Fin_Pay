@@ -1,434 +1,357 @@
 import 'dart:async';
 
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
-import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/models/payment_card.dart' as models;
-import 'package:fin_pay/screens/cards/add_card_screen.dart';
-import 'package:fin_pay/services/user_service.dart';
-import 'package:fin_pay/widgets/animations/card_3d_flip.dart';
-import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
-import 'package:fin_pay/widgets/animations/ripple_effect.dart';
-import 'package:fin_pay/widgets/animations/staggered_list_animation.dart';
-import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
+import 'package:clock/clock.dart';
+import 'package:fin_pay/blocs/card/card_bloc.dart';
+import 'package:fin_pay/blocs/card/card_event.dart';
+import 'package:fin_pay/blocs/card/card_state.dart';
+import 'package:fin_pay/core/platform/motion_sensor.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/domain/repositories/card_repository.dart';
+import 'package:fin_pay/models/payment_card.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/cards/add_card/card_validators.dart';
+import 'package:fin_pay/screens/cards/stack/card_stack_cubit.dart';
+import 'package:fin_pay/screens/cards/stack/card_stack_view.dart';
+import 'package:fin_pay/screens/cards/stack/cvv_reveal_cubit.dart';
+import 'package:fin_pay/screens/cards/widgets/payment_card_art.dart';
+import 'package:fin_pay/screens/shell/app_shell.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
-class MyCardsScreen extends StatefulWidget {
-  const MyCardsScreen({super.key});
+/// The Cards tab: the CRED-style stack over [CardBloc], with loading,
+/// empty and error states, and the way into add card and card details.
+class MyCardsScreen extends StatelessWidget {
+  const MyCardsScreen({super.key, this.motionSensor, this.cardRepository});
+
+  /// Injected for tests; default to the GetIt registrations.
+  final MotionSensor? motionSensor;
+  final ICardRepository? cardRepository;
+
+  /// Branch index of this tab in the shell.
+  static const int tabIndex = 2;
 
   @override
-  State<MyCardsScreen> createState() => _MyCardsScreenState();
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => CardStackCubit()),
+        BlocProvider(
+          create: (_) => CvvRevealCubit(
+            repository: cardRepository ?? GetIt.I<ICardRepository>(),
+            clock: GetIt.I.isRegistered<Clock>() ? GetIt.I<Clock>() : null,
+          ),
+        ),
+      ],
+      child: _MyCardsView(
+        sensor:
+            motionSensor ??
+            (GetIt.I.isRegistered<MotionSensor>()
+                ? GetIt.I<MotionSensor>()
+                : null),
+      ),
+    );
+  }
 }
 
-class _MyCardsScreenState extends State<MyCardsScreen> {
-  List<models.PaymentCard> _cards = [];
-  bool _isLoading = true;
+class _MyCardsView extends StatefulWidget {
+  const _MyCardsView({required this.sensor});
+
+  final MotionSensor? sensor;
+
+  @override
+  State<_MyCardsView> createState() => _MyCardsViewState();
+}
+
+class _MyCardsViewState extends State<_MyCardsView>
+    with WidgetsBindingObserver {
+  final FpTiltController _tilt = FpTiltController();
+  StreamSubscription<Tilt>? _sensor;
+  bool _sensorAvailable = false;
+  bool _probed = false;
+  int _lastCount = 0;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadCards());
+    WidgetsBinding.instance.addObserver(this);
+    final cards = context.read<CardBloc>();
+    if (cards.state is CardInitial) cards.add(const LoadCardsEvent());
   }
 
-  Future<void> _loadCards() async {
-    final cards = await UserService.getCards();
-    setState(() {
-      _cards = cards;
-      _isLoading = false;
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final visible = AppShell.isVisibleTab(context, MyCardsScreen.tabIndex);
+    final reduce = FpMotion.of(context).reduce;
+    if (visible && !reduce) {
+      unawaited(_listenToSensor());
+    } else {
+      _stopSensor();
+    }
+  }
+
+  Future<void> _listenToSensor() async {
+    final sensor = widget.sensor;
+    if (sensor == null || _sensor != null) return;
+    if (!_probed) {
+      _probed = true;
+      final available = await sensor.isAvailable;
+      if (!mounted) return;
+      setState(() => _sensorAvailable = available);
+    }
+    if (!_sensorAvailable || _sensor != null) return;
+    _sensor = sensor.tilt.listen(
+      (t) => _tilt.push(Offset(t.x, t.y)),
+      onError: (Object _) => _stopSensor(),
+    );
+  }
+
+  void _stopSensor() {
+    unawaited(_sensor?.cancel());
+    _sensor = null;
+    _tilt.set(Offset.zero);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.inactive) {
+      // Never leave a CVV or a card back in the app switcher.
+      context.read<CvvRevealCubit>().hide();
+      context.read<CardStackCubit>().unflipAll();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopSensor();
+    _tilt.dispose();
+    super.dispose();
+  }
+
+  void _openDetails(BuildContext context, PaymentCard card) {
+    context.read<CvvRevealCubit>().hide();
+    unawaited(context.push(AppRoutes.cardDetailsFor(card.id)));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      appBar: AppBar(
-        title: const Text('My Card'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_cards.isEmpty)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Text(
-                          'No cards added yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.credTextSecondary,
+    final fp = context.fp;
+    final c = fp.colors;
+    final visible = AppShell.isVisibleTab(context, MyCardsScreen.tabIndex);
+    return HeroMode(
+      enabled: visible,
+      child: Scaffold(
+        backgroundColor: c.background,
+        body: SafeArea(
+          child: BlocConsumer<CardBloc, CardState>(
+            listener: (context, state) {
+              final count = state is CardContent ? state.cards.length : 0;
+              context.read<CardStackCubit>().cardsChanged(
+                count,
+                focusNewest: count > _lastCount && _lastCount > 0,
+              );
+              _lastCount = count;
+            },
+            builder: (context, state) {
+              return CustomScrollView(
+                key: const ValueKey('cards-scroll'),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      FpSpacing.lg,
+                      FpSpacing.lg,
+                      FpSpacing.lg,
+                      FpSpacing.sm,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Semantics(
+                              header: true,
+                              child: Text(
+                                'Your cards',
+                                style: fp.text.headline,
+                              ),
+                            ),
                           ),
-                        ),
+                          FpButton(
+                            key: const ValueKey('cards-add'),
+                            label: 'Add',
+                            leadingIcon: Icons.add,
+                            size: FpButtonSize.small,
+                            variant: FpButtonVariant.secondary,
+                            expand: false,
+                            onPressed: () => context.push(AppRoutes.addCard),
+                          ),
+                        ],
                       ),
-                    )
-                  else
-                    ..._cards.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final card = entry.value;
-                      return StaggeredListAnimation(
-                        index: index,
-                        duration: const Duration(milliseconds: 400),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 24),
-                          child: Card3DFlip(
-                            perspective: 0.0006,
-                            frontChild: _buildCardDisplay(card),
-                            backChild: _buildCardBack(card),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      FpSpacing.lg,
+                      FpSpacing.md,
+                      FpSpacing.lg,
+                      FpSpacing.xxxl,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: switch (state) {
+                        CardInitial() ||
+                        CardLoading() => const _CardsSkeleton(),
+                        CardError(:final message) => FpErrorState(
+                          key: const ValueKey('cards-error'),
+                          title: 'Could not load your cards',
+                          message: message,
+                          onRetry: () => context.read<CardBloc>().add(
+                            const LoadCardsEvent(),
                           ),
                         ),
-                      );
-                    }),
-                  const SizedBox(height: 24),
-                  FadeInAnimation(
-                    delay: const Duration(milliseconds: 300),
-                    child: RippleEffect(
-                      borderRadius: 12,
-                      onTap: () async {
-                        await sl<HapticService>().medium();
-                        if (!context.mounted) return;
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                            builder: (context) => const AddCardScreen(),
-                          ),
-                        );
-                        await _loadCards();
+                        CardEmpty() => FpEmptyState(
+                          key: const ValueKey('cards-empty'),
+                          icon: Icons.credit_card_outlined,
+                          title: 'No cards yet',
+                          message: 'Add a debit or credit card to pay from it.',
+                          actionLabel: 'Add a card',
+                          onAction: () => context.push(AppRoutes.addCard),
+                        ),
+                        CardContent(:final cards) => _CardsContent(
+                          cards: cards,
+                          tilt: _tilt,
+                          sensorAvailable: _sensorAvailable,
+                          onOpenDetails: (card) => _openDetails(context, card),
+                        ),
                       },
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0, end: 1),
-                        duration: const Duration(milliseconds: 500),
-                        curve: Curves.easeOutBack,
-                        builder: (context, value, child) {
-                          return Transform.scale(
-                            scale: value,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppTheme.credOrangeSunshine.withValues(
-                                  alpha: 0.15,
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: ElevatedButton(
-                                onPressed: null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  foregroundColor: AppTheme.credOrangeSunshine,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: const Text('Add New Card'),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                     ),
                   ),
-                  if (_cards.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    _buildCardDetails(_cards.first),
-                  ],
                 ],
-              ),
-            ),
-      bottomNavigationBar: _buildBottomNavigationBar(context, 2),
-    );
-  }
-
-  Widget _buildCardDisplay(models.PaymentCard card) {
-    return RepaintBoundary(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: 1),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, _) {
-          return Transform.scale(
-            scale: 0.9 + (0.1 * value),
-            child: Opacity(
-              opacity: value,
-              child: Container(
-                height: 200,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.credOrangeGradient,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.credOrangeSunshine.withValues(
-                        alpha: 0.4 * value,
-                      ),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                      offset: Offset(0, 10 * value),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          card.cardType == models.CardType.visa
-                              ? 'VISA'
-                              : card.cardType == models.CardType.mastercard
-                              ? 'MASTERCARD'
-                              : 'AMEX',
-                          style: const TextStyle(
-                            color: AppTheme.credSurfaceCard,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          card.maskedNumber,
-                          style: const TextStyle(
-                            color: AppTheme.credSurfaceCard,
-                            fontSize: 18,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Card Holder',
-                                    style: TextStyle(
-                                      color: AppTheme.credSurfaceCard
-                                          .withValues(alpha: 0.7),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    card.cardHolderName,
-                                    style: const TextStyle(
-                                      color: AppTheme.credSurfaceCard,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Expire',
-                                    style: TextStyle(
-                                      color: AppTheme.credSurfaceCard
-                                          .withValues(alpha: 0.7),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    card.expireDate,
-                                    style: const TextStyle(
-                                      color: AppTheme.credSurfaceCard,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCardBack(models.PaymentCard card) {
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            AppTheme.credOrangeSunshine.withValues(alpha: 0.5),
-            AppTheme.credOrangeSunshine,
-          ],
+              );
+            },
+          ),
         ),
-        borderRadius: BorderRadius.circular(20),
       ),
+    );
+  }
+}
+
+class _CardsSkeleton extends StatelessWidget {
+  const _CardsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const FpSkeletonGroup(
+      key: ValueKey('cards-loading'),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 20),
-          Container(
-            height: 40,
-            width: double.infinity,
-            color: Colors.black.withValues(alpha: 0.3),
+          AspectRatio(
+            aspectRatio: PaymentCardArt.aspectRatio,
+            child: FpSkeleton(height: double.infinity),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  card.cvv,
-                  style: const TextStyle(
-                    color: AppTheme.credSurfaceCard,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+          SizedBox(height: FpSpacing.lg),
+          FpSkeletonRow(),
+        ],
+      ),
+    );
+  }
+}
+
+String _pileHint(int count) =>
+    '$count ${count == 1 ? 'card' : 'cards'} · tap the pile to fan out';
+
+class _CardsContent extends StatelessWidget {
+  const _CardsContent({
+    required this.cards,
+    required this.tilt,
+    required this.sensorAvailable,
+    required this.onOpenDetails,
+  });
+
+  final List<PaymentCard> cards;
+  final FpTiltController tilt;
+  final bool sensorAvailable;
+  final ValueChanged<PaymentCard> onOpenDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    return BlocBuilder<CardStackCubit, CardStackState>(
+      builder: (context, stack) {
+        final cubit = context.read<CardStackCubit>();
+        final focused = cards[stack.focused.clamp(0, cards.length - 1)];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    stack.fanned
+                        ? 'Swipe to browse, tap to flip'
+                        : _pileHint(cards.length),
+                    style: fp.text.bodySmall,
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    card.cardHolderName.toUpperCase(),
-                    style: const TextStyle(
-                      color: AppTheme.credSurfaceCard,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                    ),
+                if (stack.fanned)
+                  FpButton(
+                    key: const ValueKey('cards-collapse'),
+                    label: 'Stack',
+                    variant: FpButtonVariant.ghost,
+                    size: FpButtonSize.small,
+                    expand: false,
+                    onPressed: cubit.collapse,
                   ),
-                  Text(
-                    card.expireDate,
-                    style: const TextStyle(
-                      color: AppTheme.credSurfaceCard,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+              ],
+            ),
+            const SizedBox(height: FpSpacing.md),
+            CardStackView(
+              cards: cards,
+              tilt: tilt,
+              sensorAvailable: sensorAvailable,
+              onOpenDetails: onOpenDetails,
+            ),
+            const SizedBox(height: FpSpacing.xl),
+            FpEntrance(
+              key: ValueKey('focused-summary-${focused.id}'),
+              child: FpSurface(
+                key: const ValueKey('cards-focused-summary'),
+                variant: FpSurfaceVariant.raised,
+                semanticLabel:
+                    '${PaymentCardArt.describe(focused)}. Open details',
+                onTap: () => onOpenDetails(focused),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${CardNetwork.forType(focused.cardType).label}'
+                            ' · ${focused.last4}',
+                            style: fp.text.title,
+                          ),
+                          const SizedBox(height: FpSpacing.xs),
+                          Text(
+                            'Expires ${focused.expireDate} · '
+                            '${focused.cardHolderName}',
+                            style: fp.text.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardDetails(models.PaymentCard card) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.credSurfaceCard,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Card Details',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.credTextPrimary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildDetailRow('Balance', card.balance.format()),
-          const Divider(),
-          _buildDetailRow(
-            'Card Type',
-            card.cardType.toString().split('.').last.toUpperCase(),
-          ),
-          const Divider(),
-          _buildDetailRow('Card Holder Name', card.cardHolderName),
-          const Divider(),
-          _buildDetailRow('Card Number', card.maskedNumber),
-          const Divider(),
-          _buildDetailRow('Expire In', card.expireDate),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.credTextSecondary,
+                    Icon(Icons.chevron_right, color: c.textSecondary),
+                  ],
+                ),
               ),
             ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.credTextPrimary,
-              ),
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar(BuildContext context, int currentIndex) {
-    return CredBottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: (index) {
-        if (index == 0) {
-          context.go('/home');
-        } else if (index == 1) {
-          context.go('/statistics');
-        } else if (index == 2) {
-          context.go('/cards');
-        } else if (index == 3) {
-          context.go('/profile');
-        }
+          ],
+        );
       },
     );
   }

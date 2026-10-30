@@ -51,6 +51,9 @@ class DiOverrides {
     this.databasePath,
     this.clock,
     this.authRepository,
+    this.userRepository,
+    this.transactionRepository,
+    this.cardRepository,
   });
 
   final HapticService? haptics;
@@ -65,6 +68,12 @@ class DiOverrides {
 
   /// Replaces the credential/session repository (widget tests).
   final AuthRepository? authRepository;
+
+  /// Replace the data repositories (widget tests that need deterministic
+  /// loading / error states without a database).
+  final IUserRepository? userRepository;
+  final ITransactionRepository? transactionRepository;
+  final ICardRepository? cardRepository;
 }
 
 /// Registers every dependency. Call once at start-up (or per test with
@@ -114,12 +123,14 @@ Future<void> init({DiOverrides overrides = const DiOverrides()}) async {
 
   // Repositories
   sl
-    ..registerLazySingleton<IUserRepository>(() => UserRepositoryImpl(sl()))
+    ..registerLazySingleton<IUserRepository>(
+      () => overrides.userRepository ?? UserRepositoryImpl(sl()),
+    )
     ..registerLazySingleton<ITransactionRepository>(
-      () => TransactionRepositoryImpl(sl()),
+      () => overrides.transactionRepository ?? TransactionRepositoryImpl(sl()),
     )
     ..registerLazySingleton<ICardRepository>(
-      () => CardRepositoryImpl(sl(), sl()),
+      () => overrides.cardRepository ?? CardRepositoryImpl(sl(), sl()),
     )
     ..registerLazySingleton<INotificationRepository>(
       () => NotificationRepositoryImpl(sl()),
@@ -153,7 +164,8 @@ Future<void> init({DiOverrides overrides = const DiOverrides()}) async {
         transactionRepository: sl(),
       ),
     )
-    ..registerFactory(() => CardBloc(repository: sl()))
+    // The app-wide card list never holds PAN/CVV (read on demand instead).
+    ..registerFactory(() => CardBloc(repository: sl(), maskSensitive: true))
     ..registerFactory(() => NotificationBloc(repository: sl()));
 }
 

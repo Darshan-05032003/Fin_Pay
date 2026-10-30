@@ -18,10 +18,14 @@ void main() {
     });
 
     test('the back face is counter-rotated so it is not mirrored', () {
-      // At t = 1 the back face is drawn with no rotation at all.
+      // At t = 1 the back face is drawn with no rotation at all, and at
+      // rest there is no perspective entry either.
       final end = FpFlipMath.transform(1);
-      expect(end.entry(0, 0), closeTo(1, 1e-9));
-      expect(end.entry(3, 2), FpFlipMath.perspective);
+      expect(end, Matrix4.identity());
+      expect(
+        FpFlipMath.transform(0.999).entry(3, 2),
+        closeTo(FpFlipMath.perspective, 1e-6),
+      );
       // Just past the midpoint the back is rotated by a small negative angle.
       final mid = FpFlipMath.transform(0.6);
       expect(mid.entry(0, 0), closeTo(math.cos(0.6 * math.pi - math.pi), 1e-9));
@@ -113,8 +117,11 @@ void main() {
 
     test('transform rotates within maxAngle and keeps perspective', () {
       final flat = FpTiltMath.transform(Offset.zero);
-      expect(flat.entry(0, 0), 1);
-      expect(flat.entry(3, 2), FpTiltMath.perspective);
+      expect(flat, Matrix4.identity());
+      expect(
+        FpTiltMath.transform(const Offset(0.1, 0)).entry(3, 2),
+        closeTo(FpTiltMath.perspective, 1e-6),
+      );
       final tilted = FpTiltMath.transform(const Offset(1, 0));
       expect(tilted.entry(0, 0), closeTo(math.cos(FpTiltMath.maxAngle), 1e-9));
       final over = FpTiltMath.transform(const Offset(10, 0));

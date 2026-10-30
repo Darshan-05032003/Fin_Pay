@@ -69,6 +69,19 @@ void main() {
     },
   );
 
+  test(
+    'readCvv returns only the CVV from the vault, null when absent',
+    () async {
+      await repo.addCard(card);
+      expect((await repo.readCvv('c1')).dataOrNull, '987');
+      expect((await repo.readCvv('nope')).dataOrNull, isNull);
+      storage.values['card:c1'] = 'not json';
+      expect((await repo.readCvv('c1')).isFailure, isTrue);
+      storage.failing = true;
+      expect((await repo.readCvv('c1')).isFailure, isTrue);
+    },
+  );
+
   test('getCards propagates a db failure', () async {
     when(() => ds.getCards()).thenAnswer((_) async => const Failure('db'));
     expect((await repo.getCards()).errorOrNull, 'db');

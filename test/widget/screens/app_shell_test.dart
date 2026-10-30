@@ -25,6 +25,9 @@ void main() {
     );
     await tester.pump();
     await h.settle(tester);
+    // The legacy statistics / profile tabs read the database on first show
+    // and call setState when it answers; let that finish while mounted.
+    await h.flush(tester, rounds: 3);
   }
 
   testWidgets('home shows the four-tab bar with Home selected and no back '
@@ -92,11 +95,14 @@ void main() {
     tester,
   ) async {
     await open(tester, at: AppRoutes.cardDetailsFor('c1'));
+    // These screens read the real (in-memory) database here; let it answer.
+    await h.flush(tester);
     expect(h.location, '/cards/c1');
     expect(find.byType(FpBottomNav), findsNothing);
     h.router!.go(AppRoutes.addCard);
     await tester.pump();
     await h.settle(tester);
+    await h.flush(tester);
     expect(h.location, AppRoutes.addCard);
     expect(find.byType(FpBottomNav), findsNothing);
   });

@@ -25,8 +25,10 @@ class FpTiltMath {
   }
 
   /// The 3D transform for [tilt]: the lower edge comes towards the viewer.
+  /// Flat (zero tilt) is the identity, with no perspective entry.
   static Matrix4 transform(Offset tilt, {double maxAngle = maxAngle}) {
     final t = clamp(tilt);
+    if (t == Offset.zero) return Matrix4.identity();
     return Matrix4.identity()
       ..setEntry(3, 2, perspective)
       ..rotateX(-t.dy * maxAngle)

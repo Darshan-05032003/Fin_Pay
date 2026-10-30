@@ -27,6 +27,17 @@ class _ReselectScope extends InheritedNotifier<TabReselect> {
   const _ReselectScope({required super.notifier, required super.child});
 }
 
+/// The visible branch index, as an inherited dependency so tabs rebuild
+/// (and get `didChangeDependencies`) when the selection changes.
+class _ShellScope extends InheritedWidget {
+  const _ShellScope({required this.index, required super.child});
+
+  final int index;
+
+  @override
+  bool updateShouldNotify(_ShellScope oldWidget) => oldWidget.index != index;
+}
+
 /// The four-tab shell: an `IndexedStack` of branches (state survives tab
 /// switches), the NeoPOP bottom bar, and the Android back rule (back on a
 /// non-home tab returns to home; back on home leaves the app).
@@ -72,11 +83,12 @@ class AppShell extends StatefulWidget {
   static TabReselect? reselectOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_ReselectScope>()?.notifier;
 
-  /// Whether the branch at [index] is the visible tab (null outside a
-  /// shell, which counts as visible).
+  /// Whether the branch at [index] is the visible tab (outside a shell
+  /// everything counts as visible). Registers a dependency, so the caller
+  /// rebuilds when the selection changes.
   static bool isVisibleTab(BuildContext context, int index) {
-    final shell = StatefulNavigationShell.maybeOf(context);
-    return shell == null || shell.currentIndex == index;
+    final scope = context.dependOnInheritedWidgetOfExactType<_ShellScope>();
+    return scope == null || scope.index == index;
   }
 
   @override
@@ -103,26 +115,29 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final c = context.fp.colors;
     final index = _index;
-    return _ReselectScope(
-      notifier: _reselect,
-      child: SecureScreen(
-        active: AppShell.protectedTabs.contains(index),
-        child: PopScope(
-          canPop: index == AppShell.homeIndex,
-          onPopInvokedWithResult: (didPop, _) {
-            if (!didPop) _goHome();
-          },
-          child: Scaffold(
-            backgroundColor: c.background,
-            body: widget.navigationShell,
-            bottomNavigationBar: FpBottomNav(
-              items: AppShell.items,
-              currentIndex: index,
-              onSelected: (i) => widget.navigationShell.goBranch(i),
-              onReselected: (i) {
-                widget.navigationShell.goBranch(i, initialLocation: true);
-                _reselect.fire(i);
-              },
+    return _ShellScope(
+      index: index,
+      child: _ReselectScope(
+        notifier: _reselect,
+        child: SecureScreen(
+          active: AppShell.protectedTabs.contains(index),
+          child: PopScope(
+            canPop: index == AppShell.homeIndex,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop) _goHome();
+            },
+            child: Scaffold(
+              backgroundColor: c.background,
+              body: widget.navigationShell,
+              bottomNavigationBar: FpBottomNav(
+                items: AppShell.items,
+                currentIndex: index,
+                onSelected: (i) => widget.navigationShell.goBranch(i),
+                onReselected: (i) {
+                  widget.navigationShell.goBranch(i, initialLocation: true);
+                  _reselect.fire(i);
+                },
+              ),
             ),
           ),
         ),

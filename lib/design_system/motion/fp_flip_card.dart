@@ -18,10 +18,13 @@ class FpFlipMath {
 
   /// The transform for the face that is visible at [t]. The back face is
   /// counter-rotated by π so it reads left-to-right (the legacy flip
-  /// rendered it mirrored).
+  /// rendered it mirrored). At rest (0 or 1) the matrix is the identity:
+  /// no perspective to composite, and hit-testing / semantics stay exact.
   static Matrix4 transform(double t) {
-    final a = angle(t);
-    final visible = showsBack(t) ? a - math.pi : a;
+    final k = t.clamp(0.0, 1.0);
+    if (k == 0 || k == 1) return Matrix4.identity();
+    final a = angle(k);
+    final visible = showsBack(k) ? a - math.pi : a;
     return Matrix4.identity()
       ..setEntry(3, 2, perspective)
       ..rotateY(visible);
