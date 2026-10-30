@@ -50,6 +50,7 @@ class DiOverrides {
     this.databaseFactory,
     this.databasePath,
     this.clock,
+    this.authRepository,
   });
 
   final HapticService? haptics;
@@ -61,6 +62,9 @@ class DiOverrides {
   final DatabaseFactory? databaseFactory;
   final String? databasePath;
   final Clock? clock;
+
+  /// Replaces the credential/session repository (widget tests).
+  final AuthRepository? authRepository;
 }
 
 /// Registers every dependency. Call once at start-up (or per test with
@@ -121,7 +125,9 @@ Future<void> init({DiOverrides overrides = const DiOverrides()}) async {
       () => NotificationRepositoryImpl(sl()),
     )
     ..registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(storage: sl(), users: sl(), clock: sl()),
+      () =>
+          overrides.authRepository ??
+          AuthRepositoryImpl(storage: sl(), users: sl(), clock: sl()),
     );
 
   // Use cases
