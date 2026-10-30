@@ -1,59 +1,39 @@
-# Flutter Wrapper
+# FinPay release rules. Dart code is obfuscated by the Flutter tool
+# (`flutter build apk --release --obfuscate --split-debug-info=build/symbols`);
+# R8 handles the Android side (minify + shrink are on in build.gradle.kts).
+
+# Flutter embedding and plugin registrant.
 -keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class io.flutter.util.** { *; }
+-keep class io.flutter.view.** { *; }
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-dontwarn io.flutter.embedding.**
 
-# Gson specific classes
--keepattributes Signature
--keepattributes *Annotation*
--dontwarn sun.misc.**
--keep class com.google.gson.examples.android.model.** { <fields>; }
--keep class * extends com.google.gson.TypeAdapter
--keep class * implements com.google.gson.TypeAdapterFactory
--keep class * implements com.google.gson.JsonSerializer
--keep class * implements com.google.gson.JsonDeserializer
+# Our activity hosts the screen-protector method channel.
+-keep class com.finpay.app.MainActivity { *; }
 
-# Keep native methods
+# local_auth uses androidx.biometric reflection-free, but keep the
+# fragment activity surface R8 might otherwise strip.
+-keep class androidx.biometric.** { *; }
+-keep class androidx.fragment.app.FragmentActivity { *; }
+
+# flutter_secure_storage (Tink / Keystore wrappers).
+-keep class com.google.crypto.tink.** { *; }
+-dontwarn com.google.errorprone.annotations.**
+
+# Native methods and Parcelables.
 -keepclasseswithmembernames class * {
     native <methods>;
 }
-
-# Keep Parcelable implementations
 -keep class * implements android.os.Parcelable {
     public static final android.os.Parcelable$Creator *;
 }
 
-# Keep Serializable classes
--keepclassmembers class * implements java.io.Serializable {
-    static final long serialVersionUID;
-    private static final java.io.ObjectStreamField[] serialPersistentFields;
-    private void writeObject(java.io.ObjectOutputStream);
-    private void readObject(java.io.ObjectInputStream);
-    java.lang.Object writeReplace();
-    java.lang.Object readResolve();
-}
-
-# Keep our data models
--keep class com.finpay.app.models.** { *; }
--keep class com.finpay.app.data.** { *; }
--keep class com.finpay.app.domain.** { *; }
-
-# Keep SQLite
--keep class net.sqlcipher.** { *; }
--keep class net.sqlcipher.database.** { *; }
-
-# Keep Provider
--keep class * extends io.flutter.plugin.common.PluginRegistry { *; }
--keep class * extends io.flutter.plugin.common.PluginRegistry$RegistrarCallback { *; }
-
-# Remove logging in release
+# Strip Android logging in release.
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
     public static *** i(...);
 }
-
-

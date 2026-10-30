@@ -1,9 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- local_auth (biometric prompt). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <application
         android:label="FinPay"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <!--
+          The launcher activity is the only exported component. It has no
+          VIEW/deep-link intent filter: nothing outside the app can open a
+          protected route directly.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

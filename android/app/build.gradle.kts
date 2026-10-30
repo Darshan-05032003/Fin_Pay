@@ -32,7 +32,7 @@ android {
     defaultConfig {
         applicationId = "com.finpay.app"
         minSdk = flutter.minSdkVersion
-        targetSdk = 34
+        targetSdk = flutter.compileSdkVersion
         versionCode = 1
         versionName = "1.0.0"
     }
