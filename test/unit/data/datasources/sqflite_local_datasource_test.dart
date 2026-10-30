@@ -252,6 +252,13 @@ void main() {
       },
     );
 
+    test('getDailyTotals on an empty table returns an empty map', () async {
+      final db = await app.database;
+      await db.delete('transactions');
+      expect(unwrap(await ds.getDailyTotals()), isEmpty);
+      expect(unwrap(await ds.getDailyTotals(limitDays: 7)), isEmpty);
+    });
+
     test('saveTransactions skips duplicates', () async {
       unwrap(await ds.saveTransactions([tx('a', 1), tx('b', 1)]));
       unwrap(await ds.saveTransactions([tx('a', 1), tx('c', 1)]));

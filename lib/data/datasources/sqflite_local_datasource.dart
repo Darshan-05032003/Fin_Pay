@@ -140,10 +140,28 @@ class SqfliteLocalDataSource implements LocalDataSource {
   @override
   Future<Result<Map<DateTime, Money>>> getDailyTotals({int? limitDays}) =>
       _guard('get daily totals', (db) async {
+        // With a day limit, bound the scan by date first so the date index
+        // does the work instead of grouping every row and then LIMITing.
+        var where = '';
+        var args = const <Object?>[];
+        if (limitDays != null) {
+          final newest = await db.rawQuery(
+            'SELECT MAX(date) AS newest FROM transactions',
+          );
+          final newestDate = newest.first['newest'] as String?;
+          if (newestDate == null) return const {};
+          final newestDay = DateTime.parse(
+            '${newestDate.substring(0, 10)}T00:00:00Z',
+          );
+          final from = newestDay.subtract(Duration(days: limitDays - 1));
+          where = 'WHERE date >= ? ';
+          args = [from.toIso8601String()];
+        }
         final rows = await db.rawQuery(
           'SELECT substr(date, 1, 10) AS day, SUM(amount) AS total '
-          'FROM transactions GROUP BY day ORDER BY day DESC'
+          'FROM transactions ${where}GROUP BY day ORDER BY day DESC'
           '${limitDays == null ? '' : ' LIMIT $limitDays'}',
+          args,
         );
         return {
           for (final row in rows)
