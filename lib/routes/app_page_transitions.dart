@@ -31,6 +31,8 @@ abstract final class AppPageTransitions {
     AppRoutes.fingerprintSetup: FpTransitionKind.sharedAxisX,
     AppRoutes.passwordReset: FpTransitionKind.sharedAxisX,
     AppRoutes.home: FpTransitionKind.fadeThrough,
+    AppRoutes.addCard: FpTransitionKind.sharedAxisY,
+    AppRoutes.cardDetails: FpTransitionKind.fadeThrough,
   };
 
   /// Used for routes not listed in [kinds].
