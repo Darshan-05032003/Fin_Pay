@@ -1,0 +1,14 @@
+# Test runner configuration.
+#
+# Stress tests live in test/stress/, carry `@Tags(['stress'])` and are gated by
+# a compile-time flag, so a plain `flutter test` finishes fast. Run them with:
+#
+#   flutter test --tags stress --dart-define=FINPAY_STRESS=true
+#
+# (A file-level `exclude_tags` would also block `--tags stress`, because
+# package:test unions excludes from the file with the command line.)
+tags:
+  stress:
+    timeout: 20x
+  golden:
+    timeout: 2x
