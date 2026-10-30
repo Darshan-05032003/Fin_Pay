@@ -70,6 +70,29 @@ void main() {
       expect(go(AppRoutes.gallery, unknown, isDebug: false), AppRoutes.welcome);
     });
 
+    test('onboarding is skipped once it has been seen', () {
+      String? seen(String path, SessionState s) => AppRedirect.resolve(
+        location: path,
+        session: s,
+        isDebug: true,
+        onboardingSeen: true,
+      );
+      expect(seen(AppRoutes.onboarding, signedOut), AppRoutes.login);
+      expect(seen(AppRoutes.onboarding, failed), AppRoutes.login);
+      expect(seen(AppRoutes.onboarding, signedIn), AppRoutes.home);
+      expect(seen(AppRoutes.onboarding, unknown), AppRoutes.welcome);
+      // Not yet seen: the pages are reachable while signed out.
+      expect(go(AppRoutes.onboarding, signedOut), isNull);
+      // Every other guest route is unaffected by the flag.
+      for (final path in AppRoutes.guestOnly.difference({
+        AppRoutes.onboarding,
+      })) {
+        expect(seen(path, signedOut), isNull, reason: path);
+      }
+      expect(seen(AppRoutes.login, signedIn), AppRoutes.home);
+      expect(seen(AppRoutes.home, signedOut), AppRoutes.login);
+    });
+
     test('query strings and trailing data do not bypass the guard', () {
       expect(go('/home?x=1', signedOut), AppRoutes.login);
       expect(go('/login?next=/home', signedIn), AppRoutes.home);

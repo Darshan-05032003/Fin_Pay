@@ -18,10 +18,16 @@ void main() {
       expect(AppSettings.defaults.hapticsEnabled, isTrue);
       expect(AppSettings.defaults.reduceMotion, isFalse);
       expect(AppSettings.defaults.hideBalance, isFalse);
+      expect(AppSettings.defaults.onboardingSeen, isFalse);
+      expect(AppSettings.defaults.biometricEnabled, isFalse);
       const changed = AppSettings(reduceMotion: true);
       expect(AppSettings.fromJson(changed.toJson()), changed);
       expect(AppSettings.fromJson(const {}), AppSettings.defaults);
       expect(changed.copyWith(hideBalance: true).hideBalance, isTrue);
+      const flags = AppSettings(onboardingSeen: true, biometricEnabled: true);
+      expect(AppSettings.fromJson(flags.toJson()), flags);
+      expect(flags.copyWith(biometricEnabled: false).biometricEnabled, isFalse);
+      expect(flags.copyWith(onboardingSeen: false).onboardingSeen, isFalse);
     });
   });
 
@@ -71,6 +77,27 @@ void main() {
       verify: (_) {
         expect(repo.saves, 3);
         expect(repo.settings.hideBalance, isTrue);
+      },
+    );
+
+    blocTest<SettingsCubit, SettingsState>(
+      'onboarding seen and biometric preference persist',
+      build: () => SettingsCubit(repo),
+      act: (c) async {
+        await c.setOnboardingSeen(seen: true);
+        await c.setBiometricEnabled(enabled: true);
+      },
+      expect: () => const [
+        SettingsState(settings: AppSettings(onboardingSeen: true)),
+        SettingsState(
+          settings: AppSettings(onboardingSeen: true, biometricEnabled: true),
+        ),
+      ],
+      verify: (c) {
+        expect(repo.settings.onboardingSeen, isTrue);
+        expect(repo.settings.biometricEnabled, isTrue);
+        expect(c.state.onboardingSeen, isTrue);
+        expect(c.state.biometricEnabled, isTrue);
       },
     );
 

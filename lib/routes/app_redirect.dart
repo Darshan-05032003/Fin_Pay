@@ -11,11 +11,13 @@ abstract final class AppRedirect {
   /// * Signed out: protected routes go to the login screen.
   /// * Signed in: guest-only routes go home.
   /// * [AppRoutes.gallery] exists only when [isDebug] is true.
+  /// * [AppRoutes.onboarding] is skipped (→ login) once [onboardingSeen].
   /// * Unknown paths are left alone so the router's error page handles them.
   static String? resolve({
     required String location,
     required SessionState session,
     required bool isDebug,
+    bool onboardingSeen = false,
   }) {
     final path = Uri.parse(location).path;
     final authenticated = session is SessionAuthenticated;
@@ -34,6 +36,9 @@ abstract final class AppRedirect {
     }
     if (AppRoutes.guestOnly.contains(path) && authenticated) {
       return AppRoutes.home;
+    }
+    if (path == AppRoutes.onboarding && onboardingSeen) {
+      return AppRoutes.login;
     }
     return null;
   }

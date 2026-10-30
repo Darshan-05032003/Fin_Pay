@@ -15,6 +15,8 @@ class SettingsState extends Equatable {
   bool get hapticsEnabled => settings.hapticsEnabled;
   bool get reduceMotion => settings.reduceMotion;
   bool get hideBalance => settings.hideBalance;
+  bool get onboardingSeen => settings.onboardingSeen;
+  bool get biometricEnabled => settings.biometricEnabled;
 
   @override
   List<Object?> get props => [settings, loaded];
@@ -46,6 +48,12 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> toggleHideBalance() =>
       setHideBalance(hidden: !state.settings.hideBalance);
+
+  Future<void> setOnboardingSeen({required bool seen}) =>
+      _update(state.settings.copyWith(onboardingSeen: seen));
+
+  Future<void> setBiometricEnabled({required bool enabled}) =>
+      _update(state.settings.copyWith(biometricEnabled: enabled));
 
   Future<void> _update(AppSettings next) async {
     final previous = state;
