@@ -1,4 +1,5 @@
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class CustomPullToRefresh extends StatelessWidget {
@@ -18,7 +19,7 @@ class CustomPullToRefresh extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        await HapticService.mediumImpact();
+        await sl<HapticService>().medium();
         await onRefresh();
       },
       backgroundColor:

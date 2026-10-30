@@ -1,40 +1,70 @@
 import 'package:equatable/equatable.dart';
+import 'package:fin_pay/core/money/money.dart';
 import 'package:fin_pay/models/user.dart';
 
-/// Base class for all user-related states
-abstract class UserState extends Equatable {
+/// State of the account holder record.
+sealed class UserState extends Equatable {
   const UserState();
+
+  /// The user when loaded, otherwise null.
+  User? get user => null;
 
   @override
   List<Object?> get props => [];
 }
 
-/// Initial state when user bloc is created
-class UserInitial extends UserState {
+final class UserInitial extends UserState {
   const UserInitial();
 }
 
-/// State when user data is being loaded
-class UserLoading extends UserState {
+final class UserLoading extends UserState {
   const UserLoading();
 }
 
-/// State when user data is successfully loaded
-class UserLoaded extends UserState {
-  const UserLoaded(this.user);
-  final User? user;
-
-  @override
-  List<Object?> get props => [user];
-
-  double get balance => user?.balance ?? 0.0;
-  String get userName => user?.fullName ?? 'User';
-  bool get isAuthenticated => user != null;
+/// No user row exists (before the demo account is seeded, or after reset).
+final class UserEmpty extends UserState {
+  const UserEmpty();
 }
 
-/// State when an error occurs
-class UserError extends UserState {
+final class UserError extends UserState {
   const UserError(this.message);
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
+final class UserContent extends UserState {
+  const UserContent(this._user);
+
+  final User _user;
+
+  @override
+  User get user => _user;
+
+  Money get balance => _user.balance;
+  String get userName => _user.fullName;
+
+  @override
+  List<Object?> get props => [_user];
+}
+
+/// One-off effects for the UI.
+sealed class UserEffect extends Equatable {
+  const UserEffect();
+
+  @override
+  List<Object?> get props => [];
+}
+
+final class UserUpdated extends UserEffect {
+  const UserUpdated();
+}
+
+final class UserUpdateFailed extends UserEffect {
+  const UserUpdateFailed(this.message);
+
   final String message;
 
   @override

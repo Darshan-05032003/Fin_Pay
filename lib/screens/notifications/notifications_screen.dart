@@ -1,7 +1,10 @@
 import 'dart:async';
+
+import 'package:clock/clock.dart';
 import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/models/notification_item.dart';
-import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
@@ -36,15 +39,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _loadNotifications() async {
     final notifications = await UserService.getNotifications();
 
-    final now = DateTime.now();
+    final now = sl<Clock>().now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final yesterdayStart = todayStart.subtract(const Duration(days: 1));
 
     final today = notifications
-        .where((n) => n.time.isAfter(todayStart))
+        .where((n) => n.localTime.isAfter(todayStart))
         .toList();
     final yesterday = notifications.where((n) {
-      return n.time.isAfter(yesterdayStart) && n.time.isBefore(todayStart);
+      return n.localTime.isAfter(yesterdayStart) &&
+          n.localTime.isBefore(todayStart);
     }).toList();
 
     setState(() {
@@ -86,7 +90,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -129,7 +133,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   setState(() {
                                     _searchQuery = value;
                                   });
-                                  unawaited(HapticService.selection());
+                                  unawaited(sl<HapticService>().selection());
                                 },
                                 style: const TextStyle(
                                   color: AppTheme.credTextPrimary,
@@ -162,7 +166,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     offset: const Offset(20, 0),
                     child: CredButtonPress(
                       onTap: () async {
-                        await HapticService.mediumImpact();
+                        await sl<HapticService>().medium();
                       },
                       child: CredCardReveal(
                         perspective: 0.0006,
@@ -247,7 +251,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   child: SwipeToDismiss(
                                     uniqueKey: notification.id,
                                     onDismiss: () async {
-                                      await HapticService.mediumImpact();
+                                      await sl<HapticService>().medium();
                                       setState(() {
                                         _allNotifications.removeWhere(
                                           (n) => n.id == notification.id,
@@ -262,7 +266,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     },
                                     child: CredButtonPress(
                                       onTap: () async {
-                                        await HapticService.lightImpact();
+                                        await sl<HapticService>().light();
                                       },
                                       child: _buildNotificationItem(
                                         notification,
@@ -295,7 +299,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     child: SwipeToDismiss(
                                       uniqueKey: notification.id,
                                       onDismiss: () async {
-                                        await HapticService.mediumImpact();
+                                        await sl<HapticService>().medium();
                                         setState(() {
                                           _allNotifications.removeWhere(
                                             (n) => n.id == notification.id,
@@ -406,7 +410,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ),
           Text(
-            _formatTime(notification.time),
+            _formatTime(notification.localTime),
             style: const TextStyle(
               fontSize: 12,
               color: AppTheme.credTextSecondary,
@@ -418,7 +422,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
+    final now = sl<Clock>().now();
     final difference = now.difference(time);
 
     if (difference.inHours < 1) {

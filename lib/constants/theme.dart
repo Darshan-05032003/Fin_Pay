@@ -367,6 +367,10 @@ class AppTheme {
     );
   }
 
+  /// FinPay is dark-only until the design system lands; the dark theme is
+  /// the same `ThemeData` (brightness is already dark).
+  static ThemeData get darkTheme => lightTheme;
+
   // Legacy theme getter for backward compatibility
   static ThemeData get theme => lightTheme;
 }

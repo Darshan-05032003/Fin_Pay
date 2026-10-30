@@ -7,6 +7,48 @@ One entry per feature (spec §7b). Stress tests live in `test/stress/`, tag
 flutter test --tags stress --dart-define=FINPAY_STRESS=true --concurrency=1 test/stress
 ```
 
+Machine for the numbers below: the build box (Linux, Dart VM JIT, sqflite through `sqflite_common_ffi` on a temp file). Phone numbers will be slower; the shape (what is O(1), what grows) is what matters.
+
+## Feature: F1 Foundations
+- Scenario and scale:
+  - `test/stress/foundations_stress_test.dart`, 7 scenarios:
+    1. 100,000 transactions inserted through `SqfliteLocalDataSource.saveTransactions` in batches of 5,000, then paging, search (title and recipient `LIKE`), a one-day date range, daily group-by totals (all days and the last 30), a full 100k scan and one duplicate check.
+    2. 100,000 v1 rows (REAL rupees, `TransactionType.x` strings) migrated to v2 by `AppDatabase`.
+    3. 1,000 sequential `AddTransactionEvent`s through `TransactionBloc` against the real data source, every `idempotencyKey` submitted twice; tracked resources: the state's row count (limit 5), the effects-stream listener flag, RSS.
+    4. Breaking point: rows grown 10k → 50k → 100k → 200k → 400k, timing first page, last page (offset), search and daily totals at each step.
+    5. `Money.parse`/`format` throughput, 200k each.
+    6. PBKDF2 verify cost at the production 10,000 iterations.
+    7. Dates: a DST-gap local time stored and read back as the same UTC instant with an injected `Clock`.
+- Results (numbers):
+  - 100k insert: **1,472 ms** (≈68k rows/s). First page of 50: **2 ms**. Page at offset 50,000: **22 ms**. Title search: **12 ms**; recipient search: **1 ms**. One-day range (1,440 rows): **8 ms**. Daily totals, all 70 days: **30 ms**; last 30 days: **15 ms** (24 ms before the fix below). Full 100k scan into models: **338 ms**. Duplicate check: **1 ms**.
+  - Migration of 100k v1 rows: **313 ms** (seeding the v1 database itself: 978 ms).
+  - 1,000 BLoC adds: **1,272 ms total, 1.27 ms per event**; exactly 500 rows written and 500 `TransactionDuplicate` effects; balance debited exactly 500 × ₹1.00; state stayed at 5 rows; RSS 320 MB → 201 MB (GC ran; no growth). The earlier run showed +55 MB, which the second run gave back, so there is no monotonic growth.
+  - Breaking point (ms): 
+
+    | rows | page 50 | last page (offset) | search | totals all | totals 30d |
+    |---|---|---|---|---|---|
+    | 10k | 0 | 4 | 1 | 1 | 2 |
+    | 50k | 0 | 19 | 11 | 10 | 13 |
+    | 100k | 0 | 40 | 22 | 25 | 14 |
+    | 200k | 0 | 86 | 45 | 57 | 15 |
+    | 400k | 0 | 179 | 93 | 104 | 16 |
+
+    First query over 100 ms: offset paging to the last page at **400k rows** (179 ms) and the all-days group-by at **400k rows** (104 ms). Title search stays under 100 ms up to 400k. First-page and 30-day totals are flat.
+  - `Money.parse`: **2.8 µs** each (558 ms / 200k); `Money.format`: **0.7 µs** each.
+  - PBKDF2 verify (10k iterations): **27 ms** per attempt in the JIT VM.
+- What broke:
+  - `getDailyTotals(limitDays: 30)` grouped every row and only then applied `LIMIT`, so it cost as much as the full group-by (77 ms at 400k) and grew linearly with history.
+  - Offset-based paging grows linearly with the offset (179 ms for the last page of 400k rows); a user scrolling to the bottom of years of history would feel it.
+  - Nothing else broke: no duplicate rows, no balance drift, no overflow, no leaked listeners.
+- Failure flow (step by step):
+  1. Statistics screen asks for the last 30 days of totals.
+  2. SQLite walks the whole `transactions` table building `substr(date,1,10)` groups (no index can help a function on the column).
+  3. It sorts all groups and discards all but 30. Time ∝ total rows, not ∝ 30 days.
+- Fix applied / recommendation:
+  - Fixed: `getDailyTotals(limitDays:)` now reads `MAX(date)`, derives the lower bound and filters `WHERE date >= ?` before grouping, so the date index bounds the scan. 400k rows: 77 ms → **16 ms**, flat across sizes (unit-tested in `sqflite_local_datasource_test.dart`).
+  - Recommendation (F6, transactions list): page with a keyset (`WHERE date < ? ORDER BY date DESC LIMIT 50`, using the last row's date/id) instead of `OFFSET`; every page is then the 2 ms first-page cost. `getTransactionsBetween` already provides the index-friendly shape.
+  - Recommendation: keep the full-history group-by for the statistics "all time" view only, or cache per-month totals once F6 adds charts.
+
 Numbers below are from the test runner (Flutter 3.47.9, Linux x86-64 host,
 software rendering, ~1.4 GiB free RAM). They measure widget build + layout time
 per pumped frame, not GPU raster time; on-device profile traces are Wave 2.

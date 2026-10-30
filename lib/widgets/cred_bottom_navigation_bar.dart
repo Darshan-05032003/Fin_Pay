@@ -1,5 +1,6 @@
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 /// CRED-style bottom navigation bar with "Light Switch" effect
@@ -40,7 +41,7 @@ class CredBottomNavigationBar extends StatelessWidget {
         ),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
         onTap: (index) async {
-          await HapticService.selection();
+          await sl<HapticService>().selection();
           onTap(index);
         },
         items: [

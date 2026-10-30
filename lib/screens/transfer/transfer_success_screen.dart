@@ -1,18 +1,20 @@
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/core/money/money.dart';
+import 'package:fin_pay/routes/transfer_draft.dart';
 import 'package:fin_pay/widgets/animations/confetti_effect.dart';
 import 'package:fin_pay/widgets/animations/delayed_animation.dart';
 import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class TransferSuccessScreen extends StatefulWidget {
-  const TransferSuccessScreen({
-    required this.recipientName,
-    required this.amount,
-    super.key,
-  });
-  final String recipientName;
-  final String amount;
+  const TransferSuccessScreen({required this.draft, super.key});
+
+  final TransferDraft draft;
+
+  String get recipientName => draft.recipientName;
 
   @override
   State<TransferSuccessScreen> createState() => _TransferSuccessScreenState();
@@ -49,7 +51,10 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
     _controller.forward();
 
     // Start haptic feedback
-    Future.delayed(const Duration(milliseconds: 300), HapticService.success);
+    Future.delayed(
+      const Duration(milliseconds: 300),
+      sl<HapticService>().success,
+    );
   }
 
   @override
@@ -227,13 +232,13 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                             child: TweenAnimationBuilder<double>(
                               tween: Tween(
                                 begin: 0,
-                                end: double.parse(widget.amount),
+                                end: widget.draft.amount.rupees,
                               ),
                               duration: const Duration(milliseconds: 1200),
                               curve: Curves.easeOutCubic,
                               builder: (context, value, child) {
                                 return Text(
-                                  '\$${value.toStringAsFixed(2)}',
+                                  Money.rupees(value).format(),
                                   style: const TextStyle(
                                     fontSize: 42,
                                     fontWeight: FontWeight.w700,
@@ -254,11 +259,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                     delay: const Duration(milliseconds: 1200),
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/home',
-                          (route) => false,
-                        );
+                        context.go('/home');
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),

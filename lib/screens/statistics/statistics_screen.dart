@@ -1,7 +1,11 @@
 import 'dart:async';
+
+import 'package:clock/clock.dart';
 import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/core/money/money.dart';
 import 'package:fin_pay/models/transaction.dart';
-import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
@@ -14,6 +18,7 @@ import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
 import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:go_router/go_router.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -38,23 +43,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Future<void> _loadStatistics() async {
     final transactions = await UserService.getTransactions();
 
-    double totalSpending = 0;
-    double income = 0;
-    double expenses = 0;
+    var totalSpending = Money.zero;
+    var income = Money.zero;
+    var expenses = Money.zero;
 
     for (final transaction in transactions) {
-      if (transaction.amount < 0) {
-        expenses += transaction.amount.abs();
-        totalSpending += transaction.amount.abs();
+      if (transaction.amount.isNegative) {
+        expenses = expenses + transaction.amount.abs();
+        totalSpending = totalSpending + transaction.amount.abs();
       } else {
-        income += transaction.amount;
+        income = income + transaction.amount;
       }
     }
 
     setState(() {
-      _totalSpending = totalSpending;
-      _income = income;
-      _expenses = expenses;
+      _totalSpending = totalSpending.rupees;
+      _income = income.rupees;
+      _expenses = expenses.rupees;
       _recentTransactions = transactions.take(1).toList();
       _isLoading = false;
     });
@@ -69,7 +74,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -105,7 +110,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             ),
                             CredButtonPress(
                               onTap: () async {
-                                await HapticService.mediumImpact();
+                                await sl<HapticService>().medium();
                               },
                               child: CredCardReveal(
                                 duration: const Duration(milliseconds: 400),
@@ -376,7 +381,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       perspective: 0.0006,
       child: CredButtonPress(
         onTap: () async {
-          await HapticService.lightImpact();
+          await sl<HapticService>().light();
         },
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -482,7 +487,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _formatDate(transaction.date),
+                  _formatDate(transaction.localDate),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppTheme.credTextSecondary,
@@ -495,7 +500,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '\$${transaction.amount.abs().toStringAsFixed(2)}',
+                transaction.amount.abs().format(),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -522,7 +527,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
+    final now = sl<Clock>().now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
@@ -540,13 +545,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       currentIndex: currentIndex,
       onTap: (index) {
         if (index == 0) {
-          Navigator.pushReplacementNamed(context, '/home');
+          context.go('/home');
         } else if (index == 1) {
-          Navigator.pushReplacementNamed(context, '/statistics');
+          context.go('/statistics');
         } else if (index == 2) {
-          Navigator.pushReplacementNamed(context, '/cards');
+          context.go('/cards');
         } else if (index == 3) {
-          Navigator.pushReplacementNamed(context, '/profile');
+          context.go('/profile');
         }
       },
     );

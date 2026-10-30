@@ -1,11 +1,13 @@
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
 import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
 import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class FingerprintSetupScreen extends StatelessWidget {
   const FingerprintSetupScreen({super.key});
@@ -111,9 +113,9 @@ class FingerprintSetupScreen extends StatelessWidget {
                 delay: const Duration(milliseconds: 500),
                 child: CredButtonPress(
                   onTap: () async {
-                    await HapticService.mediumImpact();
+                    await sl<HapticService>().medium();
                     if (!context.mounted) return;
-                    Navigator.pushReplacementNamed(context, '/home');
+                    context.go('/home');
                   },
                   child: SpringAnimation(
                     startOffset: const Offset(0, 20),

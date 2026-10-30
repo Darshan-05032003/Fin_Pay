@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:clock/clock.dart';
 import 'package:fin_pay/blocs/transaction/transaction_bloc.dart';
 import 'package:fin_pay/blocs/transaction/transaction_event.dart';
 import 'package:fin_pay/blocs/transaction/transaction_state.dart';
@@ -6,9 +8,11 @@ import 'package:fin_pay/blocs/user/user_bloc.dart';
 import 'package:fin_pay/blocs/user/user_event.dart';
 import 'package:fin_pay/blocs/user/user_state.dart';
 import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/core/money/money.dart';
 import 'package:fin_pay/models/transaction.dart' as models;
 import 'package:fin_pay/models/user.dart';
-import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
 import 'package:fin_pay/widgets/animations/cred_number_counter.dart';
@@ -23,6 +27,7 @@ import 'package:fin_pay/widgets/animations/staggered_list_animation.dart';
 import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class _FloatingActionButtonWithDelay extends StatefulWidget {
   const _FloatingActionButtonWithDelay({
@@ -93,8 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, userState) {
         return BlocBuilder<TransactionBloc, TransactionState>(
           builder: (context, transactionState) {
-            final user = userState is UserLoaded ? userState.user : null;
-            final recentTransactions = transactionState is TransactionLoaded
+            final user = userState is UserContent ? userState.user : null;
+            final recentTransactions = transactionState is TransactionContent
                 ? transactionState.recentTransactions
                 : <models.Transaction>[];
             final isLoading =
@@ -146,13 +151,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 currentIndex: 0,
                 onTap: (index) {
                   if (index == 0) {
-                    Navigator.pushReplacementNamed(context, '/home');
+                    context.go('/home');
                   } else if (index == 1) {
-                    Navigator.pushReplacementNamed(context, '/statistics');
+                    context.go('/statistics');
                   } else if (index == 2) {
-                    Navigator.pushReplacementNamed(context, '/cards');
+                    context.go('/cards');
                   } else if (index == 3) {
-                    Navigator.pushReplacementNamed(context, '/profile');
+                    context.go('/profile');
                   }
                 },
               ),
@@ -165,10 +170,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxScale: 1.05,
                   child: CredButtonPress(
                     onTap: () async {
-                      await HapticService.mediumImpact();
+                      await sl<HapticService>().medium();
                       if (!context.mounted) return;
                       unawaited(
-                        Navigator.pushNamed(context, '/transfer').then((_) {
+                        context.push('/transfer').then((_) {
                           if (!context.mounted) return;
                           context.read<UserBloc>().add(const LoadUserEvent());
                           context.read<TransactionBloc>().add(
@@ -201,8 +206,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader(BuildContext context, User? user) {
-    final balance = user?.balance ?? 0.0;
-    final hour = DateTime.now().hour;
+    final balance = (user?.balance ?? Money.zero).rupees;
+    final hour = sl<Clock>().now().hour;
     final greeting = hour < 12
         ? 'Good Morning'
         : hour < 17
@@ -280,9 +285,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     RippleEffect(
                       borderRadius: 20,
                       onTap: () async {
-                        await HapticService.lightImpact();
+                        await sl<HapticService>().light();
                         if (!context.mounted) return;
-                        Navigator.pushNamed(context, '/notifications');
+                        unawaited(context.push('/notifications'));
                       },
                       child: const IconButton(
                         icon: IconMorph(
@@ -297,9 +302,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     RippleEffect(
                       borderRadius: 20,
                       onTap: () async {
-                        await HapticService.lightImpact();
+                        await sl<HapticService>().light();
                         if (!context.mounted) return;
-                        Navigator.pushNamed(context, '/profile');
+                        unawaited(context.push('/profile'));
                       },
                       child: const IconButton(
                         icon: IconMorph(
@@ -367,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
       delay: Duration(milliseconds: 400 + (index * 50)),
       child: CredButtonPress(
         onTap: () async {
-          await HapticService.selection();
+          await sl<HapticService>().selection();
           _handleQuickActionTap(label);
         },
         child: Column(
@@ -420,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Gift':
         _showComingSoonSnackBar(context, 'Gift cards coming soon!');
       case 'Finance':
-        Navigator.pushNamed(context, '/statistics');
+        unawaited(context.push('/statistics'));
       case 'More':
         _showMoreOptions(context);
     }
@@ -498,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppTheme.credTextSecondary,
       ),
       onTap: () async {
-        await HapticService.selection();
+        await sl<HapticService>().selection();
         onTap();
       },
     );
@@ -610,7 +615,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPaymentItem(IconData icon, String label, Color color) {
     return CredButtonPress(
       onTap: () async {
-        await HapticService.selection();
+        await sl<HapticService>().selection();
         _handlePaymentItemTap(label);
       },
       child: Column(
@@ -672,11 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToBillPayment(BuildContext context, String billType) {
-    Navigator.pushNamed(
-      context,
-      '/transfer',
-      arguments: {'billType': billType},
-    );
+    unawaited(context.push('/transfer'));
   }
 
   void _showMorePaymentOptions(BuildContext context) {
@@ -832,7 +833,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   CredButtonPress(
                     onTap: () {
                       unawaited(
-                        Navigator.pushNamed(context, '/transactions').then((_) {
+                        context.push('/transactions').then((_) {
                           if (!context.mounted) return;
                           context.read<UserBloc>().add(const LoadUserEvent());
                           context.read<TransactionBloc>().add(
@@ -885,7 +886,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTransactionItem(models.Transaction transaction) {
     return CredButtonPress(
       onTap: () async {
-        await HapticService.lightImpact();
+        await sl<HapticService>().light();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -905,7 +906,7 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color:
                     (transaction.type == models.TransactionType.receiveMoney ||
-                                transaction.amount > 0
+                                transaction.amount.isPositive
                             ? AppTheme.credNeoPaccha
                             : AppTheme.credError)
                         .withValues(alpha: 0.15),
@@ -918,7 +919,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color:
                         transaction.type ==
                                 models.TransactionType.receiveMoney ||
-                            transaction.amount > 0
+                            transaction.amount.isPositive
                         ? AppTheme.credNeoPaccha
                         : AppTheme.credError,
                     fontWeight: FontWeight.w700,
@@ -943,7 +944,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _formatDate(transaction.date),
+                    _formatDate(transaction.localDate),
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppTheme.credTextSecondary,
@@ -956,11 +957,11 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '\$${transaction.amount.abs().toStringAsFixed(2)}',
+                  transaction.amount.abs().format(),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: transaction.amount < 0
+                    color: transaction.amount.isNegative
                         ? AppTheme.credError
                         : AppTheme.credNeoPaccha,
                   ),
@@ -973,18 +974,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   decoration: BoxDecoration(
                     color:
-                        (transaction.amount < 0
+                        (transaction.amount.isNegative
                                 ? AppTheme.credError
                                 : AppTheme.credNeoPaccha)
                             .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    transaction.amount < 0 ? 'Payment' : 'Received',
+                    transaction.amount.isNegative ? 'Payment' : 'Received',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: transaction.amount < 0
+                      color: transaction.amount.isNegative
                           ? AppTheme.credError
                           : AppTheme.credNeoPaccha,
                     ),
@@ -999,7 +1000,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
+    final now = sl<Clock>().now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {

@@ -1,7 +1,10 @@
 import 'dart:async';
+
+import 'package:fin_pay/blocs/session/session_cubit.dart';
+import 'package:fin_pay/blocs/session/session_state.dart';
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
-import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
 import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
@@ -9,6 +12,7 @@ import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
 import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -52,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen>
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.credTextPrimary),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -165,7 +169,8 @@ class _LoginScreenState extends State<LoginScreen>
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Use: ${UserService.defaultEmail} / ${UserService.defaultPassword}',
+                                  'Demo account: user@finpay.com '
+                                  '(password in the README)',
                                   style: TextStyle(
                                     color: AppTheme.credTextSecondary,
                                     fontSize: 12,
@@ -224,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   setState(() {
                                     _obscurePassword = !_obscurePassword;
                                   });
-                                  unawaited(HapticService.selection());
+                                  unawaited(sl<HapticService>().selection());
                                 },
                                 child: IconButton(
                                   icon: Icon(
@@ -258,9 +263,9 @@ class _LoginScreenState extends State<LoginScreen>
                     const Spacer(),
                     TextButton(
                       onPressed: () async {
-                        await HapticService.lightImpact();
+                        await sl<HapticService>().light();
                         if (!context.mounted) return;
-                        Navigator.pushNamed(context, '/forgot-password');
+                        unawaited(context.push('/forgot-password'));
                       },
                       child: const Text(
                         'Forgot Password',
@@ -277,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen>
                   onTap: () async {
                     if (_emailController.text.trim().isEmpty ||
                         _passwordController.text.trim().isEmpty) {
-                      await HapticService.error();
+                      await sl<HapticService>().error();
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -288,35 +293,36 @@ class _LoginScreenState extends State<LoginScreen>
                       return;
                     }
 
-                    await HapticService.mediumImpact();
+                    await sl<HapticService>().medium();
 
                     // Only accept default credentials
                     final email = _emailController.text.trim();
                     final password = _passwordController.text.trim();
 
-                    final loginSuccess = await UserService.loginUser(
-                      email,
-                      password,
-                    );
+                    final session = sl<SessionCubit>();
+                    await session.signIn(email, password);
 
-                    if (!loginSuccess) {
-                      await HapticService.error();
+                    if (!session.isAuthenticated) {
+                      await sl<HapticService>().error();
                       if (!context.mounted) return;
+                      final state = session.state;
+                      final message = state is SessionUnauthenticated
+                          ? state.failure?.message ??
+                                'Invalid email or password.'
+                          : 'Invalid email or password.';
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Invalid email or password. Use: user@finpay.com / FinPay123',
-                          ),
+                        SnackBar(
+                          content: Text(message),
                           backgroundColor: AppTheme.credError,
-                          duration: Duration(seconds: 3),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                       return;
                     }
 
-                    await HapticService.success();
+                    await sl<HapticService>().success();
                     if (!context.mounted) return;
-                    Navigator.pushReplacementNamed(context, '/home');
+                    context.go('/home');
                   },
                   child: SpringAnimation(
                     startOffset: const Offset(0, 20),
@@ -401,9 +407,9 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                     TextButton(
                       onPressed: () async {
-                        await HapticService.lightImpact();
+                        await sl<HapticService>().light();
                         if (!context.mounted) return;
-                        Navigator.pushNamed(context, '/create-account');
+                        unawaited(context.push('/create-account'));
                       },
                       child: const Text(
                         'Create Account',
@@ -425,7 +431,7 @@ class _LoginScreenState extends State<LoginScreen>
       delay: const Duration(milliseconds: 850),
       offset: const Offset(0, 20),
       child: CredButtonPress(
-        onTap: HapticService.selection,
+        onTap: sl<HapticService>().selection,
         child: SpringAnimation(
           startOffset: const Offset(0, 10),
           child: PulseAnimation(

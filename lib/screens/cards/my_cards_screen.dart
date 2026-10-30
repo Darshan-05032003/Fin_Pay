@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/models/card.dart' as models;
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/models/payment_card.dart' as models;
 import 'package:fin_pay/screens/cards/add_card_screen.dart';
-import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/card_3d_flip.dart';
 import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
@@ -10,6 +12,7 @@ import 'package:fin_pay/widgets/animations/ripple_effect.dart';
 import 'package:fin_pay/widgets/animations/staggered_list_animation.dart';
 import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class MyCardsScreen extends StatefulWidget {
   const MyCardsScreen({super.key});
@@ -19,7 +22,7 @@ class MyCardsScreen extends StatefulWidget {
 }
 
 class _MyCardsScreenState extends State<MyCardsScreen> {
-  List<models.Card> _cards = [];
+  List<models.PaymentCard> _cards = [];
   bool _isLoading = true;
 
   @override
@@ -90,7 +93,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                     child: RippleEffect(
                       borderRadius: 12,
                       onTap: () async {
-                        await HapticService.mediumImpact();
+                        await sl<HapticService>().medium();
                         if (!context.mounted) return;
                         await Navigator.push(
                           context,
@@ -146,7 +149,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     );
   }
 
-  Widget _buildCardDisplay(models.Card card) {
+  Widget _buildCardDisplay(models.PaymentCard card) {
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: 1),
@@ -272,7 +275,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     );
   }
 
-  Widget _buildCardBack(models.Card card) {
+  Widget _buildCardBack(models.PaymentCard card) {
     return Container(
       height: 200,
       padding: const EdgeInsets.all(24),
@@ -345,7 +348,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     );
   }
 
-  Widget _buildCardDetails(models.Card card) {
+  Widget _buildCardDetails(models.PaymentCard card) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -364,7 +367,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildDetailRow('Balance', '\$${card.balance.toStringAsFixed(2)}'),
+          _buildDetailRow('Balance', card.balance.format()),
           const Divider(),
           _buildDetailRow(
             'Card Type',
@@ -418,13 +421,13 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
       currentIndex: currentIndex,
       onTap: (index) {
         if (index == 0) {
-          Navigator.pushReplacementNamed(context, '/home');
+          context.go('/home');
         } else if (index == 1) {
-          Navigator.pushReplacementNamed(context, '/statistics');
+          context.go('/statistics');
         } else if (index == 2) {
-          Navigator.pushReplacementNamed(context, '/cards');
+          context.go('/cards');
         } else if (index == 3) {
-          Navigator.pushReplacementNamed(context, '/profile');
+          context.go('/profile');
         }
       },
     );

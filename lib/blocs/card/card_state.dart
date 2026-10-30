@@ -1,36 +1,73 @@
 import 'package:equatable/equatable.dart';
-import 'package:fin_pay/models/card.dart';
+import 'package:fin_pay/models/payment_card.dart';
 
-/// Base class for all card-related states
-abstract class CardState extends Equatable {
+/// State of the card list.
+sealed class CardState extends Equatable {
   const CardState();
 
   @override
   List<Object?> get props => [];
 }
 
-/// Initial state when card bloc is created
-class CardInitial extends CardState {
+final class CardInitial extends CardState {
   const CardInitial();
 }
 
-/// State when cards are being loaded
-class CardLoading extends CardState {
+final class CardLoading extends CardState {
   const CardLoading();
 }
 
-/// State when cards are successfully loaded
-class CardLoaded extends CardState {
-  const CardLoaded(this.cards);
-  final List<Card> cards;
+final class CardEmpty extends CardState {
+  const CardEmpty();
+}
+
+final class CardError extends CardState {
+  const CardError(this.message);
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
+final class CardContent extends CardState {
+  const CardContent(this.cards);
+
+  final List<PaymentCard> cards;
 
   @override
   List<Object?> get props => [cards];
 }
 
-/// State when an error occurs
-class CardError extends CardState {
-  const CardError(this.message);
+/// One-off effects for the UI.
+sealed class CardEffect extends Equatable {
+  const CardEffect();
+
+  @override
+  List<Object?> get props => [];
+}
+
+final class CardAdded extends CardEffect {
+  const CardAdded(this.card);
+
+  final PaymentCard card;
+
+  @override
+  List<Object?> get props => [card];
+}
+
+final class CardDeleted extends CardEffect {
+  const CardDeleted(this.cardId);
+
+  final String cardId;
+
+  @override
+  List<Object?> get props => [cardId];
+}
+
+final class CardFailed extends CardEffect {
+  const CardFailed(this.message);
+
   final String message;
 
   @override

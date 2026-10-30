@@ -1,97 +1,144 @@
+import 'dart:async';
+
 import 'package:fin_pay/blocs/transaction/transaction_event.dart';
 import 'package:fin_pay/blocs/transaction/transaction_state.dart';
 import 'package:fin_pay/core/logger.dart';
 import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/domain/repositories/transaction_repository.dart';
 import 'package:fin_pay/domain/usecases/add_transaction_usecase.dart';
 import 'package:fin_pay/domain/usecases/get_transactions_usecase.dart';
+import 'package:fin_pay/models/transaction.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// BLoC for managing transaction state
+/// Lists, searches, adds and deletes transactions.
 ///
-/// This BLoC handles all transaction-related operations including:
-/// - Loading transactions
-/// - Adding new transactions
-/// - Deleting transactions
+/// Events are processed one at a time in order (the default sequential
+/// transformer), so a burst of `AddTransactionEvent`s is applied serially
+/// and the idempotency key decides what is a duplicate.
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   TransactionBloc({
     required GetTransactionsUseCase getTransactionsUseCase,
     required AddTransactionUseCase addTransactionUseCase,
+    required ITransactionRepository transactionRepository,
   }) : _getTransactionsUseCase = getTransactionsUseCase,
        _addTransactionUseCase = addTransactionUseCase,
+       _repository = transactionRepository,
        super(const TransactionInitial()) {
-    on<LoadTransactionsEvent>(_onLoadTransactions);
-    on<AddTransactionEvent>(_onAddTransaction);
-    on<DeleteTransactionEvent>(_onDeleteTransaction);
+    on<LoadTransactionsEvent>(_onLoad);
+    on<SearchTransactionsEvent>(_onSearch);
+    on<AddTransactionEvent>(_onAdd);
+    on<DeleteTransactionEvent>(_onDelete);
   }
+
   final GetTransactionsUseCase _getTransactionsUseCase;
   final AddTransactionUseCase _addTransactionUseCase;
+  final ITransactionRepository _repository;
+  late final StreamController<TransactionEffect> _effects =
+      StreamController.broadcast(
+        onListen: () => _hasEffectListeners = true,
+        onCancel: () => _hasEffectListeners = false,
+      );
 
-  /// Handle loading transactions
-  Future<void> _onLoadTransactions(
+  /// One-off effects for the UI.
+  Stream<TransactionEffect> get effects => _effects.stream;
+
+  /// True while something listens to [effects] (leak checks in tests).
+  bool get hasEffectListeners => _hasEffectListeners;
+  bool _hasEffectListeners = false;
+
+  int? _lastLimit;
+
+  Future<void> _onLoad(
     LoadTransactionsEvent event,
     Emitter<TransactionState> emit,
   ) async {
+    _lastLimit = event.limit;
     emit(const TransactionLoading());
+    final result = await _getTransactionsUseCase(limit: event.limit);
+    _emitList(result, emit);
+  }
 
-    try {
-      final result = await _getTransactionsUseCase(limit: event.limit);
+  Future<void> _onSearch(
+    SearchTransactionsEvent event,
+    Emitter<TransactionState> emit,
+  ) async {
+    final query = event.query.trim();
+    if (query.isEmpty) {
+      await _onLoad(const LoadTransactionsEvent(), emit);
+      return;
+    }
+    emit(const TransactionLoading());
+    final result = await _repository.searchTransactions(query);
+    _emitList(result, emit, query: query);
+  }
 
-      result
-          .onSuccess((transactions) {
-            emit(TransactionLoaded(transactions));
-            Logger.info('Loaded ${transactions.length} transactions');
-          })
-          .onFailure((message, error) {
-            emit(TransactionError(message));
-            Logger.error('Failed to load transactions: $message', error);
-          });
-    } on Exception catch (e) {
-      emit(TransactionError('Unexpected error: $e'));
-      Logger.error('Unexpected error loading transactions', e);
+  void _emitList(
+    Result<List<Transaction>> result,
+    Emitter<TransactionState> emit, {
+    String? query,
+  }) {
+    switch (result) {
+      case Success(data: final transactions) when transactions.isEmpty:
+        emit(TransactionEmpty(query: query));
+      case Success(data: final transactions):
+        emit(TransactionContent(transactions, query: query));
+      case Failure(:final message):
+        emit(TransactionError(message));
+        Logger.error('Failed to load transactions: $message');
     }
   }
 
-  /// Handle adding a new transaction
-  Future<void> _onAddTransaction(
+  Future<void> _onAdd(
     AddTransactionEvent event,
     Emitter<TransactionState> emit,
   ) async {
-    try {
-      final result = await _addTransactionUseCase(event.transaction);
-
-      result
-          .onSuccess((_) {
-            Logger.info('Transaction added successfully');
-            // Reload transactions after adding
-            add(const LoadTransactionsEvent());
-          })
-          .onFailure((message, error) {
-            emit(TransactionError(message));
-            Logger.error('Failed to add transaction: $message', error);
-          });
-    } on Exception catch (e) {
-      emit(TransactionError('Unexpected error: $e'));
-      Logger.error('Unexpected error adding transaction', e);
+    final result = await _addTransactionUseCase(event.transaction);
+    switch (result) {
+      case Success(data: TransactionOutcome.recorded):
+        _effects.add(TransactionAdded(event.transaction));
+        await _onLoad(LoadTransactionsEvent(limit: _lastLimit), emit);
+      case Success(data: TransactionOutcome.duplicate):
+        _effects.add(TransactionDuplicate(event.transaction));
+      case Success(data: TransactionOutcome.insufficientBalance):
+        _effects.add(
+          TransactionRejected(event.transaction, 'Insufficient balance'),
+        );
+      case Success(data: TransactionOutcome.noUser):
+        _effects.add(TransactionRejected(event.transaction, 'No account'));
+      case Failure(:final message):
+        _effects.add(TransactionFailed(message));
+        Logger.error('Failed to add transaction: $message');
     }
   }
 
-  /// Handle deleting a transaction
-  Future<void> _onDeleteTransaction(
+  Future<void> _onDelete(
     DeleteTransactionEvent event,
     Emitter<TransactionState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is TransactionLoaded) {
-      try {
-        // Note: You may need to add a DeleteTransactionUseCase if it
-        // doesn't exist
-        // For now, we'll reload transactions after deletion
-        add(const LoadTransactionsEvent());
-        Logger.info('Transaction deleted successfully');
-      } on Exception catch (e) {
-        emit(TransactionError('Failed to delete transaction: $e'));
-        Logger.error('Error deleting transaction', e);
-      }
+    final result = await _repository.deleteTransaction(event.transactionId);
+    switch (result) {
+      case Success():
+        _effects.add(TransactionDeleted(event.transactionId));
+        final current = state;
+        if (current is TransactionContent) {
+          final remaining = current.transactions
+              .where((t) => t.id != event.transactionId)
+              .toList();
+          emit(
+            remaining.isEmpty
+                ? TransactionEmpty(query: current.query)
+                : TransactionContent(remaining, query: current.query),
+          );
+        }
+      case Failure(:final message):
+        _effects.add(TransactionFailed(message));
+        Logger.error('Failed to delete transaction: $message');
     }
+  }
+
+  @override
+  Future<void> close() async {
+    await _effects.close();
+    await super.close();
   }
 }

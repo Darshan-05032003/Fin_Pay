@@ -1,4 +1,5 @@
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class SwipeToDismiss extends StatefulWidget {
@@ -56,7 +57,7 @@ class _SwipeToDismissState extends State<SwipeToDismiss>
     if (_isDismissing) return;
     _isDismissing = true;
 
-    await HapticService.mediumImpact();
+    await sl<HapticService>().medium();
     await _controller.forward();
     widget.onDismiss?.call();
   }

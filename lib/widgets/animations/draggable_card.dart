@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'package:fin_pay/services/haptic_service.dart';
+
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class DraggableCard extends StatefulWidget {
@@ -64,7 +66,7 @@ class _DraggableCardState extends State<DraggableCard>
       _isDragging = true;
       _position += details.delta;
     });
-    unawaited(HapticService.lightImpact());
+    unawaited(sl<HapticService>().light());
   }
 
   void _onPanEnd(DragEndDetails details) {
