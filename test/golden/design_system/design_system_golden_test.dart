@@ -179,6 +179,34 @@ void main() {
         );
       });
 
+      testWidgets('otp field, countdown ring, drawn check', (tester) async {
+        await _golden(
+          tester,
+          'otp_countdown_check',
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: FpSpacing.lg,
+            children: [
+              FpOtpField(value: '24', onChanged: (_) {}),
+              FpOtpField(value: '123456', error: true, onChanged: (_) {}),
+              FpOtpField(value: '1234', enabled: false, onChanged: (_) {}),
+              const Row(
+                spacing: FpSpacing.lg,
+                children: [
+                  FpCountdownRing(progress: 1, label: '30'),
+                  FpCountdownRing(progress: 0.4, label: '12'),
+                  FpCountdownRing(progress: 0, label: '0', size: 40),
+                  FpDrawnCheck(size: 64),
+                  FpDrawnCheck(shown: false, size: 64),
+                ],
+              ),
+            ],
+          ),
+          textScale: scale,
+          size: const Size(400, 420),
+        );
+      });
+
       testWidgets('amount text', (tester) async {
         await _golden(
           tester,

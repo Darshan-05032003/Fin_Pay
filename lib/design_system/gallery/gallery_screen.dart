@@ -3,6 +3,8 @@ import 'package:fin_pay/design_system/components/fp_amount_text.dart';
 import 'package:fin_pay/design_system/components/fp_bottom_sheet.dart';
 import 'package:fin_pay/design_system/components/fp_button.dart';
 import 'package:fin_pay/design_system/components/fp_chip.dart';
+import 'package:fin_pay/design_system/components/fp_countdown_ring.dart';
+import 'package:fin_pay/design_system/components/fp_otp_field.dart';
 import 'package:fin_pay/design_system/components/fp_page_indicator.dart';
 import 'package:fin_pay/design_system/components/fp_segmented_control.dart';
 import 'package:fin_pay/design_system/components/fp_skeleton.dart';
@@ -12,6 +14,7 @@ import 'package:fin_pay/design_system/components/fp_text_field.dart';
 import 'package:fin_pay/design_system/components/fp_toast.dart';
 import 'package:fin_pay/design_system/components/fp_toggle.dart';
 import 'package:fin_pay/design_system/motion/fp_confetti.dart';
+import 'package:fin_pay/design_system/motion/fp_drawn_check.dart';
 import 'package:fin_pay/design_system/motion/fp_pressable.dart';
 import 'package:fin_pay/design_system/motion/fp_pulse.dart';
 import 'package:fin_pay/design_system/motion/fp_shake.dart';
@@ -60,6 +63,10 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
   late final FpShakeController _shake = FpShakeController();
   late final FpConfettiController _confetti = FpConfettiController();
   late final TextEditingController _text = TextEditingController(text: 'Aarav');
+  String _otp = '24';
+  bool _otpError = false;
+  double _countdown = 0.6;
+  bool _checkShown = false;
 
   @override
   void dispose() {
@@ -187,6 +194,67 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
               hint: 'Disabled',
               enabled: false,
             ),
+            const _Section('OTP field'),
+            FpOtpField(
+              value: _otp,
+              error: _otpError,
+              onChanged: (v) => setState(() => _otp = v),
+              haptics: h,
+            ),
+            const SizedBox(height: FpSpacing.md),
+            _Row([
+              Expanded(
+                child: FpButton(
+                  label: _otpError ? 'Clear error' : 'Wrong code',
+                  variant: FpButtonVariant.secondary,
+                  size: FpButtonSize.small,
+                  onPressed: () => setState(() => _otpError = !_otpError),
+                  haptics: h,
+                ),
+              ),
+            ]),
+            const FpOtpField(value: '1234', enabled: false, onChanged: _noop),
+            const _Section('Countdown ring'),
+            _Row([
+              FpCountdownRing(
+                progress: _countdown,
+                label: '${(_countdown * 30).round()}',
+                semanticLabel:
+                    'Resend available in ${(_countdown * 30).round()} seconds',
+              ),
+              const SizedBox(width: FpSpacing.lg),
+              const FpCountdownRing(progress: 1, label: '30', size: 40),
+              const SizedBox(width: FpSpacing.lg),
+              const FpCountdownRing(progress: 0, label: '0', size: 40),
+              const SizedBox(width: FpSpacing.lg),
+              Expanded(
+                child: FpButton(
+                  label: 'Tick',
+                  variant: FpButtonVariant.secondary,
+                  size: FpButtonSize.small,
+                  onPressed: () => setState(
+                    () => _countdown = _countdown <= 0 ? 1 : _countdown - 0.2,
+                  ),
+                  haptics: h,
+                ),
+              ),
+            ]),
+            const _Section('Drawn check'),
+            _Row([
+              FpDrawnCheck(shown: _checkShown, size: 64),
+              const SizedBox(width: FpSpacing.lg),
+              const FpDrawnCheck(size: 64),
+              const SizedBox(width: FpSpacing.lg),
+              Expanded(
+                child: FpButton(
+                  label: _checkShown ? 'Reset' : 'Draw',
+                  variant: FpButtonVariant.secondary,
+                  size: FpButtonSize.small,
+                  onPressed: () => setState(() => _checkShown = !_checkShown),
+                  haptics: h,
+                ),
+              ),
+            ]),
             const _Section('Chips'),
             Wrap(
               spacing: FpSpacing.sm,
@@ -357,6 +425,8 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
     );
   }
 }
+
+void _noop(String _) {}
 
 class _Section extends StatelessWidget {
   const _Section(this.title);

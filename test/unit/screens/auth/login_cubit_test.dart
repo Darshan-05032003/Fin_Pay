@@ -280,7 +280,7 @@ void main() {
 
   test('hostile input does not throw', () async {
     final cubit = build()
-      ..emailChanged('‮' * 5000)
+      ..emailChanged('\u202E' * 5000)
       ..passwordChanged('😀' * 5000)
       ..emailChanged("' OR 1=1 --")
       ..passwordChanged('%s%n');

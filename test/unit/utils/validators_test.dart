@@ -28,7 +28,7 @@ void main() {
         "' OR 1=1 --@x.com",
         'user\n@x.com',
         'user\u0000@x.com',
-        'us‮er@x.com',
+        'us\u202Eer@x.com',
         'user@x.com;drop',
         '%s%n@x.com',
         'user@x.com<script>',
@@ -81,7 +81,10 @@ void main() {
     });
 
     test('is total and fast on hostile input', () {
-      expect(Validators.passwordStrength('‮' * 10000), isA<PasswordStrength>());
+      expect(
+        Validators.passwordStrength('\u202E' * 10000),
+        isA<PasswordStrength>(),
+      );
       expect(Validators.passwordStrength('😀' * 100), isA<PasswordStrength>());
     });
 
@@ -108,7 +111,7 @@ void main() {
       expect(Validators.validateName('Bob<script>'), 'Use letters only');
       expect(Validators.validateName('123'), 'Use letters only');
       expect(Validators.validateName('😀😀'), 'Use letters only');
-      expect(Validators.validateName('a‮b'), 'Use letters only');
+      expect(Validators.validateName('a\u202Eb'), 'Use letters only');
     });
   });
 

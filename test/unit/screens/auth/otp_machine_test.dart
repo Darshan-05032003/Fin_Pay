@@ -14,7 +14,7 @@ void main() {
       expect(OtpMachine.sanitize('1234567890'), '123456');
       expect(OtpMachine.sanitize('abc'), '');
       expect(OtpMachine.sanitize('١٢٣٤٥٦'), '');
-      expect(OtpMachine.sanitize('😀1‮2\u00003'), '123');
+      expect(OtpMachine.sanitize('😀1\u202E2\u00003'), '123');
       expect(OtpMachine.sanitize(''), '');
     });
   });
@@ -150,7 +150,7 @@ void main() {
 
   test('10,000 random inputs never throw and never exceed six digits', () {
     final rng = Random(7);
-    const alphabet = '0123456789abc 😀‮\u0000-+()٣٤日本\n\t<>;\'"%\$';
+    const alphabet = '0123456789abc 😀\u202E\u0000-+()٣٤日本\n\t<>;\'"%\$';
     final runes = alphabet.runes.toList();
     var s = start;
     for (var i = 0; i < 10000; i++) {

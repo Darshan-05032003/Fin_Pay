@@ -55,7 +55,7 @@ abstract final class Validators {
   // Any Unicode letter / mark; used to reject emoji, digits and symbols
   // without listing scripts.
   static final RegExp _control = RegExp(
-    r'[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁦-⁩﻿]',
+    r'[\u0000-\u001f\u007f-\u009f\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]',
   );
 
   static final RegExp _asciiDigit = RegExp('[0-9]');

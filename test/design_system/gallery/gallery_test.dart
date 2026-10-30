@@ -47,6 +47,9 @@ void main() {
         'BUTTONS',
         'SURFACES',
         'TEXT FIELDS',
+        'OTP FIELD',
+        'COUNTDOWN RING',
+        'DRAWN CHECK',
         'CHIPS',
         'TOGGLE',
         'SEGMENTED CONTROL',
@@ -63,6 +66,9 @@ void main() {
       expect(find.byType(FpSurface), findsNWidgets(3));
       expect(find.byType(FpTextField), findsNWidgets(4));
       expect(find.byType(FpChip), findsNWidgets(4));
+      expect(find.byType(FpOtpField), findsNWidgets(2));
+      expect(find.byType(FpCountdownRing), findsNWidgets(3));
+      expect(find.byType(FpDrawnCheck), findsNWidgets(2));
       expect(find.byType(FpToggle), findsNWidgets(3));
       expect(find.byType(FpSegmentedControl), findsNWidgets(2));
       expect(find.byType(FpPageIndicator), findsOneWidget);
