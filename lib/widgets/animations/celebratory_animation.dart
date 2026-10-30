@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:confetti/confetti.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class CelebratoryAnimation extends StatefulWidget {
@@ -61,7 +62,7 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
   }
 
   Future<void> _startCelebration() async {
-    await HapticService.success();
+    await sl<HapticService>().success();
     _confettiController.play();
     _scaleController.forward();
     _rotationController.repeat();

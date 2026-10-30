@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/models/user.dart';
-import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
@@ -13,6 +15,7 @@ import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -70,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -198,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           RippleEffect(
             borderRadius: 20,
             onTap: () async {
-              await HapticService.mediumImpact();
+              await sl<HapticService>().medium();
               _showEditDialog();
             },
             child: const IconButton(
@@ -240,7 +243,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                await HapticService.lightImpact();
+                await sl<HapticService>().light();
                 if (!context.mounted) return;
                 Navigator.pop(context);
               },
@@ -293,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                await HapticService.success();
+                await sl<HapticService>().success();
                 final updatedUser = _user!.copyWith(
                   fullName: nameController.text.trim(),
                   email: emailController.text.trim(),
@@ -335,14 +338,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.credit_card,
             title: 'My Card',
             onTap: () {
-              Navigator.pushNamed(context, '/cards');
+              unawaited(context.push('/cards'));
             },
           ),
           _buildMenuItem(
             icon: Icons.history,
             title: 'Transaction History',
             onTap: () {
-              Navigator.pushNamed(context, '/transactions');
+              unawaited(context.push('/transactions'));
             },
           ),
           _buildMenuItem(icon: Icons.security, title: 'Security', onTap: () {}),
@@ -404,7 +407,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return CredButtonPress(
       onTap: () async {
-        await HapticService.selection();
+        await sl<HapticService>().selection();
         onTap();
       },
       child: Container(
@@ -464,7 +467,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: RippleEffect(
           borderRadius: 12,
           onTap: () async {
-            await HapticService.mediumImpact();
+            await sl<HapticService>().medium();
             if (!context.mounted) return;
             unawaited(
               showDialog<void>(
@@ -475,7 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   actions: [
                     TextButton(
                       onPressed: () async {
-                        await HapticService.lightImpact();
+                        await sl<HapticService>().light();
                         if (!context.mounted) return;
                         Navigator.pop(context);
                       },
@@ -483,14 +486,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     TextButton(
                       onPressed: () async {
-                        await HapticService.heavyImpact();
+                        await sl<HapticService>().heavy();
                         await UserService.logout();
                         if (!context.mounted) return;
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/login',
-                          (route) => false,
-                        );
+                        context.go('/login');
                       },
                       child: const Text(
                         'Logout',
@@ -504,14 +503,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           },
           child: CredButtonPress(
             onTap: () async {
-              await HapticService.heavyImpact();
+              await sl<HapticService>().heavy();
               await UserService.logout();
               if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                (route) => false,
-              );
+              context.go('/login');
             },
             child: SpringAnimation(
               startOffset: const Offset(0, 20),
@@ -552,13 +547,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       currentIndex: currentIndex,
       onTap: (index) {
         if (index == 0) {
-          Navigator.pushReplacementNamed(context, '/home');
+          context.go('/home');
         } else if (index == 1) {
-          Navigator.pushReplacementNamed(context, '/statistics');
+          context.go('/statistics');
         } else if (index == 2) {
-          Navigator.pushReplacementNamed(context, '/cards');
+          context.go('/cards');
         } else if (index == 3) {
-          Navigator.pushReplacementNamed(context, '/profile');
+          context.go('/profile');
         }
       },
     );

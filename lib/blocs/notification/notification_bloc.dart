@@ -1,84 +1,101 @@
+import 'dart:async';
+
 import 'package:fin_pay/blocs/notification/notification_event.dart';
 import 'package:fin_pay/blocs/notification/notification_state.dart';
 import 'package:fin_pay/core/logger.dart';
-import 'package:fin_pay/services/database_service.dart';
+import 'package:fin_pay/core/result/result.dart';
+import 'package:fin_pay/domain/repositories/notification_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// BLoC for managing notification state
-///
-/// This BLoC handles all notification-related operations including:
-/// - Loading notifications
-/// - Adding new notifications
-/// - Deleting notifications
+/// Lists, adds and deletes in-app notifications.
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
-  NotificationBloc({required DatabaseService db})
-    : _db = db,
+  NotificationBloc({required INotificationRepository repository})
+    : _repository = repository,
       super(const NotificationInitial()) {
-    on<LoadNotificationsEvent>(_onLoadNotifications);
-    on<AddNotificationEvent>(_onAddNotification);
-    on<DeleteNotificationEvent>(_onDeleteNotification);
+    on<LoadNotificationsEvent>(_onLoad);
+    on<AddNotificationEvent>(_onAdd);
+    on<DeleteNotificationEvent>(_onDelete);
   }
-  final DatabaseService _db;
 
-  /// Handle loading notifications
-  Future<void> _onLoadNotifications(
+  final INotificationRepository _repository;
+  final StreamController<NotificationEffect> _effects =
+      StreamController.broadcast();
+
+  /// One-off effects for the UI.
+  Stream<NotificationEffect> get effects => _effects.stream;
+
+  Future<void> _onLoad(
     LoadNotificationsEvent event,
     Emitter<NotificationState> emit,
   ) async {
     emit(const NotificationLoading());
-
-    try {
-      final notifications = await _db.getNotifications();
-      emit(NotificationLoaded(notifications));
-      Logger.info('Loaded ${notifications.length} notifications');
-    } on Exception catch (e) {
-      emit(NotificationError('Failed to load notifications: $e'));
-      Logger.error('Error loading notifications', e);
+    final result = await _repository.getNotifications();
+    switch (result) {
+      case Success(data: final items) when items.isEmpty:
+        emit(const NotificationEmpty());
+      case Success(data: final items):
+        emit(NotificationContent(items));
+      case Failure(:final message):
+        emit(NotificationError(message));
+        Logger.error('Failed to load notifications: $message');
     }
   }
 
-  /// Handle adding a new notification
-  Future<void> _onAddNotification(
+  Future<void> _onAdd(
     AddNotificationEvent event,
     Emitter<NotificationState> emit,
   ) async {
-    try {
-      await _db.insertNotification(event.notification);
-      final currentState = state;
-      if (currentState is NotificationLoaded) {
-        final updatedNotifications = [
-          event.notification,
-          ...currentState.notifications,
-        ];
-        emit(NotificationLoaded(updatedNotifications));
-      } else {
-        add(const LoadNotificationsEvent());
-      }
-      Logger.info('Notification added successfully');
-    } on Exception catch (e) {
-      emit(NotificationError('Failed to add notification: $e'));
-      Logger.error('Error adding notification', e);
+    final result = await _repository.addNotification(event.notification);
+    switch (result) {
+      case Success():
+        _effects.add(NotificationAdded(event.notification));
+        final current = state;
+        if (current is NotificationContent) {
+          emit(
+            NotificationContent([event.notification, ...current.notifications]),
+          );
+        } else {
+          emit(NotificationContent([event.notification]));
+        }
+      case Failure(:final message):
+        _effects.add(NotificationFailed(message));
+        Logger.error('Failed to add notification: $message');
     }
   }
 
-  /// Handle deleting a notification
-  Future<void> _onDeleteNotification(
+  Future<void> _onDelete(
     DeleteNotificationEvent event,
     Emitter<NotificationState> emit,
   ) async {
-    try {
-      await _db.deleteNotification(event.notificationId);
-      final currentState = state;
-      if (currentState is NotificationLoaded) {
-        final updatedNotifications = currentState.notifications
-            .where((n) => n.id != event.notificationId)
-            .toList();
-        emit(NotificationLoaded(updatedNotifications));
-      }
-      Logger.info('Notification deleted successfully');
-    } on Exception catch (e) {
-      emit(NotificationError('Failed to delete notification: $e'));
-      Logger.error('Error deleting notification', e);
+    final current = state;
+    final removed = current is NotificationContent
+        ? current.notifications
+              .where((n) => n.id == event.notificationId)
+              .firstOrNull
+        : null;
+    final result = await _repository.deleteNotification(event.notificationId);
+    switch (result) {
+      case Success():
+        if (removed != null) _effects.add(NotificationDeleted(removed));
+        if (current is NotificationContent) {
+          final remaining = current.notifications
+              .where((n) => n.id != event.notificationId)
+              .toList();
+          emit(
+            remaining.isEmpty
+                ? const NotificationEmpty()
+                : NotificationContent(remaining),
+          );
+        }
+      case Failure(:final message):
+        _effects.add(NotificationFailed(message));
+        Logger.error('Failed to delete notification: $message');
     }
+  }
+
+  @override
+  Future<void> close() async {
+    await _effects.close();
+    await super.close();
   }
 }

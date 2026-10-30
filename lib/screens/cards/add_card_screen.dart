@@ -1,7 +1,11 @@
 import 'dart:async';
+
+import 'package:clock/clock.dart';
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/models/card.dart' as models;
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/core/money/money.dart';
+import 'package:fin_pay/models/payment_card.dart' as models;
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
@@ -265,7 +269,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                       _cardNumberController.text.trim().isEmpty ||
                       _expireController.text.trim().isEmpty ||
                       _cvvController.text.trim().isEmpty) {
-                    await HapticService.error();
+                    await sl<HapticService>().error();
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -276,7 +280,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     return;
                   }
 
-                  await HapticService.mediumImpact();
+                  await sl<HapticService>().medium();
 
                   final cardType = _cardType == 'Visa'
                       ? models.CardType.visa
@@ -284,18 +288,18 @@ class _AddCardScreenState extends State<AddCardScreen> {
                       ? models.CardType.mastercard
                       : models.CardType.amex;
 
-                  final newCard = models.Card(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  final newCard = models.PaymentCard(
+                    id: 'card-${sl<Clock>().now().microsecondsSinceEpoch}',
                     cardNumber: _cardNumberController.text.trim(),
                     cardHolderName: _cardHolderController.text.trim(),
                     expireDate: _expireController.text.trim(),
                     cvv: _cvvController.text.trim(),
                     cardType: cardType,
-                    balance: 0,
+                    balance: Money.zero,
                   );
 
                   await UserService.addCard(newCard);
-                  await HapticService.success();
+                  await sl<HapticService>().success();
 
                   if (context.mounted) {
                     Navigator.pop(context);
@@ -458,7 +462,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
   Widget _buildCardTypeField() {
     return CredButtonPress(
       onTap: () async {
-        await HapticService.mediumImpact();
+        await sl<HapticService>().medium();
         if (!mounted) return;
         unawaited(
           showModalBottomSheet<void>(
@@ -483,7 +487,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   const SizedBox(height: 24),
                   CredButtonPress(
                     onTap: () async {
-                      await HapticService.selection();
+                      await sl<HapticService>().selection();
                       setState(() {
                         _cardType = 'Visa';
                       });
@@ -518,7 +522,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   const SizedBox(height: 12),
                   CredButtonPress(
                     onTap: () async {
-                      await HapticService.selection();
+                      await sl<HapticService>().selection();
                       setState(() {
                         _cardType = 'Mastercard';
                       });
@@ -553,7 +557,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   const SizedBox(height: 12),
                   CredButtonPress(
                     onTap: () async {
-                      await HapticService.selection();
+                      await sl<HapticService>().selection();
                       setState(() {
                         _cardType = 'American Express';
                       });

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
 import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -102,7 +105,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           },
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.pushNamed(context, '/onboarding');
+                              unawaited(context.push('/onboarding'));
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.credOrangeSunshine,

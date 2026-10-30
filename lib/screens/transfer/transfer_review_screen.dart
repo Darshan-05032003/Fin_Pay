@@ -1,7 +1,11 @@
+import 'package:clock/clock.dart';
 import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/domain/repositories/transaction_repository.dart';
 import 'package:fin_pay/models/notification_item.dart';
 import 'package:fin_pay/models/transaction.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/routes/transfer_draft.dart';
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
@@ -10,17 +14,16 @@ import 'package:fin_pay/widgets/animations/draggable_card.dart';
 import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class TransferReviewScreen extends StatelessWidget {
-  const TransferReviewScreen({
-    required this.recipientName,
-    required this.recipientAccount,
-    required this.amount,
-    super.key,
-  });
-  final String recipientName;
-  final String recipientAccount;
-  final String amount;
+  const TransferReviewScreen({required this.draft, super.key});
+
+  final TransferDraft draft;
+
+  String get recipientName => draft.recipientName;
+  String get recipientAccount => draft.recipientAccount;
+  String get amount => draft.amount.format();
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +34,7 @@ class TransferReviewScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -96,7 +99,7 @@ class TransferReviewScreen extends StatelessWidget {
                         color: AppTheme.credMediumGray,
                         thickness: 0.5,
                       ),
-                      _buildDetailRow('Amount', '\$$amount'),
+                      _buildDetailRow('Amount', amount),
                       const Divider(
                         color: AppTheme.credMediumGray,
                         thickness: 0.5,
@@ -106,11 +109,7 @@ class TransferReviewScreen extends StatelessWidget {
                         color: AppTheme.credMediumGray,
                         thickness: 0.5,
                       ),
-                      _buildDetailRow(
-                        'Total Amount',
-                        '\$$amount',
-                        isTotal: true,
-                      ),
+                      _buildDetailRow('Total Amount', amount, isTotal: true),
                     ],
                   ),
                 ),
@@ -164,9 +163,9 @@ class TransferReviewScreen extends StatelessWidget {
               delay: const Duration(milliseconds: 500),
               child: CredButtonPress(
                 onTap: () async {
-                  final transferAmount = double.tryParse(amount);
-                  if (transferAmount == null || transferAmount <= 0) {
-                    await HapticService.error();
+                  final transferAmount = draft.amount;
+                  if (!transferAmount.isPositive) {
+                    await sl<HapticService>().error();
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -179,7 +178,7 @@ class TransferReviewScreen extends StatelessWidget {
 
                   final currentBalance = await UserService.getBalance();
                   if (transferAmount > currentBalance) {
-                    await HapticService.error();
+                    await sl<HapticService>().error();
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -190,40 +189,46 @@ class TransferReviewScreen extends StatelessWidget {
                     return;
                   }
 
-                  await HapticService.heavyImpact();
+                  await sl<HapticService>().heavy();
 
                   // Create transaction
                   final transaction = Transaction(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    id: 'tx-${draft.idempotencyKey}',
                     title: 'Transfer to $recipientName',
                     amount: -transferAmount,
-                    date: DateTime.now(),
+                    date: sl<Clock>().now(),
                     type: TransactionType.sendMoney,
                     icon: recipientName[0].toUpperCase(),
                     recipient: recipientName,
+                    idempotencyKey: draft.idempotencyKey,
                   );
 
-                  await UserService.addTransaction(transaction);
+                  final outcome = await UserService.addTransaction(transaction);
+                  if (outcome == TransactionOutcome.insufficientBalance ||
+                      outcome == TransactionOutcome.noUser) {
+                    await sl<HapticService>().error();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Insufficient balance'),
+                        backgroundColor: AppTheme.red,
+                      ),
+                    );
+                    return;
+                  }
 
                   // Add notification
                   final notification = NotificationItem(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    id: 'notify-${draft.idempotencyKey}',
                     title: 'Transfer Successful!',
-                    message: 'You transferred \$$amount to $recipientName',
-                    time: DateTime.now(),
+                    message: 'You transferred $amount to $recipientName',
+                    time: sl<Clock>().now(),
                     type: NotificationType.paymentRequest,
                   );
                   await UserService.addNotification(notification);
 
                   if (!context.mounted) return;
-                  Navigator.pushReplacementNamed(
-                    context,
-                    '/transfer-success',
-                    arguments: {
-                      'recipientName': recipientName,
-                      'amount': amount,
-                    },
-                  );
+                  context.pushReplacement('/transfer-success', extra: draft);
                 },
                 child: SpringAnimation(
                   startOffset: const Offset(0, 20),

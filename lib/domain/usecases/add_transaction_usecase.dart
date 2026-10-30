@@ -1,29 +1,20 @@
 import 'package:fin_pay/core/result/result.dart';
 import 'package:fin_pay/domain/repositories/transaction_repository.dart';
-import 'package:fin_pay/domain/repositories/user_repository.dart';
-import 'package:fin_pay/models/transaction.dart' as models;
+import 'package:fin_pay/models/transaction.dart';
 
-/// Use case for adding a new transaction
+/// Records a transaction exactly once and applies it to the balance.
 class AddTransactionUseCase {
-  AddTransactionUseCase(this._transactionRepository, this._userRepository);
+  AddTransactionUseCase(this._transactionRepository);
+
   final ITransactionRepository _transactionRepository;
-  final IUserRepository _userRepository;
 
-  /// Execute the use case
-  Future<Result<void>> call(models.Transaction transaction) async {
-    // Add transaction
-    final result = await _transactionRepository.addTransaction(transaction);
-
-    // Update user balance if transaction is successful
-    return await result.flatMapAsync((_) async {
-      final userResult = await _userRepository.getCurrentUser();
-      return await userResult.flatMapAsync((user) async {
-        if (user == null) {
-          return const Failure('User not found');
-        }
-        final newBalance = user.balance + transaction.amount;
-        return await _userRepository.updateBalance(newBalance);
-      });
-    });
+  Future<Result<TransactionOutcome>> call(Transaction transaction) async {
+    if (transaction.amount.isZero) {
+      return const Failure('Amount must not be zero');
+    }
+    if (transaction.title.trim().isEmpty) {
+      return const Failure('Title must not be empty');
+    }
+    return await _transactionRepository.addTransaction(transaction);
   }
 }

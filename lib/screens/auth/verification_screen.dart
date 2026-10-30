@@ -1,14 +1,16 @@
 import 'dart:async';
+
+import 'package:fin_pay/blocs/session/session_cubit.dart';
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/models/user.dart';
-import 'package:fin_pay/services/haptic_service.dart';
-import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
 import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
 import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -26,8 +28,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userData =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final userData = GoRouterState.of(context).extra as Map<String, dynamic>?;
 
     return Scaffold(
       backgroundColor: AppTheme.credPureBackground,
@@ -91,7 +92,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       ),
                       CredButtonPress(
                         onTap: () async {
-                          await HapticService.lightImpact();
+                          await sl<HapticService>().light();
                           if (!context.mounted) return;
                           Navigator.pop(context);
                         },
@@ -186,7 +187,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                           contentPadding: EdgeInsets.all(16),
                                         ),
                                         onChanged: (value) {
-                                          unawaited(HapticService.selection());
+                                          unawaited(
+                                            sl<HapticService>().selection(),
+                                          );
                                           if (value.isNotEmpty && index < 3) {
                                             _focusNodes[index + 1]
                                                 .requestFocus();
@@ -220,7 +223,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         ),
                         CredButtonPress(
                           onTap: () async {
-                            await HapticService.lightImpact();
+                            await sl<HapticService>().light();
                           },
                           child: const Text(
                             'Resend It',
@@ -241,7 +244,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         // Verify all fields are filled
                         final code = _controllers.map((c) => c.text).join();
                         if (code.length != 4) {
-                          await HapticService.error();
+                          await sl<HapticService>().error();
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -254,7 +257,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           return;
                         }
 
-                        await HapticService.mediumImpact();
+                        await sl<HapticService>().medium();
 
                         // Only allow creating account with default credentials
                         if (userData != null) {
@@ -267,29 +270,19 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           final password =
                               userData['password']?.toString() ?? '';
 
-                          // Check if using default credentials
-                          if (email == UserService.defaultEmail.toLowerCase() &&
-                              password == UserService.defaultPassword) {
-                            final user = User(
-                              id: 'default_user_001',
-                              fullName:
-                                  userData['fullName'] as String? ??
-                                  UserService.defaultName,
-                              email: UserService.defaultEmail,
-                              password: UserService.defaultPassword,
-                              balance: 56246.90, // Initial balance
-                              createdAt: DateTime.now(),
-                            );
-                            await UserService.saveUser(user);
-                            await HapticService.success();
+                          // Only the seeded demo account can sign up.
+                          final session = sl<SessionCubit>();
+                          await session.signIn(email, password);
+                          if (session.isAuthenticated) {
+                            await sl<HapticService>().success();
                           } else {
-                            // Show error - only default credentials allowed
-                            await HapticService.error();
+                            await sl<HapticService>().error();
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                  'Only default credentials allowed. Use: user@finpay.com / FinPay123',
+                                  'Only the demo account can sign up: '
+                                  'user@finpay.com (password in the README)',
                                 ),
                                 backgroundColor: AppTheme.credError,
                                 duration: Duration(seconds: 3),
@@ -300,10 +293,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         }
 
                         if (!context.mounted) return;
-                        Navigator.pushReplacementNamed(
-                          context,
-                          '/fingerprint-setup',
-                        );
+                        context.go('/fingerprint-setup');
                       },
                       child: SpringAnimation(
                         startOffset: const Offset(0, 20),

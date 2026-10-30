@@ -1,14 +1,13 @@
 import 'package:fin_pay/core/result/result.dart';
 import 'package:fin_pay/domain/repositories/transaction_repository.dart';
-import 'package:fin_pay/models/transaction.dart' as models;
+import 'package:fin_pay/models/transaction.dart';
 
-/// Use case for getting transactions
+/// Lists transactions, newest first.
 class GetTransactionsUseCase {
   GetTransactionsUseCase(this._transactionRepository);
+
   final ITransactionRepository _transactionRepository;
 
-  /// Execute the use case
-  Future<Result<List<models.Transaction>>> call({int? limit}) async {
-    return await _transactionRepository.getTransactions(limit: limit);
-  }
+  Future<Result<List<Transaction>>> call({int? limit, int? offset}) =>
+      _transactionRepository.getTransactions(limit: limit, offset: offset);
 }

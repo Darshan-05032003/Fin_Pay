@@ -1,7 +1,10 @@
 import 'dart:async';
+
+import 'package:clock/clock.dart';
 import 'package:fin_pay/constants/theme.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/models/transaction.dart';
-import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
@@ -62,7 +65,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -105,7 +108,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   setState(() {
                                     _searchQuery = value;
                                   });
-                                  unawaited(HapticService.selection());
+                                  unawaited(sl<HapticService>().selection());
                                 },
                                 style: const TextStyle(
                                   color: AppTheme.credTextPrimary,
@@ -138,7 +141,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     offset: const Offset(20, 0),
                     child: CredButtonPress(
                       onTap: () async {
-                        await HapticService.mediumImpact();
+                        await sl<HapticService>().medium();
                       },
                       child: CredCardReveal(
                         duration: const Duration(milliseconds: 400),
@@ -169,7 +172,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     offset: const Offset(20, 0),
                     child: CredButtonPress(
                       onTap: () async {
-                        await HapticService.mediumImpact();
+                        await sl<HapticService>().medium();
                       },
                       child: CredCardReveal(
                         perspective: 0.0006,
@@ -247,7 +250,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               child: SwipeToDismiss(
                                 uniqueKey: transaction.id,
                                 onDismiss: () async {
-                                  await HapticService.mediumImpact();
+                                  await sl<HapticService>().medium();
                                   setState(() {
                                     _transactions.removeWhere(
                                       (t) => t.id == transaction.id,
@@ -259,7 +262,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 },
                                 child: CredButtonPress(
                                   onTap: () async {
-                                    await HapticService.lightImpact();
+                                    await sl<HapticService>().light();
                                   },
                                   child: _buildTransactionItem(transaction),
                                 ),
@@ -277,7 +280,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildTransactionItem(Transaction transaction) {
-    final isPayment = transaction.amount < 0;
+    final isPayment = transaction.amount.isNegative;
     final iconColor = isPayment ? AppTheme.credError : AppTheme.credNeoPaccha;
     final tagColor = isPayment ? AppTheme.credError : AppTheme.credNeoPaccha;
     final tagText = isPayment ? 'Payment' : 'Received';
@@ -329,7 +332,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _formatDate(transaction.date),
+                  _formatDate(transaction.localDate),
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppTheme.credTextTertiary,
@@ -343,7 +346,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '\$${transaction.amount.abs().toStringAsFixed(2)}',
+                transaction.amount.abs().format(),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -372,7 +375,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
+    final now = sl<Clock>().now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {

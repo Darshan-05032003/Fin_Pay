@@ -1,52 +1,118 @@
 import 'package:equatable/equatable.dart';
+import 'package:fin_pay/core/money/money.dart';
 import 'package:fin_pay/models/transaction.dart';
 
-/// Base class for all transaction-related states
-abstract class TransactionState extends Equatable {
+/// State of the transaction list.
+sealed class TransactionState extends Equatable {
   const TransactionState();
 
   @override
   List<Object?> get props => [];
 }
 
-/// Initial state when transaction bloc is created
-class TransactionInitial extends TransactionState {
+final class TransactionInitial extends TransactionState {
   const TransactionInitial();
 }
 
-/// State when transactions are being loaded
-class TransactionLoading extends TransactionState {
+final class TransactionLoading extends TransactionState {
   const TransactionLoading();
 }
 
-/// State when transactions are successfully loaded
-class TransactionLoaded extends TransactionState {
-  const TransactionLoaded(this.transactions);
-  final List<Transaction> transactions;
+/// Loaded, but there is nothing to show (optionally for a search).
+final class TransactionEmpty extends TransactionState {
+  const TransactionEmpty({this.query});
+
+  final String? query;
 
   @override
-  List<Object?> get props => [transactions];
-
-  List<Transaction> get recentTransactions => transactions.take(5).toList();
-
-  double get totalIncome {
-    return transactions
-        .where((t) => t.amount > 0)
-        .fold(0, (sum, t) => sum + t.amount);
-  }
-
-  double get totalExpenses {
-    return transactions
-        .where((t) => t.amount < 0)
-        .fold(0, (sum, t) => sum + t.amount.abs());
-  }
+  List<Object?> get props => [query];
 }
 
-/// State when an error occurs
-class TransactionError extends TransactionState {
+final class TransactionError extends TransactionState {
   const TransactionError(this.message);
+
   final String message;
 
   @override
   List<Object?> get props => [message];
+}
+
+final class TransactionContent extends TransactionState {
+  const TransactionContent(this.transactions, {this.query});
+
+  final List<Transaction> transactions;
+
+  /// The search query these results are for, or null for the full list.
+  final String? query;
+
+  List<Transaction> get recentTransactions => transactions.take(5).toList();
+
+  Money get totalIncome => transactions
+      .where((t) => t.amount.isPositive)
+      .fold(Money.zero, (sum, t) => sum + t.amount);
+
+  Money get totalExpenses => transactions
+      .where((t) => t.amount.isNegative)
+      .fold(Money.zero, (sum, t) => sum + t.amount.abs());
+
+  @override
+  List<Object?> get props => [transactions, query];
+}
+
+/// One-off effects for the UI (toasts, haptics, navigation).
+sealed class TransactionEffect extends Equatable {
+  const TransactionEffect();
+
+  @override
+  List<Object?> get props => [];
+}
+
+/// The transaction was written and the balance updated.
+final class TransactionAdded extends TransactionEffect {
+  const TransactionAdded(this.transaction);
+
+  final Transaction transaction;
+
+  @override
+  List<Object?> get props => [transaction];
+}
+
+/// The same confirmation was submitted again; nothing changed.
+final class TransactionDuplicate extends TransactionEffect {
+  const TransactionDuplicate(this.transaction);
+
+  final Transaction transaction;
+
+  @override
+  List<Object?> get props => [transaction];
+}
+
+/// Refused by a business rule (insufficient balance, no user).
+final class TransactionRejected extends TransactionEffect {
+  const TransactionRejected(this.transaction, this.reason);
+
+  final Transaction transaction;
+  final String reason;
+
+  @override
+  List<Object?> get props => [transaction, reason];
+}
+
+/// Storage failed; the list is unchanged.
+final class TransactionFailed extends TransactionEffect {
+  const TransactionFailed(this.message);
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
+final class TransactionDeleted extends TransactionEffect {
+  const TransactionDeleted(this.transactionId);
+
+  final String transactionId;
+
+  @override
+  List<Object?> get props => [transactionId];
 }

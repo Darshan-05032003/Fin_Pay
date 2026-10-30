@@ -1,3 +1,9 @@
+import 'package:fin_pay/blocs/session/session_cubit.dart';
+import 'package:fin_pay/routes/app_page_transitions.dart';
+import 'package:fin_pay/routes/app_redirect.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/routes/go_router_refresh_stream.dart';
+import 'package:fin_pay/routes/transfer_draft.dart';
 import 'package:fin_pay/screens/auth/create_account_screen.dart';
 import 'package:fin_pay/screens/auth/fingerprint_setup_screen.dart';
 import 'package:fin_pay/screens/auth/forgot_password_screen.dart';
@@ -15,66 +21,108 @@ import 'package:fin_pay/screens/transactions/transactions_screen.dart';
 import 'package:fin_pay/screens/transfer/transfer_review_screen.dart';
 import 'package:fin_pay/screens/transfer/transfer_screen.dart';
 import 'package:fin_pay/screens/transfer/transfer_success_screen.dart';
-import 'package:fin_pay/widgets/animations/cred_page_transition.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-class AppRouter {
-  static Route<dynamic> generateRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case '/':
-        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
-      case '/onboarding':
-        return CredPageTransition(page: const OnboardingScreen());
-      case '/login':
-        return CredPageTransition(page: const LoginScreen());
-      case '/create-account':
-        return CredPageTransition(page: const CreateAccountScreen());
-      case '/verification':
-        return CredPageTransition(page: const VerificationScreen());
-      case '/fingerprint-setup':
-        return CredPageTransition(page: const FingerprintSetupScreen());
-      case '/forgot-password':
-        return CredPageTransition(page: const ForgotPasswordScreen());
-      case '/home':
-        return CredPageTransition(page: const HomeScreen());
-      case '/transactions':
-        return CredPageTransition(page: const TransactionsScreen());
-      case '/transfer':
-        return CredPageTransition(page: const TransferScreen());
-      case '/transfer-review':
-        final args = settings.arguments as Map<String, dynamic>?;
-        return CredPageTransition(
-          page: TransferReviewScreen(
-            recipientName: args?['recipientName'] as String? ?? 'Kelvin Habit',
-            recipientAccount:
-                args?['recipientAccount'] as String? ?? '**** 5961',
-            amount: args?['amount'] as String? ?? '420.90',
+/// Builds the app's [GoRouter].
+abstract final class AppRouter {
+  /// Creates the router. [session] drives the auth redirect; [gallery]
+  /// supplies the debug-only widget gallery (null → placeholder);
+  /// [isDebug] defaults to [kDebugMode] and is overridable for tests.
+  static GoRouter build({
+    required SessionCubit session,
+    WidgetBuilder? gallery,
+    bool? isDebug,
+    String initialLocation = AppRoutes.welcome,
+  }) {
+    final debug = isDebug ?? kDebugMode;
+    return GoRouter(
+      initialLocation: initialLocation,
+      refreshListenable: GoRouterRefreshStream(session.stream),
+      redirect: (context, state) => AppRedirect.resolve(
+        location: state.uri.toString(),
+        session: session.state,
+        isDebug: debug,
+      ),
+      errorBuilder: (context, state) => _NotFoundScreen(path: state.uri.path),
+      routes: [
+        _route(AppRoutes.welcome, (_) => const WelcomeScreen()),
+        _route(AppRoutes.onboarding, (_) => const OnboardingScreen()),
+        _route(AppRoutes.login, (_) => const LoginScreen()),
+        _route(AppRoutes.createAccount, (_) => const CreateAccountScreen()),
+        _route(AppRoutes.verification, (_) => const VerificationScreen()),
+        _route(
+          AppRoutes.fingerprintSetup,
+          (_) => const FingerprintSetupScreen(),
+        ),
+        _route(AppRoutes.passwordReset, (_) => const ForgotPasswordScreen()),
+        _route(AppRoutes.home, (_) => const HomeScreen()),
+        _route(AppRoutes.transactions, (_) => const TransactionsScreen()),
+        _route(AppRoutes.transfer, (_) => const TransferScreen()),
+        GoRoute(
+          path: AppRoutes.transferReview,
+          pageBuilder: (context, state) => AppPageTransitions.page(
+            state: state,
+            child: switch (state.extra) {
+              final TransferDraft draft => TransferReviewScreen(draft: draft),
+              _ => const _MissingDraftScreen(),
+            },
           ),
-        );
-      case '/transfer-success':
-        final args = settings.arguments as Map<String, dynamic>?;
-        return CredPageTransition(
-          page: TransferSuccessScreen(
-            recipientName: args?['recipientName'] as String? ?? 'Kelvin Habit',
-            amount: args?['amount'] as String? ?? '420.90',
+        ),
+        GoRoute(
+          path: AppRoutes.transferSuccess,
+          pageBuilder: (context, state) => AppPageTransitions.page(
+            state: state,
+            child: switch (state.extra) {
+              final TransferDraft draft => TransferSuccessScreen(draft: draft),
+              _ => const _MissingDraftScreen(),
+            },
           ),
-        );
-      case '/cards':
-        return CredPageTransition(page: const MyCardsScreen());
-      case '/add-card':
-        return CredPageTransition(page: const AddCardScreen());
-      case '/profile':
-        return CredPageTransition(page: const ProfileScreen());
-      case '/statistics':
-        return CredPageTransition(page: const StatisticsScreen());
-      case '/notifications':
-        return CredPageTransition(page: const NotificationsScreen());
-      default:
-        return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(child: Text('No route defined for ${settings.name}')),
-          ),
-        );
-    }
+        ),
+        _route(AppRoutes.cards, (_) => const MyCardsScreen()),
+        _route(AppRoutes.addCard, (_) => const AddCardScreen()),
+        _route(AppRoutes.profile, (_) => const ProfileScreen()),
+        _route(AppRoutes.statistics, (_) => const StatisticsScreen()),
+        _route(AppRoutes.notifications, (_) => const NotificationsScreen()),
+        _route(
+          AppRoutes.gallery,
+          gallery ?? (_) => const _GalleryPlaceholder(),
+        ),
+      ],
+    );
   }
+
+  static GoRoute _route(String path, WidgetBuilder builder) => GoRoute(
+    path: path,
+    pageBuilder: (context, state) =>
+        AppPageTransitions.page(state: state, child: builder(context)),
+  );
+}
+
+class _NotFoundScreen extends StatelessWidget {
+  const _NotFoundScreen({required this.path});
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) =>
+      Scaffold(body: Center(child: Text('No route defined for $path')));
+}
+
+class _MissingDraftScreen extends StatelessWidget {
+  const _MissingDraftScreen();
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+    body: Center(child: Text('Start a transfer from the home screen.')),
+  );
+}
+
+class _GalleryPlaceholder extends StatelessWidget {
+  const _GalleryPlaceholder();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Widget gallery (F2)')));
 }

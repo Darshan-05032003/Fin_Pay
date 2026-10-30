@@ -1,7 +1,8 @@
 import 'dart:async';
+
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
-import 'package:fin_pay/services/user_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
 import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
@@ -9,6 +10,7 @@ import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
 import 'package:fin_pay/widgets/animations/ripple_effect.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -33,7 +35,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         leading: IconButton(
           icon: const Icon(Icons.close, color: AppTheme.credTextPrimary),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -192,7 +194,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Only default credentials work: ${UserService.defaultEmail} / ${UserService.defaultPassword}',
+                                  'Only the demo account can sign up: '
+                                  'user@finpay.com (password in the README)',
                                   style: TextStyle(
                                     color: AppTheme.credTextSecondary,
                                     fontSize: 12,
@@ -251,7 +254,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                   setState(() {
                                     _obscurePassword = !_obscurePassword;
                                   });
-                                  unawaited(HapticService.selection());
+                                  unawaited(sl<HapticService>().selection());
                                 },
                                 child: IconButton(
                                   icon: Icon(
@@ -294,7 +297,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     if (_nameController.text.trim().isEmpty ||
                         _emailController.text.trim().isEmpty ||
                         _passwordController.text.trim().isEmpty) {
-                      await HapticService.error();
+                      await sl<HapticService>().error();
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -305,7 +308,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       return;
                     }
 
-                    await HapticService.mediumImpact();
+                    await sl<HapticService>().medium();
                     // Save user data temporarily to pass to verification
                     final userData = {
                       'fullName': _nameController.text.trim(),
@@ -314,11 +317,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     };
 
                     if (!context.mounted) return;
-                    Navigator.pushNamed(
-                      context,
-                      '/verification',
-                      arguments: userData,
-                    );
+                    unawaited(context.push('/verification', extra: userData));
                   },
                   child: SpringAnimation(
                     startOffset: const Offset(0, 20),
@@ -395,9 +394,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   ),
                   TextButton(
                     onPressed: () async {
-                      await HapticService.lightImpact();
+                      await sl<HapticService>().light();
                       if (!context.mounted) return;
-                      Navigator.pushReplacementNamed(context, '/login');
+                      context.go('/login');
                     },
                     child: const Text(
                       'Login',
@@ -423,7 +422,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           scale: value,
           child: RippleEffect(
             borderRadius: 28,
-            onTap: HapticService.selection,
+            onTap: sl<HapticService>().selection,
             child: Container(
               width: 56,
               height: 56,

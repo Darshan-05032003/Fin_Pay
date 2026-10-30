@@ -1,0 +1,40 @@
+import 'package:fin_pay/blocs/session/session_state.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+
+/// The auth redirect, as a pure function so every route × session state can
+/// be unit-tested without a widget tree.
+abstract final class AppRedirect {
+  /// Returns the path to redirect to, or null to let navigation proceed.
+  ///
+  /// * [SessionUnknown]: everything but the welcome splash goes to the
+  ///   splash until the session is restored.
+  /// * Signed out: protected routes go to the login screen.
+  /// * Signed in: guest-only routes go home.
+  /// * [AppRoutes.gallery] exists only when [isDebug] is true.
+  /// * Unknown paths are left alone so the router's error page handles them.
+  static String? resolve({
+    required String location,
+    required SessionState session,
+    required bool isDebug,
+  }) {
+    final path = Uri.parse(location).path;
+    final authenticated = session is SessionAuthenticated;
+
+    if (session is SessionUnknown) {
+      return path == AppRoutes.welcome ? null : AppRoutes.welcome;
+    }
+
+    if (path == AppRoutes.gallery) {
+      if (isDebug) return null;
+      return authenticated ? AppRoutes.home : AppRoutes.login;
+    }
+
+    if (AppRoutes.protected.contains(path) && !authenticated) {
+      return AppRoutes.login;
+    }
+    if (AppRoutes.guestOnly.contains(path) && authenticated) {
+      return AppRoutes.home;
+    }
+    return null;
+  }
+}

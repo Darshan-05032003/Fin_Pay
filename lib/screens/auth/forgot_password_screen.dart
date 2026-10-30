@@ -1,5 +1,6 @@
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
 import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
@@ -100,7 +101,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                       'Use your fingerprint to quickly and securely reset '
                       'your password.',
                   onTap: () async {
-                    await HapticService.mediumImpact();
+                    await sl<HapticService>().medium();
                   },
                 ),
               ),
@@ -113,7 +114,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                   description:
                       'Get help from our support team to reset your password.',
                   onTap: () async {
-                    await HapticService.mediumImpact();
+                    await sl<HapticService>().medium();
                   },
                 ),
               ),
@@ -122,7 +123,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                 delay: const Duration(milliseconds: 600),
                 child: CredButtonPress(
                   onTap: () async {
-                    await HapticService.lightImpact();
+                    await sl<HapticService>().light();
                     if (!context.mounted) return;
                     Navigator.pop(context);
                   },

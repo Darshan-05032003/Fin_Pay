@@ -1,6 +1,11 @@
 import 'dart:async';
+
+import 'package:clock/clock.dart';
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/core/money/money.dart';
+import 'package:fin_pay/routes/transfer_draft.dart';
 import 'package:fin_pay/services/user_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
@@ -10,6 +15,7 @@ import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -21,7 +27,7 @@ class TransferScreen extends StatefulWidget {
 class _TransferScreenState extends State<TransferScreen> {
   final TextEditingController _amountController = TextEditingController();
   String? selectedRecipient;
-  double _balance = 0;
+  Money _balance = Money.zero;
   bool _isLoading = true;
 
   final List<Map<String, String>> recipients = [
@@ -68,7 +74,7 @@ class _TransferScreenState extends State<TransferScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            await HapticService.lightImpact();
+            await sl<HapticService>().light();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
@@ -86,7 +92,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 children: [
                   CredButtonPress(
                     onTap: () async {
-                      await HapticService.mediumImpact();
+                      await sl<HapticService>().medium();
                       // Add recipient functionality
                     },
                     child: CredCardReveal(
@@ -113,7 +119,7 @@ class _TransferScreenState extends State<TransferScreen> {
                               padding: const EdgeInsets.only(right: 12),
                               child: CredButtonPress(
                                 onTap: () async {
-                                  await HapticService.selection();
+                                  await sl<HapticService>().selection();
                                   setState(() {
                                     selectedRecipient = recipient['name'];
                                   });
@@ -265,7 +271,7 @@ class _TransferScreenState extends State<TransferScreen> {
                             ),
                           ),
                           CredNumberCounter(
-                            value: _balance,
+                            value: _balance.rupees,
                             duration: const Duration(milliseconds: 1000),
                             style: const TextStyle(
                               fontSize: 14,
@@ -290,9 +296,9 @@ class _TransferScreenState extends State<TransferScreen> {
                     selectedRecipient != null &&
                         _amountController.text.isNotEmpty
                     ? () async {
-                        final amount = double.tryParse(_amountController.text);
-                        if (amount == null || amount <= 0) {
-                          await HapticService.error();
+                        final amount = Money.tryParse(_amountController.text);
+                        if (amount == null || !amount.isPositive) {
+                          await sl<HapticService>().error();
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -303,7 +309,7 @@ class _TransferScreenState extends State<TransferScreen> {
                           return;
                         }
                         if (amount > _balance) {
-                          await HapticService.error();
+                          await sl<HapticService>().error();
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -314,19 +320,23 @@ class _TransferScreenState extends State<TransferScreen> {
                           return;
                         }
 
-                        await HapticService.mediumImpact();
+                        await sl<HapticService>().medium();
                         final recipient = recipients.firstWhere(
                           (r) => r['name'] == selectedRecipient,
                         );
                         if (!context.mounted) return;
-                        Navigator.pushNamed(
-                          context,
-                          '/transfer-review',
-                          arguments: {
-                            'recipientName': selectedRecipient,
-                            'recipientAccount': recipient['account'],
-                            'amount': amount.toStringAsFixed(2),
-                          },
+                        final stamp = sl<Clock>().now().toUtc();
+                        unawaited(
+                          context.push(
+                            '/transfer-review',
+                            extra: TransferDraft(
+                              recipientName: selectedRecipient!,
+                              recipientAccount: recipient['account']!,
+                              amount: amount,
+                              idempotencyKey:
+                                  'transfer-${stamp.microsecondsSinceEpoch}',
+                            ),
+                          ),
                         );
                       }
                     : null,
@@ -476,7 +486,7 @@ class _TransferScreenState extends State<TransferScreen> {
           ),
           CredButtonPress(
             onTap: () async {
-              await HapticService.lightImpact();
+              await sl<HapticService>().light();
               setState(() {
                 selectedRecipient = null;
                 _amountController.clear();
@@ -537,7 +547,7 @@ class _TransferScreenState extends State<TransferScreen> {
       offset: const Offset(0, 20),
       child: CredButtonPress(
         onTap: () async {
-          await HapticService.selection();
+          await sl<HapticService>().selection();
           if (isBackspace) {
             if (_amountController.text.isNotEmpty) {
               setState(() {

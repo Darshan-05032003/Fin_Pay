@@ -1,11 +1,13 @@
 import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/services/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/widgets/animations/cred_button_press.dart';
 import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
 import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
 import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -56,9 +58,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.topRight,
                 child: CredButtonPress(
                   onTap: () async {
-                    await HapticService.lightImpact();
+                    await sl<HapticService>().light();
                     if (!context.mounted) return;
-                    Navigator.pushReplacementNamed(context, '/login');
+                    context.go('/login');
                   },
                   child: const Padding(
                     padding: EdgeInsets.all(16),
@@ -112,9 +114,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     if (_currentPage < _pages.length - 1)
                       CredButtonPress(
                         onTap: () async {
-                          await HapticService.lightImpact();
+                          await sl<HapticService>().light();
                           if (!context.mounted) return;
-                          Navigator.pushReplacementNamed(context, '/login');
+                          context.go('/login');
                         },
                         child: const Text(
                           'Skip',
@@ -128,7 +130,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const Spacer(),
                     CredButtonPress(
                       onTap: () async {
-                        await HapticService.mediumImpact();
+                        await sl<HapticService>().medium();
                         if (_currentPage < _pages.length - 1) {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 400),
@@ -136,7 +138,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           );
                         } else {
                           if (!context.mounted) return;
-                          Navigator.pushReplacementNamed(context, '/login');
+                          context.go('/login');
                         }
                       },
                       child: SpringAnimation(
