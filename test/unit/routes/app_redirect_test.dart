@@ -62,6 +62,19 @@ void main() {
       }
     });
 
+    test('card details and add card (under /cards/) need a session', () {
+      for (final path in ['/cards/c1', '/cards/add', '/cards/a%20b']) {
+        expect(AppRoutes.isProtected(path), isTrue, reason: path);
+        expect(go(path, signedOut), AppRoutes.login, reason: path);
+        expect(go(path, authenticating), AppRoutes.login, reason: path);
+        expect(go(path, signedIn), isNull, reason: path);
+        expect(go(path, unknown), AppRoutes.welcome, reason: path);
+      }
+      expect(AppRoutes.isProtected('/cardsx'), isFalse);
+      expect(AppRoutes.isProtected(AppRoutes.login), isFalse);
+      expect(AppRoutes.cardDetailsFor('a b/c'), '/cards/a%20b%2Fc');
+    });
+
     test('gallery is reachable only in debug builds', () {
       expect(go(AppRoutes.gallery, signedIn), isNull);
       expect(go(AppRoutes.gallery, signedOut), isNull);

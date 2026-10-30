@@ -13,7 +13,13 @@ abstract final class AppRoutes {
   static const String transferReview = '/transfer-review';
   static const String transferSuccess = '/transfer-success';
   static const String cards = '/cards';
-  static const String addCard = '/add-card';
+
+  /// Add-card form, pushed over the tab shell.
+  static const String addCard = '/cards/add';
+
+  /// Card details, pushed over the tab shell. Build a concrete path with
+  /// [cardDetailsFor].
+  static const String cardDetails = '/cards/:id';
   static const String profile = '/profile';
   static const String statistics = '/statistics';
   static const String notifications = '/notifications';
@@ -42,6 +48,7 @@ abstract final class AppRoutes {
     transferSuccess,
     cards,
     addCard,
+    cardDetails,
     profile,
     statistics,
     notifications,
@@ -55,6 +62,15 @@ abstract final class AppRoutes {
     gallery,
   };
 
-  /// The four bottom-navigation roots.
+  /// The four bottom-navigation roots, in tab order.
   static const List<String> tabs = [home, statistics, cards, profile];
+
+  /// The details path for card [id] (percent-encoded).
+  static String cardDetailsFor(String id) =>
+      '$cards/${Uri.encodeComponent(id)}';
+
+  /// True for every path that needs a session: the listed [protected]
+  /// routes and anything under `/cards/` (card details carry an id).
+  static bool isProtected(String path) =>
+      protected.contains(path) || path.startsWith('$cards/');
 }

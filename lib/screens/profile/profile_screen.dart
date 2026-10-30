@@ -13,7 +13,6 @@ import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/ripple_effect.dart';
 import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
 import 'package:fin_pay/widgets/animations/spring_animation.dart';
-import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -57,10 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppTheme.credPureBackground,
         appBar: AppBar(
           title: const Text('Profile'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
+          automaticallyImplyLeading: false,
         ),
         body: const Center(child: Text('No user data found')),
       );
@@ -70,14 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
         title: const Text('Profile'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            await sl<HapticService>().light();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: CustomPullToRefresh(
         onRefresh: _loadUserData,
@@ -121,7 +110,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(context, 3),
     );
   }
 
@@ -539,23 +527,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar(BuildContext context, int currentIndex) {
-    return CredBottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: (index) {
-        if (index == 0) {
-          context.go('/home');
-        } else if (index == 1) {
-          context.go('/statistics');
-        } else if (index == 2) {
-          context.go('/cards');
-        } else if (index == 3) {
-          context.go('/profile');
-        }
-      },
     );
   }
 }

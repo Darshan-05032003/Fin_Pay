@@ -142,3 +142,27 @@ per pumped frame, not GPU raster time; on-device profile traces are Wave 2.
   - Wave 2: repeat scenario 6 on a device in profile mode for raster times;
     the illustrations are three `CustomPaint`s per page under one
     `RepaintBoundary`, so raster cost should be flat.
+
+## Feature: F4 Home + Cards
+- Scenario and scale:
+  - `test/stress/home_cards_stress_test.dart`, 5 scenarios on the real router + DI harness:
+    1. 50 cards in the stack, fanned, with a fake accelerometer sample every frame (60 Hz) for 300 frames, then 20 flips of the front card under tilt (30 frames each), then 10 swipes across the carousel under tilt (20 frames each); frame build times; tickers and sensor subscriptions after dispose.
+    2. 10,000 transactions inserted in the in-memory sqflite database (batches of 2,500), then the home tab opened: time until the balance is on screen, number of rows rendered, RSS.
+    3. 1,000 rapid taps on the hide-balance eye: final state, persisted state, number of settings writes.
+    4. 1,000 rapid taps on "Add card" with the repository gated on a `Completer`: rows stored, where the app lands.
+    5. Home at 1.3× text scale with a balance of ₹99,99,99,999.99: 60 frames of the odometer count-up, final label, tickers after dispose.
+- Results (numbers, Linux test host, Dart JIT, software rendering):
+  1. 50-card stack under 60 Hz tilt: 300 frames, **avg 1.23 ms, p90 1.60 ms, p99 2.45 ms**, frames > 16 ms: 0. 20 flips under tilt: 600 frames, avg 1.09 ms, p90 1.47 ms, p99 4.97 ms, > 16 ms: 0. 10 swipes under tilt: 200 frames, avg 1.46 ms, p90 1.69 ms, p99 10.51 ms, > 16 ms: 0. Tickers after dispose: **0**; sensor listeners: **0**.
+  2. 10k transactions: seed **188 ms**; home ready **102 ms** after the route is pumped (includes the full-ledger read, see below); rows on screen: **5**; RSS 324 MB (test process, includes the compiler).
+  3. 1,000 hide-balance taps dispatched in **400 ms**: final hidden = false (even count), persisted = false, writes = **1,000** (one per change, none coalesced away, none duplicated).
+  4. 1,000 add-card taps dispatched in **299 ms**: stored = **1**, the app returned to `/cards`.
+  5. Odometer to ₹99,99,99,999.99 at 1.3×: 60 frames, avg 1.20 ms, p90 2.45 ms, p99 6.27 ms, > 16 ms: 0; label `Available balance ₹9,99,99,999.99`; tickers after dispose: 0.
+- What broke:
+  - Nothing in the product failed at these scales. Two drafts were fixed before the numbers above: the fan-out spring settled at 0.9999 so the carousel never swapped in (snap on completion), and a detached `MotionSensor` subscription survived a tab switch because the visible-tab check was not an inherited dependency (the shell now publishes the index through an `InheritedWidget`).
+  - Observation, not a failure: `LoadTransactionsEvent` reads the whole ledger (F1 design); with 10k rows that is ~35 ms of the 102 ms. Home only needs five rows.
+- Failure flow (step by step): none reached. The expensive path in the stack is the pile with many cards: only the top four are drawn (`CardStackMath.maxPileDepth`), so 50 cards cost the same as 4; the carousel builds pages lazily. The odometer's cost is width, not digits (D-016 / F2 report): at 1.3× the header fits ₹99,99,99,999.99 through a `FittedBox`.
+- Fix applied / recommendation:
+  - Only the visible tab subscribes to the accelerometer; the stream is cancelled on tab change and dispose; samples are damped (D-046).
+  - The pile draws at most four cards; neighbours in the carousel are plain art (no tilt, no flip controllers) so tickers scale with 1, not with the card count.
+  - Recommendation (F6/F7): page the ledger or give home a `limit`, so the 5-row list does not depend on the ledger size (F1 report already recommends keyset paging).
+  - Wave 2: repeat scenario 1 on a mid-range device in profile mode for raster times; the card art is one `CustomPaint` per card under a `RepaintBoundary`, and the sheen is a gradient `DecoratedBox` (no `saveLayer`), so raster cost should be flat.

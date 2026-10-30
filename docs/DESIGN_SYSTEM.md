@@ -18,10 +18,12 @@ lib/design_system/
   components/             fp_button, fp_surface, fp_text_field, fp_chip, fp_toggle,
                           fp_bottom_sheet, fp_toast, fp_skeleton, fp_state_views,
                           fp_amount_text (+ FpOdometer), fp_segmented_control, fp_page_indicator,
-                          fp_otp_field, fp_countdown_ring (F3)
+                          fp_otp_field, fp_countdown_ring (F3),
+                          fp_bottom_nav, fp_refresh_indicator, fp_collapsing_header (F4)
   motion/                 fp_pressable, fp_submit_guard, fp_staggered_entrance (FpEntrance,
                           FpStaggeredEntrance, FpStagger), fp_parallax, fp_page_transitions,
-                          fp_hero, fp_shake, fp_pulse, fp_confetti, fp_drawn_check (F3)
+                          fp_hero, fp_shake, fp_pulse, fp_confetti, fp_drawn_check (F3),
+                          fp_flip_card, fp_tilt_card (F4)
   gallery/                gallery_screen (FpGallery.route = '/gallery', FpGalleryScreen)
 ```
 
@@ -128,6 +130,9 @@ haptics through `HapticService` (constructor parameter, else GetIt, else none).
 | `FpEmptyState` / `FpErrorState` | icon, title, message, action / retry | Staggered entrance | via `FpButton` |
 | `FpOtpField` (F3) | `length` cells (default 6) over one hidden text field (typing, paste, `oneTimeCode` autofill share one path); idle, focused (active cell follows the digits), error, disabled; `onCompleted` | Active-cell border 150 ms; new error → shake (400 ms) + red flash (400 ms) | `selection` per digit, `error` on a new error |
 | `FpCountdownRing` (F3) | `progress` 1 → 0 (clamped), optional centred `label`, `size`, `semanticLabel` | Arc empties clockwise; value changes tween over 250 ms, instant with reduce-motion | – |
+| `FpBottomNav` (F4) | `items` (≥ 2), `currentIndex`, `onSelected`, `onReselected`; every tab a ≥ 48 dp button with `selected` semantics | Accent indicator slides 250 ms (standard curve), icon cross-fades; jumps with reduce-motion | `selection` |
+| `FpRefreshIndicator` (F4) | Wraps any vertical scrollable; `onRefresh` future; works with clamping and bouncing physics; `FpRefreshGlyph` for galleries | Drawn plunk tile slides down with a resisted curve (`FpRefreshMath`), arc sweeps with drag, spins while refreshing, retracts 400 ms; no spin with reduce-motion; errors reported, never thrown | `medium` on arm |
+| `FpCollapsingHeader` (F4) | Pinned sliver with `expandedHeight`, `collapsedHeight`, `rebuildKey`; builder receives the collapse fraction `t` (`FpCollapseMath`: fraction, lerp, fadeOut, fadeIn) | Scroll-linked only | – |
 
 ## 4. Motion primitives
 
@@ -144,6 +149,8 @@ haptics through `HapticService` (constructor parameter, else GetIt, else none).
 | `FpPulse` | Finite scale pulses (default 3, 700 ms each); `pulses: null` only for live indicators | Never starts |
 | `FpConfetti` + `FpConfettiController` | `CustomPainter` burst (80 particles, 1.6 s) per `burst()`, stops when done, no package | Nothing drawn |
 | `FpDrawnCheck` (F3) | Strokes the check path over 400 ms once `shown` is true; `onCompleted` fires once; `pathFor(size)` is pure | Appears fully drawn at once |
+| `FpFlipCard` (F4) | 3D flip between `front` and `back` when `flipped` changes (400 ms, standard curve); faces swap at 90°; the back is counter-rotated so it is not mirrored; identity matrix at rest (`FpFlipMath`) | Faces swap with no rotation |
+| `FpTiltCard` + `FpTiltController` (F4) | Perspective tilt (±10°) from a controller fed by a sensor (`push`, damped) or by raw pointer events (`Listener`, never fights a swipe) with a spring back on release; moving radial sheen; identity at rest (`FpTiltMath`) | Child rendered flat, no sheen |
 
 ### Motion rules (spec §8)
 
@@ -207,31 +214,35 @@ F1; F3 wires `FpPageTransitions` through `AppPageTransitions.fp`). The
 `smooth_page_indicator` package left with the old onboarding screen (its only
 importer); `FpPageIndicator` replaces it.
 
+### Deleted in F4 (zero usages in `lib/` after the home + cards rewrite)
+
+`animations/card_3d_flip.dart` (→ `FpFlipCard`), `animations/icon_morph.dart`
+(the home FAB is gone), `animations/staggered_list_animation.dart` (→
+`FpStaggeredEntrance`) and `cred_bottom_navigation_bar.dart` (→ `FpBottomNav`
+in the `StatefulShellRoute` shell; statistics and profile lost their own bar).
+
 ### Pending removals (still imported by screens; Wave 1 switches them over)
 
-Counts are the screens still importing each file after F3 (the seven
-onboarding/auth screens no longer import anything from `lib/widgets/`).
+Counts are the screens still importing each file after F4 (home, my cards,
+add card, card details and the onboarding/auth screens import nothing from
+`lib/widgets/`).
 
 | File | Used by | Replace with |
 |---|---|---|
-| `animations/cred_slide_in.dart` | 8 screens | `FpEntrance` / `FpStaggeredEntrance` |
-| `animations/cred_button_press.dart` | 8 screens | `FpPressable` (or `FpButton` for real buttons) |
-| `animations/cred_card_reveal.dart` | 8 screens | `FpEntrance` |
-| `animations/fade_in_animation.dart` | 5 screens | `FpEntrance` |
-| `animations/spring_animation.dart` | 4 screens | `FpEntrance(scaleFrom: 0.85)` |
-| `animations/pulse_animation.dart` | 6 screens | `FpPulse` (finite; drop decorative uses) |
-| `animations/skeleton_loader_full.dart` | 6 screens | `FpSkeleton*` |
-| `animations/pull_to_refresh_custom.dart` | 5 screens | F4: `components/fp_refresh.dart` (not in F2 scope) |
-| `animations/ripple_effect.dart` | 3 screens | `FpPressable` |
-| `animations/cred_number_counter.dart` | 3 screens | `FpAmountText` |
-| `animations/staggered_list_animation.dart` | 2 screens | `FpStaggeredEntrance` |
+| `animations/cred_slide_in.dart` | 6 screens | `FpEntrance` / `FpStaggeredEntrance` |
+| `animations/cred_button_press.dart` | 6 screens | `FpPressable` (or `FpButton` for real buttons) |
+| `animations/cred_card_reveal.dart` | 6 screens | `FpEntrance` |
+| `animations/skeleton_loader_full.dart` | 5 screens | `FpSkeleton*` |
+| `animations/pull_to_refresh_custom.dart` | 4 screens | `FpRefreshIndicator` (F4) |
+| `animations/pulse_animation.dart` | 4 screens | `FpPulse` (finite; drop decorative uses) |
+| `animations/fade_in_animation.dart` | 3 screens | `FpEntrance` |
+| `animations/spring_animation.dart` | 3 screens | `FpEntrance(scaleFrom: 0.85)` |
+| `animations/cred_number_counter.dart` | 2 screens | `FpAmountText` |
 | `animations/swipe_to_dismiss.dart` | 2 screens | F6: `components/fp_swipe_action_row.dart` (not in F2 scope) |
-| `animations/card_3d_flip.dart` | my_cards | F4: `motion/fp_flip_card.dart` (not in F2 scope) |
+| `animations/ripple_effect.dart` | profile | `FpPressable` |
 | `animations/confetti_effect.dart` | transfer_success | `FpConfetti` |
 | `animations/delayed_animation.dart` | transfer_success | `FpEntrance` |
 | `animations/draggable_card.dart` | transfer_review | F5 swipe-to-pay (DELETE then) |
-| `animations/icon_morph.dart` | home | `AnimatedSwitcher` (DELETE then) |
-| `cred_bottom_navigation_bar.dart` | 4 screens | Wave 1 shell / F7 `FpBottomNav` |
 
 When the last screen stops importing a file, delete it; the `confetti`,
 `shimmer` and `flutter_staggered_animations` packages can go with their last user.

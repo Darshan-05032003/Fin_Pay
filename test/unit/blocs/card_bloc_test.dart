@@ -59,6 +59,47 @@ void main() {
   );
 
   blocTest<CardBloc, CardState>(
+    'maskSensitive: loaded cards carry the mask and no CVV',
+    build: () {
+      final bloc = CardBloc(repository: repo, maskSensitive: true);
+      bloc.effects.listen(effects.add);
+      return bloc;
+    },
+    act: (b) => b.add(const LoadCardsEvent()),
+    expect: () => [
+      const CardLoading(),
+      CardContent([
+        card.copyWith(cardNumber: '**** **** **** 1111', cvv: ''),
+        other.copyWith(cardNumber: '**** **** **** 1111', cvv: ''),
+      ]),
+    ],
+    verify: (b) {
+      final content = b.state as CardContent;
+      expect(content.toString(), isNot(contains('4111 1111 1111 1111')));
+      expect(content.toString(), isNot(contains('123')));
+      expect(content.cards.every((c) => c.last4 == '1111'), isTrue);
+    },
+  );
+
+  blocTest<CardBloc, CardState>(
+    'maskSensitive: the CardAdded effect is sanitised too',
+    build: () {
+      when(
+        () => repo.addCard(any()),
+      ).thenAnswer((_) async => const Success(null));
+      final bloc = CardBloc(repository: repo, maskSensitive: true);
+      bloc.effects.listen(effects.add);
+      return bloc;
+    },
+    act: (b) => b.add(const AddCardEvent(card)),
+    verify: (_) {
+      final added = effects.whereType<CardAdded>().single;
+      expect(added.card.cvv, isEmpty);
+      expect(added.card.cardNumber, '**** **** **** 1111');
+    },
+  );
+
+  blocTest<CardBloc, CardState>(
     'load empty',
     build: () {
       when(() => repo.getCards()).thenAnswer((_) async => const Success([]));

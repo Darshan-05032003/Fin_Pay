@@ -9,9 +9,19 @@ import 'package:get_it/get_it.dart';
 /// screen over the first, and popping it must not switch protection off
 /// while the login form is still visible.
 class SecureScreen extends StatefulWidget {
-  const SecureScreen({required this.child, super.key, this.protector});
+  const SecureScreen({
+    required this.child,
+    super.key,
+    this.protector,
+    this.active = true,
+  });
 
   final Widget child;
+
+  /// When false the screen does not count as protected (a tab that is
+  /// mounted in an `IndexedStack` but not the visible one). Toggling it
+  /// enables or disables protection like mounting / unmounting would.
+  final bool active;
 
   /// Injected for tests; defaults to the GetIt registration (no-op when
   /// none is registered).
@@ -37,20 +47,44 @@ class SecureScreen extends StatefulWidget {
 
 class _SecureScreenState extends State<SecureScreen> {
   ScreenProtector? _protector;
+  bool _counted = false;
 
   @override
   void initState() {
     super.initState();
     _protector = SecureScreen._resolve(widget.protector);
-    if (++SecureScreen._active == 1) _protector?.enable().ignore();
+    if (widget.active) _acquire();
   }
 
   @override
-  void dispose() {
+  void didUpdateWidget(SecureScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active == widget.active) return;
+    if (widget.active) {
+      _acquire();
+    } else {
+      _release();
+    }
+  }
+
+  void _acquire() {
+    if (_counted) return;
+    _counted = true;
+    if (++SecureScreen._active == 1) _protector?.enable().ignore();
+  }
+
+  void _release() {
+    if (!_counted) return;
+    _counted = false;
     if (--SecureScreen._active <= 0) {
       SecureScreen._active = 0;
       _protector?.disable().ignore();
     }
+  }
+
+  @override
+  void dispose() {
+    _release();
     super.dispose();
   }
 

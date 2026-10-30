@@ -69,6 +69,20 @@ class CardRepositoryImpl implements ICardRepository {
   }
 
   @override
+  Future<Result<String?>> readCvv(String cardId) async {
+    try {
+      final raw = await _secureStorage.read(vaultKey(cardId));
+      if (raw == null) return const Success(null);
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return Success(json['cvv'] as String?);
+    } on SecureStorageException catch (e) {
+      return Failure('Could not read the card securely', e);
+    } on FormatException catch (e) {
+      return Failure('Stored card details are unreadable', e);
+    }
+  }
+
+  @override
   Future<Result<void>> deleteCard(String cardId) async {
     final deleted = await _localDataSource.deleteCard(cardId);
     return await deleted.flatMapAsync((_) async {

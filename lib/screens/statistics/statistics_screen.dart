@@ -15,10 +15,8 @@ import 'package:fin_pay/widgets/animations/fade_in_animation.dart' as custom;
 import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
 import 'package:fin_pay/widgets/animations/pulse_animation.dart';
 import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
-import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:go_router/go_router.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -70,15 +68,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.credPureBackground,
       appBar: AppBar(
-        title: const Text('Statics'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            await sl<HapticService>().light();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
-        ),
+        title: const Text('Statistics'),
+        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const SkeletonList()
@@ -268,7 +259,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ),
             ),
-      bottomNavigationBar: _buildBottomNavigationBar(context, 1),
     );
   }
 
@@ -538,22 +528,5 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     } else {
       return '${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     }
-  }
-
-  Widget _buildBottomNavigationBar(BuildContext context, int currentIndex) {
-    return CredBottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: (index) {
-        if (index == 0) {
-          context.go('/home');
-        } else if (index == 1) {
-          context.go('/statistics');
-        } else if (index == 2) {
-          context.go('/cards');
-        } else if (index == 3) {
-          context.go('/profile');
-        }
-      },
-    );
   }
 }

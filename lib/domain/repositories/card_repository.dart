@@ -10,4 +10,8 @@ abstract interface class ICardRepository {
   Future<Result<List<PaymentCard>>> getCards();
   Future<Result<void>> addCard(PaymentCard card);
   Future<Result<void>> deleteCard(String cardId);
+
+  /// Reads just the CVV of [cardId] from secure storage for a timed reveal;
+  /// null when the card has no vault entry. Never cached by the caller.
+  Future<Result<String?>> readCvv(String cardId);
 }

@@ -131,7 +131,50 @@ All three are generic (F5's success screen needs the drawn check; any timed step
 ### D-038: Sign-up illustrations are three `CustomPainter` layers per page
 No assets: each onboarding page paints three NeoPOP glyphs (flat face + solid edge) at speeds 0.35 / 0.6 / 0.85 of the page; `OnboardingParallax.layerShift` (pure) counter-translates each layer by `(page − index) × width × (1 − speed)`, read from the `PageController` in one `AnimatedBuilder` per illustration (no per-frame `setState`). Reduce-motion freezes the layers and makes "next" jump instead of animate.
 
+## F4 Home + Cards (Agent D)
+
+### D-039: The four tabs live in a `StatefulShellRoute.indexedStack`
+`AppRouter` wraps home, statistics, cards and profile in one shell (`lib/screens/shell/app_shell.dart`) so every tab keeps its scroll position, fanned stack and loaded state across switches. The bar is `FpBottomNav`; tab switches are cuts (an `IndexedStack` swap), which reads as "the bar is the app" and avoids a transition that would replay entrances; pushes out of a tab (add card, card details, transfer, transactions) keep the design-system transitions. The Android back rule lives in a `PopScope`: on a non-home tab back returns to home (`goBranch(0)`), on home it leaves the app (`popRoute()` returns false). Re-tapping the current tab fires `TabReselect`, which home uses to scroll to the top. Add card and card details moved to `/cards/add` and `/cards/:id` and are pushed on the **root** navigator (`parentNavigatorKey`) so they cover the bar; `AppRoutes.isProtected` treats everything under `/cards/` as protected so a deep link with any id still needs a session.
+
+### D-040: `FLAG_SECURE` follows the visible tab
+`SecureScreen` gained an `active` flag; the shell keeps one instance active while home or cards is the visible branch, so the recents thumbnail is blank on the balance and card tabs but not on statistics/profile (Agent F decides for those). The reference count from D-034 still applies: card details and add card are pushed over the shell and hold their own count, so popping them never switches protection off under the home tab.
+
+### D-041: The app-wide card list never holds the PAN or CVV
+`CardBloc(maskSensitive: true)` (the DI registration) strips the number to its mask and the CVV to an empty string on every load and in the `CardAdded` effect; the full values go through `ICardRepository.addCard` to secure storage and come back only through the new `ICardRepository.readCvv(cardId)` for a timed reveal. The default stays `false` so the F1 bloc tests are unchanged. Dart strings are immutable and cannot be zeroed, so "cleared from memory" means every reference is dropped (`AddCardCubit._cvv = ''` on success and close, `CvvRevealCubit._cvv = null`, the add-card controllers cleared on dispose) and nothing retains them; a native secure-string type is out of scope.
+
+### D-042: CVV reveal is a five-second window on the injected `Clock`
+`CvvRevealCubit` fetches the CVV on tap/long-press, shows it with a countdown ring, masks it after `ttl` (5 s, `Timer.periodic` on the injected `Clock` so `fake_async` drives it; a clock jump backwards cannot extend the window), on `hide()` (the screen calls it when the app goes `inactive`, when details are opened and when the stack collapses) and on close. The digits are a private field, never a state property, so `BlocObserver`/`toString` never carry them; `Logger.redact` masks `cvv: 123` should anyone log one. A second reveal of the same card restarts the window without touching storage.
+
+### D-043: Hide balance masks and is one persisted write per change
+The eye on the home header calls `SettingsCubit.toggleHideBalance()`; the header, the recent rows and the card-details rows read the setting, so every amount on the home/cards screens is `₹••••••` at once. Mask rather than blur, per D-010 (a blur leaks magnitude in screenshots and costs a layer). The settings cubit already debounces nothing and writes once per change, which the stress test confirms (1,000 taps → 1,000 writes, final state consistent).
+
+### D-044: Only the last four digits ever reach the clipboard
+Card details offers "Copy last 4" and nothing else: there is no "copy full number" action at all, so the PAN cannot land in the clipboard (which every app can read on older Android versions and which keyboard clipboard managers persist). The masked number on screen is `•••• •••• •••• 1234`.
+
+### D-045: Card art is code-drawn and labels are neutral text
+`PaymentCardArt` paints a NeoPOP face (solid token colour, flat pattern, bottom/right edge) per network: diagonal bands for Visa, concentric arcs for Mastercard, chevrons for RuPay, a dot grid otherwise; a generic EMV-style chip; the network as a plain `label` text ("Visa", "Mastercard", "RuPay") in the token typography. No wordmarks, no logos, no assets. BIN detection: Visa 4; Mastercard 51–55 and 2221–2720; RuPay 60, 65, 81, 82, 508. American Express exists in `CardType` for legacy rows but is not detected and cannot be added (16-digit, 3-digit-CVV flow only).
+
+### D-046: Tilt comes from a damped sensor stream or raw pointer events
+`FpTiltCard` takes an `FpTiltController`; the cards tab subscribes to `MotionSensor.tilt` only while it is the visible tab and reduce motion is off (so the accelerometer is not sampled from an offstage tab), pushes samples through `FpTiltMath.damp` (factor 0.25) to kill jitter, and cancels the subscription on tab change and dispose. When `isAvailable` is false the card tilts under the finger through a `Listener` (raw pointer events never enter the gesture arena, so the carousel still swipes) and springs back on release. At rest the transform is the identity (no perspective entry), which keeps hit-testing and semantics rects exact and lets the compositor skip a 3D layer. Reduce motion renders the child flat with no sheen.
+
+### D-047: Freeze is local and "recent card payments" are payments
+The ledger has no card column, so card details lists the newest `TransactionType.payment` rows under "Recent card payments" and says so in the code; a per-card filter needs a schema change (F6/F7). The freeze toggle is a `CardDetailsCubit` flag for the screen's lifetime: persisting it needs a column or a settings key, and a demo "frozen" card that still pays would be misleading; it is clearly labelled as blocking payments "on this device".
+
+### D-048: Pull-to-refresh waits for the blocs
+`FpRefreshIndicator` is built on scroll notifications (no `RefreshIndicator`), so it works with clamping and bouncing physics and draws its own plunk tile + arc; `refreshHome` dispatches the three load events and awaits each bloc's first non-loading state (10 s cap), so the indicator holds until data is back instead of closing immediately as the legacy screen did (UI audit 2.8). A throwing `onRefresh` is reported through `FlutterError.reportError` and the glyph retracts; it never takes the screen down.
+
+### D-049: Flip card draws the back un-mirrored and switches faces at 90°
+`FpFlipMath.transform` counter-rotates the back face by π (the legacy `Card3DFlip` showed it mirrored, UI audit 2.9) and swaps faces at `t = 0.5`; add card uses it to flip the preview while the CVV field has focus, and the stack/details use it for the CVV back. Under reduce motion the face swaps without rotation.
+
 ## Compromises
+
+### F4
+- `TransactionBloc` (F1) loads the whole ledger for `LoadTransactionsEvent`; home shows five rows but still pays for the full read (10k rows: home ready in 102 ms on the host). F6 should page (keyset, LOAD_TEST_REPORT F1 recommendation) or add a `limit` for the home tab.
+- Freeze is session-local and "recent card payments" are all `payment` rows (D-047).
+- The tapjacking hook (`window.decorView.filterTouchesWhenObscured = true` in `MainActivity.onResume`) could not be compiled here (no Gradle on this machine); it is two lines of standard Android API, but the first device build should confirm it.
+- The tab-visible check and the sensor subscription depend on the shell's inherited index; outside the shell (a tab screen pumped alone) everything counts as visible.
+- The widget tests for the legacy statistics/profile tabs still need `ScreenHarness.flush` after a tab switch because those screens call `setState` after an awaited database read (UI audit 2.15/2.17); Agent F's rewrite removes the need.
+- Files touched outside `lib/screens/home`, `lib/screens/cards`, `lib/screens/shell` and `lib/design_system`: `routes/app_routes.dart`, `routes/app_redirect.dart`, `routes/app_router.dart`, `routes/app_page_transitions.dart` (new paths, shell, prefix guard), `screens/auth/widgets/secure_screen.dart` (`active` flag), `blocs/card/card_bloc.dart` (`maskSensitive`), `domain/repositories/card_repository.dart` + `data/repositories/card_repository_impl.dart` (`readCvv`), `core/di/injection_container.dart` (repository overrides, `maskSensitive: true`), `screens/statistics/statistics_screen.dart` and `screens/profile/profile_screen.dart` (bar and back arrow removed only), `android/.../MainActivity.kt` (tapjacking), `test/widget/screens/screen_harness.dart` (overrides), `test/unit/blocs/card_bloc_test.dart`, `test/unit/data/repositories/card_repository_test.dart`, `test/unit/routes/app_redirect_test.dart` (added cases), `test/design_system/gallery/gallery_test.dart` and `test/golden/design_system/design_system_golden_test.dart` (new sections). All additive.
 
 ### F3
 - Phone-based OTP is simulated (D-030) and the reset email is never sent; both are stated on screen as "Demo build".

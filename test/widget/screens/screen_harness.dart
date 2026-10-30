@@ -14,6 +14,9 @@ import 'package:fin_pay/core/settings/settings_cubit.dart';
 import 'package:fin_pay/design_system/design_system.dart';
 import 'package:fin_pay/domain/auth/auth_failure.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
+import 'package:fin_pay/domain/repositories/card_repository.dart';
+import 'package:fin_pay/domain/repositories/transaction_repository.dart';
+import 'package:fin_pay/domain/repositories/user_repository.dart';
 import 'package:fin_pay/models/user.dart';
 import 'package:fin_pay/routes/app_page_transitions.dart';
 import 'package:fin_pay/routes/app_router.dart';
@@ -50,6 +53,7 @@ class ScreenHarness {
   late FakeScreenProtector protector;
   late InMemorySettingsRepository settingsRepo;
   late FakeSecureStorage storage;
+  late FakeMotionSensor sensor;
   GoRouter? router;
   bool _disposed = false;
 
@@ -64,6 +68,10 @@ class ScreenHarness {
     bool signedIn = false,
     bool restore = true,
     Clock? clock,
+    ICardRepository? cardRepository,
+    ITransactionRepository? transactionRepository,
+    IUserRepository? userRepository,
+    FakeMotionSensor? motionSensor,
   }) async {
     sqfliteFfiInit();
     Logger.sink = (_) {};
@@ -73,6 +81,7 @@ class ScreenHarness {
     protector = FakeScreenProtector();
     settingsRepo = InMemorySettingsRepository(initialSettings);
     storage = FakeSecureStorage();
+    sensor = motionSensor ?? FakeMotionSensor();
     when(
       () => auth.restoreSession(),
     ).thenAnswer((_) async => signedIn ? harnessUser.id : null);
@@ -100,7 +109,7 @@ class ScreenHarness {
       overrides: di.DiOverrides(
         haptics: haptics,
         biometrics: biometrics,
-        motionSensor: FakeMotionSensor(),
+        motionSensor: sensor,
         screenProtector: protector,
         secureStorage: storage,
         settingsRepository: settingsRepo,
@@ -108,6 +117,9 @@ class ScreenHarness {
         databasePath: inMemoryDatabasePath,
         clock: clock ?? tester.binding.clock,
         authRepository: auth,
+        cardRepository: cardRepository,
+        transactionRepository: transactionRepository,
+        userRepository: userRepository,
       ),
     );
     await settings.load();
@@ -202,9 +214,10 @@ class ScreenHarness {
   Future<void> dispose(WidgetTester tester) async {
     if (_disposed) return;
     _disposed = true;
-    // Flush submit-guard timers and the legacy screens' delayed entrances
-    // before unmounting, so no timer is pending when the test ends.
-    await tester.pump(const Duration(seconds: 5));
+    // Flush submit-guard timers, the legacy screens' delayed entrances and
+    // sqflite's 10 s lock-warning timer before unmounting, so no timer is
+    // pending when the test ends.
+    await tester.pump(const Duration(seconds: 11));
     await tester.pumpWidget(const SizedBox());
     router?.dispose();
     router = null;

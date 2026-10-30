@@ -5,11 +5,17 @@ import 'package:fin_pay/blocs/card/card_state.dart';
 import 'package:fin_pay/core/logger.dart';
 import 'package:fin_pay/core/result/result.dart';
 import 'package:fin_pay/domain/repositories/card_repository.dart';
+import 'package:fin_pay/models/payment_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Lists, adds and deletes payment cards.
+///
+/// With [maskSensitive] (the app's setting) the cards in [state] carry only
+/// the masked number and an empty CVV: the PAN and CVV stay in secure
+/// storage and are read on demand (`ICardRepository.readCvv`), so an
+/// app-wide bloc never holds them in memory.
 class CardBloc extends Bloc<CardEvent, CardState> {
-  CardBloc({required ICardRepository repository})
+  CardBloc({required ICardRepository repository, this.maskSensitive = false})
     : _repository = repository,
       super(const CardInitial()) {
     on<LoadCardsEvent>(_onLoad);
@@ -18,7 +24,14 @@ class CardBloc extends Bloc<CardEvent, CardState> {
   }
 
   final ICardRepository _repository;
+
+  /// Strip PAN and CVV from every loaded card.
+  final bool maskSensitive;
   final StreamController<CardEffect> _effects = StreamController.broadcast();
+
+  PaymentCard _sanitise(PaymentCard card) => maskSensitive
+      ? card.copyWith(cardNumber: card.maskedNumber, cvv: '')
+      : card;
 
   /// One-off effects for the UI.
   Stream<CardEffect> get effects => _effects.stream;
@@ -30,7 +43,7 @@ class CardBloc extends Bloc<CardEvent, CardState> {
       case Success(data: final cards) when cards.isEmpty:
         emit(const CardEmpty());
       case Success(data: final cards):
-        emit(CardContent(cards));
+        emit(CardContent(cards.map(_sanitise).toList()));
       case Failure(:final message):
         emit(CardError(message));
         Logger.error('Failed to load cards: $message');
@@ -41,7 +54,7 @@ class CardBloc extends Bloc<CardEvent, CardState> {
     final result = await _repository.addCard(event.card);
     switch (result) {
       case Success():
-        _effects.add(CardAdded(event.card));
+        _effects.add(CardAdded(_sanitise(event.card)));
         await _onLoad(const LoadCardsEvent(), emit);
       case Failure(:final message):
         _effects.add(CardFailed(message));

@@ -8,7 +8,8 @@ abstract final class AppRedirect {
   ///
   /// * [SessionUnknown]: everything but the welcome splash goes to the
   ///   splash until the session is restored.
-  /// * Signed out: protected routes go to the login screen.
+  /// * Signed out: protected routes (including `/cards/<id>`) go to the
+  ///   login screen.
   /// * Signed in: guest-only routes go home.
   /// * [AppRoutes.gallery] exists only when [isDebug] is true.
   /// * [AppRoutes.onboarding] is skipped (→ login) once [onboardingSeen].
@@ -31,7 +32,7 @@ abstract final class AppRedirect {
       return authenticated ? AppRoutes.home : AppRoutes.login;
     }
 
-    if (AppRoutes.protected.contains(path) && !authenticated) {
+    if (AppRoutes.isProtected(path) && !authenticated) {
       return AppRoutes.login;
     }
     if (AppRoutes.guestOnly.contains(path) && authenticated) {

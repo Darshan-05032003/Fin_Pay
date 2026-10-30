@@ -39,6 +39,8 @@ class FpTextField extends StatefulWidget {
     this.semanticLabel,
     this.haptics,
     this.autofocus = false,
+    this.enableSuggestions,
+    this.autocorrect,
   });
 
   final TextEditingController? controller;
@@ -72,6 +74,13 @@ class FpTextField extends StatefulWidget {
   final String? semanticLabel;
   final HapticService? haptics;
   final bool autofocus;
+
+  /// Keyboard suggestions; defaults to off for obscured fields. Pass false
+  /// for card numbers and CVVs so the keyboard never learns them.
+  final bool? enableSuggestions;
+
+  /// Autocorrect; defaults to off for obscured fields.
+  final bool? autocorrect;
 
   @override
   State<FpTextField> createState() => _FpTextFieldState();
@@ -152,8 +161,8 @@ class _FpTextFieldState extends State<FpTextField> {
       autofocus: widget.autofocus,
       obscureText: _obscured,
       // Never let the keyboard learn or suggest secrets.
-      enableSuggestions: !widget.obscureText,
-      autocorrect: !widget.obscureText,
+      enableSuggestions: widget.enableSuggestions ?? !widget.obscureText,
+      autocorrect: widget.autocorrect ?? !widget.obscureText,
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,
       inputFormatters: widget.inputFormatters,

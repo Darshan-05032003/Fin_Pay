@@ -13,12 +13,14 @@ import 'package:fin_pay/screens/auth/forgot_password_screen.dart';
 import 'package:fin_pay/screens/auth/login_screen.dart';
 import 'package:fin_pay/screens/auth/verification_screen.dart';
 import 'package:fin_pay/screens/cards/add_card_screen.dart';
+import 'package:fin_pay/screens/cards/card_details_screen.dart';
 import 'package:fin_pay/screens/cards/my_cards_screen.dart';
 import 'package:fin_pay/screens/home/home_screen.dart';
 import 'package:fin_pay/screens/notifications/notifications_screen.dart';
 import 'package:fin_pay/screens/onboarding/onboarding_screen.dart';
 import 'package:fin_pay/screens/onboarding/welcome_screen.dart';
 import 'package:fin_pay/screens/profile/profile_screen.dart';
+import 'package:fin_pay/screens/shell/app_shell.dart';
 import 'package:fin_pay/screens/statistics/statistics_screen.dart';
 import 'package:fin_pay/screens/transactions/transactions_screen.dart';
 import 'package:fin_pay/screens/transfer/transfer_review_screen.dart';
@@ -49,6 +51,7 @@ abstract final class AppRouter {
     CreateAccountCubitFactory? createAccount,
   }) {
     final debug = isDebug ?? kDebugMode;
+    final rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
     final refresh = GoRouterRefreshStream(session.stream);
     final settingsRefresh = settings == null
         ? null
@@ -62,6 +65,7 @@ abstract final class AppRouter {
           clock: di.sl(),
         );
     return GoRouter(
+      navigatorKey: rootKey,
       initialLocation: initialLocation,
       refreshListenable: settingsRefresh == null
           ? refresh
@@ -92,7 +96,45 @@ abstract final class AppRouter {
           (_) => const FingerprintSetupScreen(),
         ),
         _route(AppRoutes.passwordReset, (_) => const ForgotPasswordScreen()),
-        _route(AppRoutes.home, (_) => const HomeScreen()),
+        // The four tabs live in one IndexedStack shell, so each keeps its
+        // state across switches. Add card and card details are pushed on
+        // the root navigator, over the bar.
+        StatefulShellRoute.indexedStack(
+          pageBuilder: (context, state, navigationShell) =>
+              AppPageTransitions.page(
+                state: state,
+                child: AppShell(navigationShell: navigationShell),
+              ),
+          branches: [
+            StatefulShellBranch(
+              routes: [_route(AppRoutes.home, (_) => const HomeScreen())],
+            ),
+            StatefulShellBranch(
+              routes: [
+                _route(AppRoutes.statistics, (_) => const StatisticsScreen()),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [_route(AppRoutes.cards, (_) => const MyCardsScreen())],
+            ),
+            StatefulShellBranch(
+              routes: [_route(AppRoutes.profile, (_) => const ProfileScreen())],
+            ),
+          ],
+        ),
+        _route(
+          AppRoutes.addCard,
+          (_) => const AddCardScreen(),
+          parentNavigatorKey: rootKey,
+        ),
+        GoRoute(
+          path: AppRoutes.cardDetails,
+          parentNavigatorKey: rootKey,
+          pageBuilder: (context, state) => AppPageTransitions.page(
+            state: state,
+            child: CardDetailsScreen(cardId: state.pathParameters['id'] ?? ''),
+          ),
+        ),
         _route(AppRoutes.transactions, (_) => const TransactionsScreen()),
         _route(AppRoutes.transfer, (_) => const TransferScreen()),
         GoRoute(
@@ -115,10 +157,6 @@ abstract final class AppRouter {
             },
           ),
         ),
-        _route(AppRoutes.cards, (_) => const MyCardsScreen()),
-        _route(AppRoutes.addCard, (_) => const AddCardScreen()),
-        _route(AppRoutes.profile, (_) => const ProfileScreen()),
-        _route(AppRoutes.statistics, (_) => const StatisticsScreen()),
         _route(AppRoutes.notifications, (_) => const NotificationsScreen()),
         _route(
           AppRoutes.gallery,
@@ -128,8 +166,13 @@ abstract final class AppRouter {
     );
   }
 
-  static GoRoute _route(String path, WidgetBuilder builder) => GoRoute(
+  static GoRoute _route(
+    String path,
+    WidgetBuilder builder, {
+    GlobalKey<NavigatorState>? parentNavigatorKey,
+  }) => GoRoute(
     path: path,
+    parentNavigatorKey: parentNavigatorKey,
     pageBuilder: (context, state) =>
         AppPageTransitions.page(state: state, child: builder(context)),
   );
