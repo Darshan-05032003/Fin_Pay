@@ -102,7 +102,44 @@ Cards, rows and avatars need press feedback but must not swallow repeated taps (
 ### D-016: Odometer rolls in the direction of the overall change
 `FpOdometer.plan` compares the digit strings numerically and rolls every column upward on an increase (wrapping 9 → 0) and downward on a decrease, with new leading columns sliding in from blank. The pure planner is unit-tested ("1,234" → "9,876"), and one controller with per-column `Interval`s (30 ms stagger from the right, capped at 200 ms) drives all columns.
 
+## F3 Onboarding + Auth (Agent C)
+
+### D-030: The demo OTP is the last six digits of the phone number
+There is no SMS backend, so the verification code is simulated locally. The code is derived from the mobile number typed at sign-up (`CreateAccountCubit.otpFor`), which keeps the demo self-explanatory (documented in the README) without printing the code on screen or logging it. The code is held privately by `OtpCubit`/`CreateAccountCubit` and is never a field of any state; the comparison is constant-time; five wrong codes lock the step and resending never resets the attempt count. Alternatives rejected: a fixed `123456` (looks like a backdoor in screenshots) and showing the code in a debug banner (would ship in release unless guarded).
+
+### D-031: Sign-up re-keys the single on-device account
+The data layer is single-user (`getUser()` is `LIMIT 1`). Creating an account therefore stores a new salted hash for the new email, updates the existing user row's name/email/phone (keeping the balance, cards and transactions, so the demo stays explorable) or inserts a row with the demo opening balance when the device has none, then signs in. Deleting the demo user would break the F1 seeding assumptions and wipe the demo data; a multi-user schema is out of scope for a demo.
+
+### D-032: The password lives in a shell-scoped `CreateAccountCubit`, not in route `extra`
+F1 flagged the plaintext password travelling through `GoRouter` `extra` (Medium). `/create-account` and `/verification` now sit under one `ShellRoute` whose builder provides a `CreateAccountCubit`; the verification step reads the pending sign-up from it, and the cubit is closed (password wiped) when the shell is left. The password is a private field, never part of `CreateAccountState`, so `toString`/`props` never carry it; the same holds for `LoginCubit`. Opening `/verification` with no pending sign-up (deep link, process death) shows a "start again" guard instead of inventing a session.
+
+### D-033: Countdowns run on the injected `Clock` and clamp clock jumps
+`OtpCubit` (30 s resend) and `LoginCubit` (lockout remaining) compute the remaining time from a deadline against `Clock.now()` on a 1 s `Timer.periodic`, so `fake_async` drives them in tests and `tester.binding.clock` in widget tests. A clock jump forward ends the countdown; a jump backwards is clamped to the original length (the lock can never grow past what the repository granted), so the user is never stuck.
+
+### D-034: `FLAG_SECURE` is reference-counted
+`SecureScreen` wraps login, create account and verification. Pushing create account over login must not switch protection off when it is popped, so the wrapper counts mounted instances and calls `ScreenProtector.enable()` on 0 → 1 and `disable()` on 1 → 0 only. The login and sign-up screens also re-obscure a revealed password on `inactive`/`hidden`/`paused`.
+
+### D-035: Onboarding "seen" lives in `AppSettings`, and the redirect reads it
+`onboardingSeen` and `biometricEnabled` were added to `AppSettings` (shared_preferences). `AppRedirect.resolve` takes `onboardingSeen` and sends `/onboarding` to `/login` once seen; the router merges the `SettingsCubit` stream into its refresh listenable so the redirect re-runs when the flag flips. The welcome splash stays as the root and adapts its calls to action instead of being skipped.
+
+### D-036: Page transitions through `AppPageTransitions.fp`
+`AppPageTransitions.builder` now defaults to `fp`, a route → `FpTransitionKind` map: shared-axis X for the auth steps (onboarding, login, create account, verification, fingerprint, reset) and fade-through for the splash, home and anything unlisted (tabs). Tests that need a cut keep `AppPageTransitions.fade`.
+
+### D-037: `FpOtpField`, `FpCountdownRing` and `FpDrawnCheck` join the design system
+All three are generic (F5's success screen needs the drawn check; any timed step can use the ring; the OTP field has no auth-specific knowledge), so they live under `lib/design_system/` with gallery sections, goldens and tests. The OTP field is one hidden `TextField` (digits-only formatter, `oneTimeCode` autofill) behind six painted cells rather than six fields: paste and autofill then need no cross-field plumbing and backspace naturally moves back.
+
+### D-038: Sign-up illustrations are three `CustomPainter` layers per page
+No assets: each onboarding page paints three NeoPOP glyphs (flat face + solid edge) at speeds 0.35 / 0.6 / 0.85 of the page; `OnboardingParallax.layerShift` (pure) counter-translates each layer by `(page − index) × width × (1 − speed)`, read from the `PageController` in one `AnimatedBuilder` per illustration (no per-frame `setState`). Reduce-motion freezes the layers and makes "next" jump instead of animate.
+
 ## Compromises
+
+### F3
+- Phone-based OTP is simulated (D-030) and the reset email is never sent; both are stated on screen as "Demo build".
+- Biometric unlock is enrolled and persisted (`biometricEnabled`) but not yet used to sign in: the credential check needs the password hash, so a biometric-gated sign-in would need a stored secret behind the keystore (Wave 2 / profile settings).
+- Sign-up re-keys the device's single account (D-031) rather than creating a second user.
+- `AppSettings`, `SettingsCubit`, `SharedPreferencesSettingsRepository`, `AppRedirect`, `AppRouter`, `AppPageTransitions` and one line of `app.dart` (passing the settings cubit to the router) were touched outside the screen folders; all additive.
+- Legacy-widget deletion: only `cred_page_transition.dart` reached zero usages; the other files in the pending table are still imported by the home/cards/transfer/insights screens (Agents D–F).
+- The DB-backed sign-up completion runs real sqflite I/O inside widget tests; the harness has a `flush()` helper (`tester.runAsync`) for the two tests that need the write to finish.
 
 ### F2
 - Material icons are not loaded in golden tests, so icons render as boxes in the baselines (D-009). Loading `MaterialIcons-Regular.otf` from the SDK cache is possible in Wave 2 if real icon glyphs are wanted.

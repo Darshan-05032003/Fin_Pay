@@ -113,3 +113,83 @@ One entry per feature, appended after the feature's quality loop (spec §7a).
     keyboard's learning dictionary, handles credentials.
   - The gallery guard is build-mode based (`kReleaseMode`); Agent A must also
     leave the route out of the release router so it cannot be deep-linked.
+
+## Feature: F3 Onboarding + Auth
+- Attacks tried:
+  - Every field: 10,000-character pastes, 300× emoji, right-to-left overrides
+    (U+202E), NUL / zero-width / BOM characters, Devanagari and Arabic-Indic
+    digits, SQL (`' OR 1=1 --`), format strings (`%s%n`), `<script>`, a
+    250-character local part, 65-code-point passwords
+    (`validators_test.dart`, `login_cubit_test.dart` "hostile input",
+    `login_screen_test.dart` "hostile input never throws").
+  - OTP: 10,000 random inputs mixing junk and backspace/verify/resend
+    through the pure machine; 2,000 junk pastes through the real
+    `FpOtpField`; wrong code × 7; resend before and after the cooldown;
+    concurrent submits; the expected code searched for in `state.toString()`
+    and `props` (`otp_machine_test.dart`, `otp_cubit_test.dart`,
+    `auth_stress_test.dart`).
+  - Rapid taps: 50 (widget) and 1,000 (stress) taps on "Sign in" with the
+    repository gated on a `Completer`; 1,000 `submit()` calls while one is in
+    flight; 20 taps on the fingerprint glyph; three concurrent
+    `completeSignUp()` calls; three concurrent `OtpCubit.submit()` calls.
+  - Backgrounding mid-login: `AppLifecycleState` inactive → hidden → paused
+    while the password is revealed, on login and create account.
+  - Process death mid-OTP / deep link: `/verification` opened with no pending
+    sign-up (router test and screen test); `/fingerprint-setup` opened while
+    signed out and "not now" pressed; `/home` while signed out.
+  - Biometrics: `failed`, `lockedOut`, `error`, `notEnrolled`, `notAvailable`
+    at check time and at prompt time; retry after failure.
+  - Clock jumps: +2 h and −5 h during the OTP cooldown; −1 h during the login
+    lockout (`fake_async` + injected `Clock`).
+  - Route `extra` inspected after the sign-up push (`router.state.extra`).
+  - Password visibility: eye toggle, re-hide on background; password and OTP
+    searched for in every emitted state; `demo_credentials_test.dart` greps
+    `lib/` for the owner's secret regex (it caught the first draft's private
+    `_password = ''` field, renamed).
+  - FLAG_SECURE: `FakeScreenProtector` call counts across login → create
+    account → back → welcome.
+  - Enumeration: forgot-password with an unknown vs a known address.
+  - Semantics guidelines (`androidTapTargetGuideline`,
+    `labeledTapTargetGuideline`, `textContrastGuideline`) on every screen at
+    1.3× with errors showing.
+- What broke:
+  - **Medium** (carried from F1) – the plaintext password travelled through
+    `GoRouter` `extra` from create account to verification. Fixed: shell-scoped
+    `CreateAccountCubit` (D-032); the password is a private field, never in a
+    state, wiped on close; `router.state.extra` is asserted null after the
+    push (`create_account_screen_test.dart`, `app_router_test.dart`).
+  - **Medium** – the old verification screen accepted *any* four digits and
+    "resend" did nothing. Fixed: six-digit code compared in constant time,
+    five attempts then lockout, resend only after a 30 s cooldown and never
+    resetting attempts (`otp_machine_test.dart`).
+  - **Medium** – no screenshot protection on the credential screens. Fixed:
+    `SecureScreen` (reference-counted `FLAG_SECURE`) on login, create account
+    and verification (`secure_screen_test.dart`, `login_screen_test.dart`
+    "screen protection stays on").
+  - **Low** – a revealed password stayed visible in the app switcher after
+    backgrounding. Fixed: re-obscured on `inactive`/`hidden`/`paused`.
+  - **Low** – the first `LoginCubit` draft clamped the lock countdown to 5
+    minutes, so a clock jump backwards could extend a 30 s lock. Fixed: clamp
+    to the originally granted length (`login_cubit_test.dart` "clock jump").
+  - **Low** – `Validators.validateEmail` accepted any `\w`-ish local part and
+    `validateName` accepted symbols. Fixed: ASCII-only, length-bounded email;
+    letter/mark-only names; control and bidi characters rejected everywhere.
+  - **Low** – demo credentials were printed on the login and sign-up screens.
+    Fixed: the screens only say the details are in the README (asserted by
+    `login_screen_test.dart`).
+  - Nothing Critical/High found: the repository lockout (F1) already stops
+    brute force; 1,000 rapid taps and 1,000 in-flight submits reach the
+    repository once; the OTP flow cannot be reached without a pending sign-up.
+- Fixed now: all of the above, each with a regression test (listed per item).
+- Scope for improvement:
+  - The simulated OTP is derived from the phone number (D-030); a real
+    deployment needs a server-issued code with its own rate limit.
+  - `biometricEnabled` is persisted but biometric sign-in is not wired (see
+    DECISIONS F3 compromises); when it is, keep the hash check and gate a
+    keystore-held secret behind `BiometricAuthenticator`.
+  - `AutofillGroup`/`autofillHints` are set; iOS/Android keychain behaviour
+    needs a device check in Wave 2.
+  - Tapjacking (`filterTouchesWhenObscured`) remains a `MainActivity` change
+    (F2 note) and is not applied to the auth screens.
+  - The forgot-password "sent" state is simulated; a real sender must keep
+    the same constant-time, non-enumerating response.
