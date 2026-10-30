@@ -17,10 +17,11 @@ lib/design_system/
   theme/                  fp_tokens (FpTokens ThemeExtension, context.fp), fp_theme (FpTheme.dark())
   components/             fp_button, fp_surface, fp_text_field, fp_chip, fp_toggle,
                           fp_bottom_sheet, fp_toast, fp_skeleton, fp_state_views,
-                          fp_amount_text (+ FpOdometer), fp_segmented_control, fp_page_indicator
+                          fp_amount_text (+ FpOdometer), fp_segmented_control, fp_page_indicator,
+                          fp_otp_field, fp_countdown_ring (F3)
   motion/                 fp_pressable, fp_submit_guard, fp_staggered_entrance (FpEntrance,
                           FpStaggeredEntrance, FpStagger), fp_parallax, fp_page_transitions,
-                          fp_hero, fp_shake, fp_pulse, fp_confetti
+                          fp_hero, fp_shake, fp_pulse, fp_confetti, fp_drawn_check (F3)
   gallery/                gallery_screen (FpGallery.route = '/gallery', FpGalleryScreen)
 ```
 
@@ -125,6 +126,8 @@ haptics through `HapticService` (constructor parameter, else GetIt, else none).
 | `FpToast.show` | success, error, info; auto-dismiss (3 s), tap to dismiss, one at a time | Slide (-1.2 × height) + fade 400 ms in, 250 ms out; fade only with reduce-motion | – |
 | `FpSkeleton` / `FpSkeletonRow` / `FpSkeletonGroup` | block, circle, list row | Gradient sweep 1.4 s, shared ticker in a group; static with reduce-motion | – |
 | `FpEmptyState` / `FpErrorState` | icon, title, message, action / retry | Staggered entrance | via `FpButton` |
+| `FpOtpField` (F3) | `length` cells (default 6) over one hidden text field (typing, paste, `oneTimeCode` autofill share one path); idle, focused (active cell follows the digits), error, disabled; `onCompleted` | Active-cell border 150 ms; new error → shake (400 ms) + red flash (400 ms) | `selection` per digit, `error` on a new error |
+| `FpCountdownRing` (F3) | `progress` 1 → 0 (clamped), optional centred `label`, `size`, `semanticLabel` | Arc empties clockwise; value changes tween over 250 ms, instant with reduce-motion | – |
 
 ## 4. Motion primitives
 
@@ -140,6 +143,7 @@ haptics through `HapticService` (constructor parameter, else GetIt, else none).
 | `FpShake` + `FpShakeController` | Decaying-sine horizontal shake (8 px, 3 cycles, 400 ms) | No movement |
 | `FpPulse` | Finite scale pulses (default 3, 700 ms each); `pulses: null` only for live indicators | Never starts |
 | `FpConfetti` + `FpConfettiController` | `CustomPainter` burst (80 particles, 1.6 s) per `burst()`, stops when done, no package | Nothing drawn |
+| `FpDrawnCheck` (F3) | Strokes the check path over 400 ms once `shown` is true; `onCompleted` fires once; `pathFor(size)` is pure | Appears fully drawn at once |
 
 ### Motion rules (spec §8)
 
@@ -196,25 +200,34 @@ accessibility guideline tests (`androidTapTargetGuideline`,
 `shimmer_loader.dart`, `slide_page_route.dart`, `neumorphic_container.dart`, and
 the unused `neopop_button.dart` (its replacement, `FpButton`/`FpSurface`, exists; D-014).
 
+### Deleted in F3 (zero usages in `lib/` after the onboarding + auth rewrite)
+
+`animations/cred_page_transition.dart` (the router has used go_router pages since
+F1; F3 wires `FpPageTransitions` through `AppPageTransitions.fp`). The
+`smooth_page_indicator` package left with the old onboarding screen (its only
+importer); `FpPageIndicator` replaces it.
+
 ### Pending removals (still imported by screens; Wave 1 switches them over)
+
+Counts are the screens still importing each file after F3 (the seven
+onboarding/auth screens no longer import anything from `lib/widgets/`).
 
 | File | Used by | Replace with |
 |---|---|---|
-| `animations/cred_slide_in.dart` | 14 screens | `FpEntrance` / `FpStaggeredEntrance` |
-| `animations/cred_button_press.dart` | 14 screens | `FpPressable` (or `FpButton` for real buttons) |
-| `animations/cred_card_reveal.dart` | 14 screens | `FpEntrance` |
-| `animations/fade_in_animation.dart` | 8 screens | `FpEntrance` |
-| `animations/spring_animation.dart` | 10 screens | `FpEntrance(scaleFrom: 0.85)` |
-| `animations/pulse_animation.dart` | 12 screens | `FpPulse` (finite; drop decorative uses) |
+| `animations/cred_slide_in.dart` | 8 screens | `FpEntrance` / `FpStaggeredEntrance` |
+| `animations/cred_button_press.dart` | 8 screens | `FpPressable` (or `FpButton` for real buttons) |
+| `animations/cred_card_reveal.dart` | 8 screens | `FpEntrance` |
+| `animations/fade_in_animation.dart` | 5 screens | `FpEntrance` |
+| `animations/spring_animation.dart` | 4 screens | `FpEntrance(scaleFrom: 0.85)` |
+| `animations/pulse_animation.dart` | 6 screens | `FpPulse` (finite; drop decorative uses) |
 | `animations/skeleton_loader_full.dart` | 6 screens | `FpSkeleton*` |
 | `animations/pull_to_refresh_custom.dart` | 5 screens | F4: `components/fp_refresh.dart` (not in F2 scope) |
-| `animations/ripple_effect.dart` | 4 screens | `FpPressable` |
+| `animations/ripple_effect.dart` | 3 screens | `FpPressable` |
 | `animations/cred_number_counter.dart` | 3 screens | `FpAmountText` |
 | `animations/staggered_list_animation.dart` | 2 screens | `FpStaggeredEntrance` |
 | `animations/swipe_to_dismiss.dart` | 2 screens | F6: `components/fp_swipe_action_row.dart` (not in F2 scope) |
 | `animations/card_3d_flip.dart` | my_cards | F4: `motion/fp_flip_card.dart` (not in F2 scope) |
 | `animations/confetti_effect.dart` | transfer_success | `FpConfetti` |
-| `animations/cred_page_transition.dart` | app_router | `FpPageTransitions` (Agent A / F7) |
 | `animations/delayed_animation.dart` | transfer_success | `FpEntrance` |
 | `animations/draggable_card.dart` | transfer_review | F5 swipe-to-pay (DELETE then) |
 | `animations/icon_morph.dart` | home | `AnimatedSwitcher` (DELETE then) |
@@ -233,3 +246,7 @@ When the last screen stops importing a file, delete it; the `confetti`,
   `flutter test --update-goldens test/golden` only when a change is intended.
 - `test/stress/design_system_stress_test.dart` tag `stress`:
   `flutter test --tags stress --dart-define=FINPAY_STRESS=true --concurrency=1 test/stress`.
+- F3 screens: `test/widget/screens/` (harness `screen_harness.dart` boots the
+  real router + DI with the platform fakes), `test/golden/screens/` (every
+  onboarding/auth screen × state at 1.0× and 1.3×, 38 baselines),
+  `test/stress/auth_stress_test.dart`.

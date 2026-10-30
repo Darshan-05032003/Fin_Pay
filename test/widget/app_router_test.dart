@@ -1,9 +1,11 @@
+import 'package:animations/animations.dart';
 import 'package:fin_pay/app.dart';
 import 'package:fin_pay/blocs/session/session_cubit.dart';
 import 'package:fin_pay/blocs/session/session_state.dart';
 import 'package:fin_pay/core/di/injection_container.dart' as di;
 import 'package:fin_pay/core/money/money.dart';
 import 'package:fin_pay/core/platform/fakes/fakes.dart';
+import 'package:fin_pay/core/settings/settings_cubit.dart';
 import 'package:fin_pay/domain/auth/auth_failure.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
 import 'package:fin_pay/models/user.dart';
@@ -59,8 +61,16 @@ void main() {
     await di.reset();
   });
 
-  Future<void> pump(WidgetTester tester, {bool isDebug = true}) async {
-    router = AppRouter.build(session: session, isDebug: isDebug);
+  Future<void> pump(
+    WidgetTester tester, {
+    bool isDebug = true,
+    bool withSettings = false,
+  }) async {
+    router = AppRouter.build(
+      session: session,
+      settings: withSettings ? di.sl<SettingsCubit>() : null,
+      isDebug: isDebug,
+    );
     await tester.pumpWidget(FinPayApp(router: router));
     await tester.pump();
   }
@@ -202,6 +212,66 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(calls, greaterThanOrEqualTo(2));
+    await settle(tester);
+  });
+
+  testWidgets('the default builder renders design-system transitions', (
+    tester,
+  ) async {
+    AppPageTransitions.builder = AppPageTransitions.fp;
+    await session.restore();
+    await pump(tester);
+    router.go(AppRoutes.login);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(SharedAxisTransition), findsWidgets);
+    await settle(tester);
+    router.go(AppRoutes.welcome);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(FadeThroughTransition), findsWidgets);
+    await settle(tester);
+  });
+
+  testWidgets('onboarding seen: /onboarding goes to login, and the router '
+      'reacts when the flag flips', (tester) async {
+    await session.restore();
+    await pump(tester, withSettings: true);
+    router.go(AppRoutes.onboarding);
+    await tester.pump();
+    expect(location(), AppRoutes.onboarding);
+    await di.sl<SettingsCubit>().setOnboardingSeen(seen: true);
+    await tester.pump();
+    await tester.pump();
+    expect(location(), AppRoutes.login);
+    await settle(tester);
+  });
+
+  testWidgets('a pushed /verification without a sign-up shows the guard, and '
+      'nothing travels in extra', (tester) async {
+    await session.restore();
+    await pump(tester);
+    router.go(AppRoutes.verification);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Start again'), findsOneWidget);
+    expect(router.state.extra, isNull);
+    await settle(tester);
+  });
+
+  testWidgets('fingerprint setup while signed out cannot reach home', (
+    tester,
+  ) async {
+    await session.restore();
+    await pump(tester);
+    router.go(AppRoutes.fingerprintSetup);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(location(), AppRoutes.fingerprintSetup);
+    await tester.tap(find.text('NOT NOW'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(location(), AppRoutes.login);
     await settle(tester);
   });
 }

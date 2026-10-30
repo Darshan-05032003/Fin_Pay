@@ -92,3 +92,53 @@ per pumped frame, not GPU raster time; on-device profile traces are Wave 2.
     overlapping (already built in).
   - Wave 2: repeat scenario 2 on a mid-range device with
     `flutter drive --profile` and record raster times.
+
+## Feature: F3 Onboarding + Auth
+- Scenario and scale:
+  - `test/stress/auth_stress_test.dart`, 7 scenarios:
+    1. 1,000 rapid taps on the real login screen's "Sign in" with the
+       repository gated on a `Completer`.
+    2. 10,000 random OTP inputs (junk, emoji, bidi, NUL, non-ASCII digits,
+       backspace/verify/resend interleaved) through the pure `OtpMachine`.
+    3. 2,000 junk pastes through the real `FpOtpField` widget.
+    4. 1,000 login failures through `LoginCubit` → `SessionCubit` →
+       `AuthRepositoryImpl` (real PBKDF2, `FakeSecureStorage`, fake clock),
+       letting the 30 s lock expire every 50 attempts; RSS before/after.
+    5. 1,000 wrong passwords straight at the repository (does hashing stop
+       once locked?).
+    6. 500 onboarding page flings (3,000 pumped frames) with frame build
+       times, then a ticker count after dispose.
+    7. 5,000 hostile edits of the login fields through `bloc_test`.
+- Results (numbers, Linux test host, Dart JIT):
+  - 1,000 login taps dispatched in **485 ms** → **1** `signIn` call; the app
+    landed on `/home` once the gate opened.
+  - 10k OTP machine transitions: **34 ms**; max digits **6**; never threw.
+  - 2,000 `FpOtpField` pastes: **4,199 ms** (2.1 ms per paste including the
+    text-input round trip); max digits **6**; no exception.
+  - 1,000 login failures: **2,586 ms**; **80** hashed `InvalidCredentials`
+    (4 before each of 20 locks), **920** answered from the lock record without
+    hashing; RSS **231 MB → 236 MB** (no growth beyond GC noise); the form
+    re-enabled after the last expiry.
+  - 1,000 repository sign-ins with a stored credential: **14 ms**; **996**
+    `AccountLocked` responses (hashing stops after the fifth failure, so a
+    brute force costs the attacker time, not the device CPU).
+  - 500 onboarding swings: **6,129 ms**, 3,000 frames, build **avg 0.63 ms,
+    p90 0.79 ms, p99 1.77 ms**; **0** tickers after dispose.
+  - 5,000 hostile edits: state stayed `idle`, no exception.
+- What broke:
+  - The first draft of scenario 4 closed the cubit on the 50th attempt and
+    then measured nothing (a test bug, not a product one); and with no stored
+    credential for the address the repository never hashed (unknown e-mail
+    and wrong password are indistinguishable by design), so the "cost" line
+    was meaningless until a credential was seeded.
+  - Nothing in the product broke at these scales.
+- Failure flow (step by step): none reached. The expensive path is one
+  PBKDF2 verify (~27 ms JIT) per *unlocked* wrong attempt; the lock record
+  makes attempts 5–∞ of each 30 s window free.
+- Fix applied / recommendation:
+  - Stress test rewritten on `fake_async` with a seeded credential.
+  - Keep the OTP and lock countdowns on the injected `Clock` (D-033) so a
+    stuck or jumping clock cannot pin a user.
+  - Wave 2: repeat scenario 6 on a device in profile mode for raster times;
+    the illustrations are three `CustomPaint`s per page under one
+    `RepaintBoundary`, so raster cost should be flat.

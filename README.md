@@ -30,7 +30,7 @@ Run `flutter test` to see them pass.
 Email: `user@finpay.com`
 Pass: `FinPay123`
 
-(Just use these defaults, I haven't made a working sign up screen yet lol)
+**Sign-up (simulated):** create an account with any name, email, 10-digit Indian mobile number and an 8+ character password. The verification code is simulated locally: it is the **last six digits of the mobile number you entered** (no SMS is sent). Sign-up re-keys the single on-device demo account; the opening balance stays. Biometrics and the password-reset email are simulated too.
 
 The password is not stored anywhere in the app code: `lib/core/auth/demo_credentials.dart` holds a precomputed PBKDF2-HMAC-SHA256 `(salt, hash)` pair that is seeded into secure storage on first run, and a test fails if the plaintext ever shows up under `lib/`. After 5 wrong attempts the account locks for 30 seconds.
 

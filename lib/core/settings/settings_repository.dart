@@ -17,6 +17,8 @@ class SharedPreferencesSettingsRepository implements SettingsRepository {
   static const String _haptics = 'settings.hapticsEnabled';
   static const String _reduceMotion = 'settings.reduceMotion';
   static const String _hideBalance = 'settings.hideBalance';
+  static const String _onboardingSeen = 'settings.onboardingSeen';
+  static const String _biometricEnabled = 'settings.biometricEnabled';
 
   @override
   Future<AppSettings> load() async {
@@ -25,6 +27,8 @@ class SharedPreferencesSettingsRepository implements SettingsRepository {
         hapticsEnabled: await _prefs.getBool(_haptics) ?? true,
         reduceMotion: await _prefs.getBool(_reduceMotion) ?? false,
         hideBalance: await _prefs.getBool(_hideBalance) ?? false,
+        onboardingSeen: await _prefs.getBool(_onboardingSeen) ?? false,
+        biometricEnabled: await _prefs.getBool(_biometricEnabled) ?? false,
       );
     } on Exception {
       return AppSettings.defaults;
@@ -36,6 +40,8 @@ class SharedPreferencesSettingsRepository implements SettingsRepository {
     await _prefs.setBool(_haptics, settings.hapticsEnabled);
     await _prefs.setBool(_reduceMotion, settings.reduceMotion);
     await _prefs.setBool(_hideBalance, settings.hideBalance);
+    await _prefs.setBool(_onboardingSeen, settings.onboardingSeen);
+    await _prefs.setBool(_biometricEnabled, settings.biometricEnabled);
   }
 }
 

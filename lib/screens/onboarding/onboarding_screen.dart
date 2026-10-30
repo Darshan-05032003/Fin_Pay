@@ -1,296 +1,191 @@
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
-import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
-import 'package:fin_pay/widgets/animations/spring_animation.dart';
+import 'package:fin_pay/core/settings/settings_cubit.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/auth/widgets/spring_rise.dart';
+import 'package:fin_pay/screens/onboarding/onboarding_cubit.dart';
+import 'package:fin_pay/screens/onboarding/onboarding_illustrations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-class OnboardingScreen extends StatefulWidget {
+/// Three swipeable pages with layered, code-drawn illustrations that move
+/// at different speeds, a morphing page indicator and a CTA that rises in
+/// on a spring. Finishing (or skipping) records "onboarding seen".
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) =>
+          OnboardingCubit(settings: context.read<SettingsCubit>()),
+      child: const _OnboardingView(),
+    );
+  }
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+class _OnboardingView extends StatefulWidget {
+  const _OnboardingView();
 
-  final List<OnboardingPage> _pages = [
-    OnboardingPage(
-      title: 'Pay for everything easily and conveniently!',
-      subtitle:
-          'Handle all your payments easily, anytime, from one secure app.',
-      image: Icons.account_balance_wallet,
-    ),
-    OnboardingPage(
-      title: 'Take control of your money like never before!',
-      subtitle:
-          'Track expenses, make payments, and manage your money securely '
-          'in one place.',
-      image: Icons.pie_chart,
-    ),
-    OnboardingPage(
-      title: 'Spend smarter every day with smarter tools in one app!',
-      subtitle:
-          'Monitor spending, pay securely, and stay in control of your '
-          'money in one place.',
-      image: Icons.credit_card,
-    ),
-  ];
+  @override
+  State<_OnboardingView> createState() => _OnboardingViewState();
+}
+
+class _OnboardingViewState extends State<_OnboardingView> {
+  final PageController _controller = PageController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _syncPage(int page) {
+    if (!_controller.hasClients) return;
+    if ((_controller.page ?? _controller.initialPage).round() == page) return;
+    if (FpMotion.of(context).reduce) {
+      _controller.jumpToPage(page);
+      return;
+    }
+    _controller.animateToPage(
+      page,
+      duration: FpMotion.screen,
+      curve: FpMotion.emphasizedDecelerate,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      body: SafeArea(
-        child: Column(
-          children: [
-            CredSlideIn(
-              delay: const Duration(milliseconds: 100),
-              offset: const Offset(20, 0),
-              child: Align(
-                alignment: Alignment.topRight,
-                child: CredButtonPress(
-                  onTap: () async {
-                    await sl<HapticService>().light();
-                    if (!context.mounted) return;
-                    context.go('/login');
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: AppTheme.credWhite,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+    final fp = context.fp;
+    final c = fp.colors;
+    final cubit = context.read<OnboardingCubit>();
+    final pages = OnboardingCubit.pages;
+    return BlocListener<OnboardingCubit, OnboardingState>(
+      listener: (context, state) {
+        if (state.completed) {
+          context.go(AppRoutes.login);
+          return;
+        }
+        _syncPage(state.page);
+      },
+      child: Scaffold(
+        backgroundColor: c.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  FpSpacing.lg,
+                  FpSpacing.sm,
+                  FpSpacing.lg,
+                  0,
                 ),
-              ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  return _buildAnimatedPage(_pages[index], index);
-                },
-              ),
-            ),
-            CredSlideIn(
-              delay: const Duration(milliseconds: 300),
-              offset: const Offset(0, 20),
-              child: SmoothPageIndicator(
-                controller: _pageController,
-                count: _pages.length,
-                effect: const WormEffect(
-                  activeDotColor: AppTheme.credOrangeSunshine,
-                  dotColor: AppTheme.credMediumGray,
-                  dotHeight: 10,
-                  dotWidth: 10,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            CredSlideIn(
-              delay: const Duration(milliseconds: 400),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (_currentPage < _pages.length - 1)
-                      CredButtonPress(
-                        onTap: () async {
-                          await sl<HapticService>().light();
-                          if (!context.mounted) return;
-                          context.go('/login');
-                        },
-                        child: const Text(
-                          'Skip',
-                          style: TextStyle(
-                            color: AppTheme.credTextSecondary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    const Spacer(),
-                    CredButtonPress(
-                      onTap: () async {
-                        await sl<HapticService>().medium();
-                        if (_currentPage < _pages.length - 1) {
-                          _pageController.nextPage(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeInOutCubic,
-                          );
-                        } else {
-                          if (!context.mounted) return;
-                          context.go('/login');
-                        }
-                      },
-                      child: SpringAnimation(
-                        startOffset: const Offset(0, 20),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.credOrangeGradient,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withValues(
-                                  alpha: 0.4,
-                                ),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 18,
-                          ),
-                          child: const Text(
-                            'Continue',
-                            style: TextStyle(
-                              color: AppTheme.credWhite,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
+                    FpButton(
+                      label: 'Skip',
+                      variant: FpButtonVariant.ghost,
+                      size: FpButtonSize.small,
+                      expand: false,
+                      semanticLabel: 'Skip onboarding',
+                      onPressed: cubit.skip,
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-          ],
+              Expanded(
+                child: PageView.builder(
+                  key: const ValueKey('onboarding-pages'),
+                  controller: _controller,
+                  onPageChanged: cubit.pageChanged,
+                  itemCount: pages.length,
+                  itemBuilder: (context, index) => _OnboardingPage(
+                    spec: pages[index],
+                    index: index,
+                    controller: _controller,
+                  ),
+                ),
+              ),
+              BlocBuilder<OnboardingCubit, OnboardingState>(
+                buildWhen: (p, n) => p.page != n.page,
+                builder: (context, state) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FpSpacing.lg,
+                    vertical: FpSpacing.lg,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: FpPageIndicator(
+                          count: pages.length,
+                          index: state.page,
+                        ),
+                      ),
+                      const SizedBox(height: FpSpacing.xl),
+                      SpringRise(
+                        key: const ValueKey('onboarding-cta'),
+                        delay: FpMotion.standard,
+                        child: FpButton(
+                          label: state.isLast(pages.length)
+                              ? 'Get started'
+                              : 'Next',
+                          size: FpButtonSize.large,
+                          onPressed: cubit.next,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-
-  Widget _buildAnimatedPage(OnboardingPage page, int index) {
-    final isCurrentPage = _currentPage == index;
-
-    return RepaintBoundary(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: isCurrentPage ? 1.0 : 0.0),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, _) {
-          return Opacity(
-            opacity: value,
-            child: Transform.translate(
-              offset: Offset(30 * (1 - value), 0),
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 40),
-                    CredSlideIn(
-                      delay: Duration(milliseconds: 200 + (index * 100)),
-                      child: Text(
-                        page.title,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.credTextPrimary,
-                          height: 1.2,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    CredSlideIn(
-                      delay: Duration(milliseconds: 300 + (index * 100)),
-                      offset: const Offset(0, 20),
-                      child: Text(
-                        page.subtitle,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppTheme.credTextSecondary,
-                          height: 1.5,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    CredSlideIn(
-                      delay: Duration(milliseconds: 400 + (index * 100)),
-                      offset: const Offset(0, 40),
-                      child: CredCardReveal(
-                        duration: const Duration(milliseconds: 800),
-                        perspective: 0.0008,
-                        child: PulseAnimation(
-                          minScale: 0.98,
-                          maxScale: 1.02,
-                          child: Container(
-                            width: 220,
-                            height: 220,
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.credOrangeGradient,
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.credOrangeSunshine.withValues(
-                                    alpha: 0.4,
-                                  ),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              page.image,
-                              size: 100,
-                              color: AppTheme.credWhite,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
 }
 
-class OnboardingPage {
-  OnboardingPage({
-    required this.title,
-    required this.subtitle,
-    required this.image,
+class _OnboardingPage extends StatelessWidget {
+  const _OnboardingPage({
+    required this.spec,
+    required this.index,
+    required this.controller,
   });
-  final String title;
-  final String subtitle;
-  final IconData image;
+
+  final OnboardingPageSpec spec;
+  final int index;
+  final PageController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    return ListView(
+      padding: const EdgeInsets.symmetric(
+        horizontal: FpSpacing.xl,
+        vertical: FpSpacing.lg,
+      ),
+      children: [
+        Center(
+          child: OnboardingIllustration(
+            spec: spec,
+            index: index,
+            controller: controller,
+          ),
+        ),
+        const SizedBox(height: FpSpacing.xxl),
+        Semantics(
+          header: true,
+          child: Text(
+            spec.title,
+            style: fp.text.headline,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: FpSpacing.md),
+        Text(spec.body, style: fp.text.bodySmall, textAlign: TextAlign.center),
+      ],
+    );
+  }
 }

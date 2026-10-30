@@ -1,246 +1,153 @@
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
 import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
-import 'package:fin_pay/widgets/animations/spring_animation.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/auth/forgot_password/forgot_password_cubit.dart';
+import 'package:fin_pay/screens/auth/widgets/auth_scaffold.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+/// Email step of the password reset, with a simulated send and a success
+/// state that never reveals whether the address has an account.
 class ForgotPasswordScreen extends StatelessWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({super.key, this.sendDelay});
+
+  /// Simulated network time (tests pass zero).
+  final Duration? sendDelay;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      appBar: AppBar(
-        backgroundColor: AppTheme.credPureBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.credTextPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return BlocProvider(
+      create: (_) => sendDelay == null
+          ? ForgotPasswordCubit()
+          : ForgotPasswordCubit(delay: sendDelay!),
+      child: const _ForgotPasswordView(),
+    );
+  }
+}
+
+class _ForgotPasswordView extends StatelessWidget {
+  const _ForgotPasswordView();
+
+  void _back(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.login);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final cubit = context.read<ForgotPasswordCubit>();
+    return BlocListener<ForgotPasswordCubit, ForgotPasswordState>(
+      listenWhen: (p, n) => p.status != n.status,
+      listener: (context, state) {
+        if (state.status == ForgotPasswordStatus.sent) {
+          playHaptic(null, HapticType.success);
+        }
+      },
+      child: BlocBuilder<ForgotPasswordCubit, ForgotPasswordState>(
+        builder: (context, state) {
+          final sent = state.status == ForgotPasswordStatus.sent;
+          return AuthScaffold(
+            title: sent ? 'Check your inbox' : 'Forgot your password?',
+            subtitle: sent
+                ? null
+                : 'Enter the email on your account and we will send a '
+                      'link to reset it.',
+            onBack: () => _back(context),
+            scrollKey: const ValueKey('forgot-scroll'),
             children: [
-              const CredSlideIn(
-                delay: Duration(milliseconds: 100),
-                child: Text(
-                  'Forgot Password?',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.credTextPrimary,
-                    letterSpacing: -1,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const CredSlideIn(
-                delay: Duration(milliseconds: 200),
-                offset: Offset(0, 20),
-                child: Text(
-                  'Choose a recovery method to reset your password.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.credTextSecondary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 300),
-                offset: const Offset(0, 40),
-                child: CredCardReveal(
-                  duration: const Duration(milliseconds: 800),
-                  perspective: 0.0008,
-                  child: Center(
-                    child: PulseAnimation(
-                      minScale: 0.98,
-                      maxScale: 1.02,
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.credOrangeGradient,
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.credOrangeSunshine.withValues(
-                                alpha: 0.4,
+              AnimatedSwitcher(
+                duration: FpMotion.of(context).scaled(FpMotion.emphasized),
+                switchInCurve: FpMotion.emphasizedDecelerate,
+                switchOutCurve: FpMotion.emphasizedAccelerate,
+                child: sent
+                    ? Column(
+                        key: const ValueKey('forgot-sent'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Center(
+                            child: FpSurface(
+                              width: 112,
+                              height: 112,
+                              padding: EdgeInsets.zero,
+                              child: Center(
+                                child: FpDrawnCheck(
+                                  size: 72,
+                                  semanticLabel: 'Reset link sent',
+                                ),
                               ),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
                             ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.security,
-                          size: 100,
-                          color: AppTheme.credWhite,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 400),
-                child: _buildRecoveryOption(
-                  icon: Icons.fingerprint,
-                  title: 'Biometric Scan',
-                  description:
-                      'Use your fingerprint to quickly and securely reset '
-                      'your password.',
-                  onTap: () async {
-                    await sl<HapticService>().medium();
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 500),
-                child: _buildRecoveryOption(
-                  icon: Icons.chat_bubble_outline,
-                  title: 'Chat with FinPay Agent',
-                  description:
-                      'Get help from our support team to reset your password.',
-                  onTap: () async {
-                    await sl<HapticService>().medium();
-                  },
-                ),
-              ),
-              const SizedBox(height: 32),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 600),
-                child: CredButtonPress(
-                  onTap: () async {
-                    await sl<HapticService>().light();
-                    if (!context.mounted) return;
-                    Navigator.pop(context);
-                  },
-                  child: SpringAnimation(
-                    startOffset: const Offset(0, 20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.credOrangeGradient,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withValues(
-                              alpha: 0.4,
+                          ),
+                          const SizedBox(height: FpSpacing.xl),
+                          Text(
+                            'If an account exists for ${state.email}, a '
+                            'reset link is on its way. It expires in '
+                            '15 minutes.',
+                            style: fp.text.bodySmall,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: FpSpacing.xl),
+                          FpButton(
+                            key: const ValueKey('forgot-done'),
+                            label: 'Back to sign in',
+                            size: FpButtonSize.large,
+                            onPressed: () => _back(context),
+                          ),
+                          const SizedBox(height: FpSpacing.md),
+                          FpButton(
+                            key: const ValueKey('forgot-again'),
+                            label: 'Use a different email',
+                            variant: FpButtonVariant.ghost,
+                            onPressed: cubit.reset,
+                          ),
+                        ],
+                      )
+                    : Column(
+                        key: const ValueKey('forgot-form'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          FpTextField(
+                            key: const ValueKey('forgot-email'),
+                            label: 'Email',
+                            hint: 'you@example.com',
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.email],
+                            prefix: const Icon(Icons.alternate_email),
+                            errorText: state.emailError,
+                            enabled:
+                                state.status != ForgotPasswordStatus.submitting,
+                            onChanged: cubit.emailChanged,
+                            onSubmitted: (_) => cubit.submit(),
+                          ),
+                          const SizedBox(height: FpSpacing.xl),
+                          FpButton(
+                            key: const ValueKey('forgot-submit'),
+                            label: 'Send reset link',
+                            size: FpButtonSize.large,
+                            isLoading:
+                                state.status == ForgotPasswordStatus.submitting,
+                            onPressed: cubit.submit,
+                          ),
+                          const SizedBox(height: FpSpacing.lg),
+                          Text(
+                            'Demo build: no email is sent.',
+                            style: fp.text.caption.copyWith(
+                              color: c.textTertiary,
                             ),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: const Center(
-                        child: Text(
-                          'Continue',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.credWhite,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecoveryOption({
-    required IconData icon,
-    required String title,
-    required String description,
-    required VoidCallback onTap,
-  }) {
-    return CredButtonPress(
-      onTap: onTap,
-      child: CredCardReveal(
-        perspective: 0.0006,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppTheme.credSurfaceCard,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppTheme.credMediumGray.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Row(
-            children: [
-              PulseAnimation(
-                minScale: 0.98,
-                maxScale: 1.02,
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.credOrangeGradient,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.credOrangeSunshine.withValues(
-                          alpha: 0.3,
-                        ),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: Icon(icon, color: AppTheme.credWhite, size: 28),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.credTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.credTextSecondary,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppTheme.credTextSecondary,
-                size: 24,
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
