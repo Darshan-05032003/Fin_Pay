@@ -1,0 +1,35 @@
+/// FinPay design system: tokens, theme, NeoPOP components, motion primitives
+/// and the debug gallery. Import this barrel from screens.
+library;
+
+export 'components/fp_amount_text.dart';
+export 'components/fp_bottom_sheet.dart';
+export 'components/fp_button.dart';
+export 'components/fp_chip.dart';
+export 'components/fp_page_indicator.dart';
+export 'components/fp_segmented_control.dart';
+export 'components/fp_skeleton.dart';
+export 'components/fp_state_views.dart';
+export 'components/fp_surface.dart';
+export 'components/fp_text_field.dart';
+export 'components/fp_toast.dart';
+export 'components/fp_toggle.dart';
+export 'fp_haptics.dart';
+export 'gallery/gallery_screen.dart';
+export 'motion/fp_confetti.dart';
+export 'motion/fp_hero.dart';
+export 'motion/fp_page_transitions.dart';
+export 'motion/fp_parallax.dart';
+export 'motion/fp_pressable.dart';
+export 'motion/fp_pulse.dart';
+export 'motion/fp_shake.dart';
+export 'motion/fp_staggered_entrance.dart';
+export 'motion/fp_submit_guard.dart';
+export 'theme/fp_theme.dart';
+export 'theme/fp_tokens.dart';
+export 'tokens/fp_colors.dart';
+export 'tokens/fp_contrast.dart';
+export 'tokens/fp_depth.dart';
+export 'tokens/fp_motion.dart';
+export 'tokens/fp_spacing.dart';
+export 'tokens/fp_typography.dart';
