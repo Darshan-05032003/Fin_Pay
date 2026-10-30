@@ -50,3 +50,14 @@ android/key.properties
 *.keystore
 upload-keystore.jks
 **/key.properties
+
+# Private agent notes and secrets (never pushed)
+CLAUDE.md
+CLAUDE.local.md
+.ai-notes/
+.claude/
+key.properties
+android/local.properties
+google-services.json
+GoogleService-Info.plist
+.env
