@@ -278,8 +278,93 @@ void main() {
         );
       });
 
+      testWidgets('bottom nav, refresh glyph, flip and tilt cards', (
+        tester,
+      ) async {
+        final tilt = FpTiltController()..set(const Offset(0.7, -0.5));
+        addTearDown(tilt.dispose);
+        await _golden(
+          tester,
+          'nav_refresh_flip_tilt',
+          Column(
+            spacing: FpSpacing.lg,
+            children: [
+              FpBottomNav(
+                items: const [
+                  FpBottomNavItem(icon: Icons.home_outlined, label: 'Home'),
+                  FpBottomNavItem(
+                    icon: Icons.bar_chart_outlined,
+                    label: 'Stats',
+                  ),
+                  FpBottomNavItem(
+                    icon: Icons.credit_card_outlined,
+                    label: 'Cards',
+                  ),
+                  FpBottomNavItem(icon: Icons.person_outline, label: 'Profile'),
+                ],
+                currentIndex: 2,
+                onSelected: (_) {},
+              ),
+              Row(
+                spacing: FpSpacing.lg,
+                children: [
+                  for (final p in [0.3, 0.7, 1.0])
+                    FpRefreshGlyph(
+                      progress: p,
+                      spin: 0,
+                      face: FpColors.surfaceRaised,
+                      edge: FpEdge.surfaceRaised,
+                      arc: FpColors.accent,
+                    ),
+                ],
+              ),
+              Row(
+                spacing: FpSpacing.lg,
+                children: [
+                  Expanded(
+                    child: FpFlipCard(
+                      flipped: false,
+                      front: Container(
+                        height: 100,
+                        color: FpColors.accent,
+                        alignment: Alignment.center,
+                        child: const Text('FRONT', style: FpTypography.label),
+                      ),
+                      back: const SizedBox(),
+                    ),
+                  ),
+                  Expanded(
+                    child: FpFlipCard(
+                      flipped: true,
+                      front: const SizedBox(),
+                      back: Container(
+                        height: 100,
+                        color: FpColors.surfaceHigh,
+                        alignment: Alignment.center,
+                        child: const Text('BACK', style: FpTypography.label),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              FpTiltCard(
+                controller: tilt,
+                child: Container(
+                  height: 100,
+                  color: FpColors.success,
+                  alignment: Alignment.center,
+                  child: const Text('TILT', style: FpTypography.label),
+                ),
+              ),
+            ],
+          ),
+          textScale: scale,
+          size: const Size(400, 520),
+        );
+      });
+
       testWidgets('gallery', (tester) async {
-        await tester.binding.setSurfaceSize(const Size(430, 5600));
+        await tester.binding.setSurfaceSize(const Size(430, 7200));
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(
           MaterialApp(

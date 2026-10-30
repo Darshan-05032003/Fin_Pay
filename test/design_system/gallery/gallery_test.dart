@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/design_system/design_system.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +11,7 @@ Future<void> _pumpGallery(
   HapticService? haptics,
   double textScale = 1,
 }) async {
-  await tester.binding.setSurfaceSize(const Size(430, 5600));
+  await tester.binding.setSurfaceSize(const Size(430, 7200));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     MaterialApp(
@@ -58,6 +60,11 @@ void main() {
         'SKELETON',
         'EMPTY AND ERROR STATES',
         'MOTION',
+        'BOTTOM NAVIGATION',
+        'REFRESH GLYPH',
+        'FLIP CARD',
+        'TILT CARD',
+        'COLLAPSING HEADER',
         'OVERLAYS',
       ]) {
         expect(find.text(section), findsOneWidget, reason: section);
@@ -76,6 +83,11 @@ void main() {
       expect(find.byType(FpSkeletonRow), findsNWidgets(2));
       expect(find.byType(FpEmptyState), findsOneWidget);
       expect(find.byType(FpErrorState), findsOneWidget);
+      expect(find.byType(FpBottomNav), findsOneWidget);
+      expect(find.byType(FpRefreshGlyph), findsNWidgets(3));
+      expect(find.byType(FpFlipCard), findsOneWidget);
+      expect(find.byType(FpTiltCard), findsOneWidget);
+      expect(find.byType(FpCollapsingHeader), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -119,6 +131,24 @@ void main() {
         tester.getSemantics(find.byType(FpPageIndicator)).label,
         'Page 3 of 4',
       );
+      await tester.tap(find.text('Cards'));
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        tester
+            .getSemantics(
+              find.ancestor(
+                of: find.text('Cards'),
+                matching: find.byType(FpPressable),
+              ),
+            )
+            .flagsCollection
+            .isSelected,
+        Tristate.isTrue,
+      );
+      await tester.tap(find.text('FRONT'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('BACK'), findsOneWidget);
       await tester.tap(find.text('SHAKE ME'));
       await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.text('CONFETTI'));

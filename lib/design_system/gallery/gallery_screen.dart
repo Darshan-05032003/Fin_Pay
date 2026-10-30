@@ -1,11 +1,14 @@
 import 'package:fin_pay/core/haptics/haptic_service.dart';
 import 'package:fin_pay/design_system/components/fp_amount_text.dart';
+import 'package:fin_pay/design_system/components/fp_bottom_nav.dart';
 import 'package:fin_pay/design_system/components/fp_bottom_sheet.dart';
 import 'package:fin_pay/design_system/components/fp_button.dart';
 import 'package:fin_pay/design_system/components/fp_chip.dart';
+import 'package:fin_pay/design_system/components/fp_collapsing_header.dart';
 import 'package:fin_pay/design_system/components/fp_countdown_ring.dart';
 import 'package:fin_pay/design_system/components/fp_otp_field.dart';
 import 'package:fin_pay/design_system/components/fp_page_indicator.dart';
+import 'package:fin_pay/design_system/components/fp_refresh_indicator.dart';
 import 'package:fin_pay/design_system/components/fp_segmented_control.dart';
 import 'package:fin_pay/design_system/components/fp_skeleton.dart';
 import 'package:fin_pay/design_system/components/fp_state_views.dart';
@@ -15,11 +18,14 @@ import 'package:fin_pay/design_system/components/fp_toast.dart';
 import 'package:fin_pay/design_system/components/fp_toggle.dart';
 import 'package:fin_pay/design_system/motion/fp_confetti.dart';
 import 'package:fin_pay/design_system/motion/fp_drawn_check.dart';
+import 'package:fin_pay/design_system/motion/fp_flip_card.dart';
 import 'package:fin_pay/design_system/motion/fp_pressable.dart';
 import 'package:fin_pay/design_system/motion/fp_pulse.dart';
 import 'package:fin_pay/design_system/motion/fp_shake.dart';
+import 'package:fin_pay/design_system/motion/fp_tilt_card.dart';
 import 'package:fin_pay/design_system/theme/fp_tokens.dart';
 import 'package:fin_pay/design_system/tokens/fp_contrast.dart';
+import 'package:fin_pay/design_system/tokens/fp_depth.dart';
 import 'package:fin_pay/design_system/tokens/fp_spacing.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -67,12 +73,17 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
   bool _otpError = false;
   double _countdown = 0.6;
   bool _checkShown = false;
+  int _navIndex = 0;
+  bool _flipped = false;
+  late final FpTiltController _tilt = FpTiltController()
+    ..set(const Offset(0.6, -0.4));
 
   @override
   void dispose() {
     _shake.dispose();
     _confetti.dispose();
     _text.dispose();
+    _tilt.dispose();
     super.dispose();
   }
 
@@ -386,6 +397,78 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
               const SizedBox(width: FpSpacing.md),
               Text('Pulse (3 times)', style: fp.text.bodySmall),
             ]),
+            const _Section('Bottom navigation'),
+            FpBottomNav(
+              items: const [
+                FpBottomNavItem(icon: Icons.home_outlined, label: 'Home'),
+                FpBottomNavItem(icon: Icons.bar_chart_outlined, label: 'Stats'),
+                FpBottomNavItem(
+                  icon: Icons.credit_card_outlined,
+                  label: 'Cards',
+                ),
+                FpBottomNavItem(icon: Icons.person_outline, label: 'Profile'),
+              ],
+              currentIndex: _navIndex,
+              onSelected: (i) => setState(() => _navIndex = i),
+              haptics: h,
+            ),
+            const _Section('Refresh glyph'),
+            _Row([
+              for (final p in [0.3, 0.7, 1.0]) ...[
+                FpRefreshGlyph(
+                  progress: p,
+                  spin: 0,
+                  face: fp.colors.surfaceRaised,
+                  edge: FpEdge.surfaceRaised,
+                  arc: fp.colors.accent,
+                ),
+                const SizedBox(width: FpSpacing.lg),
+              ],
+              Text('Pull progress 30 / 70 / 100 %', style: fp.text.caption),
+            ]),
+            const _Section('Flip card'),
+            FpFlipCard(
+              flipped: _flipped,
+              semanticLabel: _flipped ? 'Card back' : 'Card front',
+              onTap: () => setState(() => _flipped = !_flipped),
+              front: _GalleryCard(label: 'FRONT', color: fp.colors.accent),
+              back: _GalleryCard(label: 'BACK', color: fp.colors.surfaceHigh),
+            ),
+            const SizedBox(height: FpSpacing.md),
+            const _Section('Tilt card'),
+            FpTiltCard(
+              controller: _tilt,
+              child: _GalleryCard(label: 'TILT', color: fp.colors.success),
+            ),
+            const SizedBox(height: FpSpacing.md),
+            const _Section('Collapsing header'),
+            SizedBox(
+              height: 200,
+              child: CustomScrollView(
+                slivers: [
+                  FpCollapsingHeader(
+                    expandedHeight: 120,
+                    collapsedHeight: 56,
+                    builder: (context, t) => ColoredBox(
+                      color: fp.colors.surfaceRaised,
+                      child: Center(
+                        child: Text(
+                          'Collapse ${(t * 100).round()} %',
+                          style: fp.text.title,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverList.builder(
+                    itemCount: 10,
+                    itemBuilder: (context, i) => Padding(
+                      padding: const EdgeInsets.all(FpSpacing.md),
+                      child: Text('Row $i', style: fp.text.body),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const _Section('Overlays'),
             FpButton(
               label: 'Show toast',
@@ -427,6 +510,24 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
 }
 
 void _noop(String _) {}
+
+class _GalleryCard extends StatelessWidget {
+  const _GalleryCard({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    return Container(
+      height: 120,
+      alignment: Alignment.center,
+      color: color,
+      child: Text(label, style: fp.text.label.copyWith(color: fp.colors.onPop)),
+    );
+  }
+}
 
 class _Section extends StatelessWidget {
   const _Section(this.title);
