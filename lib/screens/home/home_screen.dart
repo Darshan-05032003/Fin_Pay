@@ -1,1035 +1,441 @@
 import 'dart:async';
 
 import 'package:clock/clock.dart';
+import 'package:fin_pay/blocs/card/card_bloc.dart';
+import 'package:fin_pay/blocs/card/card_event.dart';
+import 'package:fin_pay/blocs/card/card_state.dart';
 import 'package:fin_pay/blocs/transaction/transaction_bloc.dart';
 import 'package:fin_pay/blocs/transaction/transaction_event.dart';
 import 'package:fin_pay/blocs/transaction/transaction_state.dart';
 import 'package:fin_pay/blocs/user/user_bloc.dart';
 import 'package:fin_pay/blocs/user/user_event.dart';
 import 'package:fin_pay/blocs/user/user_state.dart';
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
-import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/core/money/money.dart';
-import 'package:fin_pay/models/transaction.dart' as models;
-import 'package:fin_pay/models/user.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_number_counter.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/fade_in_animation.dart' as custom;
-import 'package:fin_pay/widgets/animations/icon_morph.dart';
-import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
-import 'package:fin_pay/widgets/animations/ripple_effect.dart';
-import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
-import 'package:fin_pay/widgets/animations/staggered_list_animation.dart';
-import 'package:fin_pay/widgets/cred_bottom_navigation_bar.dart';
+import 'package:fin_pay/core/settings/settings_cubit.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/cards/stack/card_stack_view.dart';
+import 'package:fin_pay/screens/cards/widgets/payment_card_art.dart';
+import 'package:fin_pay/screens/home/widgets/balance_header.dart';
+import 'package:fin_pay/screens/home/widgets/offers_carousel.dart';
+import 'package:fin_pay/screens/home/widgets/quick_actions.dart';
+import 'package:fin_pay/screens/home/widgets/transaction_row.dart';
+import 'package:fin_pay/screens/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
-class _FloatingActionButtonWithDelay extends StatefulWidget {
-  const _FloatingActionButtonWithDelay({
-    required this.child,
-    required this.delay,
-  });
-  final Widget child;
-  final Duration delay;
-
-  @override
-  State<_FloatingActionButtonWithDelay> createState() =>
-      _FloatingActionButtonWithDelayState();
+/// Reloads the three home blocs and waits for each to leave its loading
+/// state (bounded by [timeout]), so a pull-to-refresh holds until the data
+/// is actually back.
+Future<void> refreshHome({
+  required UserBloc user,
+  required TransactionBloc transactions,
+  required CardBloc cards,
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  final settled = Future.wait<void>([
+    user.stream.firstWhere((s) => s is! UserLoading && s is! UserInitial),
+    transactions.stream.firstWhere(
+      (s) => s is! TransactionLoading && s is! TransactionInitial,
+    ),
+    cards.stream.firstWhere((s) => s is! CardLoading && s is! CardInitial),
+  ]).timeout(timeout, onTimeout: () => const []);
+  user.add(const LoadUserEvent());
+  transactions.add(const LoadTransactionsEvent());
+  cards.add(const LoadCardsEvent());
+  await settled;
 }
 
-class _FloatingActionButtonWithDelayState
-    extends State<_FloatingActionButtonWithDelay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-  bool _isVisible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-
-    Future.delayed(widget.delay, () {
-      if (mounted) {
-        setState(() => _isVisible = true);
-        _controller.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_isVisible) return const SizedBox.shrink();
-    return RepaintBoundary(
-      child: ScaleTransition(scale: _animation, child: widget.child),
-    );
-  }
-}
-
+/// The Home tab: collapsing balance header, quick actions, the first card
+/// (hero into its details), offers, the five newest transactions, and
+/// pull-to-refresh. Screenshot protection is handled by the shell.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  /// Branch index of this tab in the shell.
+  static const int tabIndex = 0;
+
+  /// How many transactions are listed.
+  static const int recentLimit = 5;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scroll = ScrollController();
+  TabReselect? _reselect;
+  int _seenReselects = 0;
+
+  static Clock _clock() =>
+      GetIt.I.isRegistered<Clock>() ? GetIt.I<Clock>() : const Clock();
+
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<UserBloc, UserState>(
-      builder: (context, userState) {
-        return BlocBuilder<TransactionBloc, TransactionState>(
-          builder: (context, transactionState) {
-            final user = userState is UserContent ? userState.user : null;
-            final recentTransactions = transactionState is TransactionContent
-                ? transactionState.recentTransactions
-                : <models.Transaction>[];
-            final isLoading =
-                userState is UserLoading ||
-                transactionState is TransactionLoading;
-
-            if (isLoading) {
-              return Scaffold(
-                backgroundColor: AppTheme.credPureBackground,
-                body: _buildSkeletonLoader(),
-              );
-            }
-
-            return Scaffold(
-              backgroundColor: AppTheme.credPureBackground,
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    _buildHeader(context, user),
-                    Expanded(
-                      child: CustomPullToRefresh(
-                        onRefresh: () async {
-                          context.read<UserBloc>().add(const LoadUserEvent());
-                          context.read<TransactionBloc>().add(
-                            const LoadTransactionsEvent(),
-                          );
-                        },
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildQuickActions(),
-                              _buildPaymentList(context),
-                              _buildPromoSection(),
-                              _buildRecentTransactions(
-                                context,
-                                recentTransactions,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              bottomNavigationBar: CredBottomNavigationBar(
-                currentIndex: 0,
-                onTap: (index) {
-                  if (index == 0) {
-                    context.go('/home');
-                  } else if (index == 1) {
-                    context.go('/statistics');
-                  } else if (index == 2) {
-                    context.go('/cards');
-                  } else if (index == 3) {
-                    context.go('/profile');
-                  }
-                },
-              ),
-              floatingActionButton: CredSlideIn(
-                delay: const Duration(milliseconds: 1000),
-                offset: const Offset(0, 50),
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.elasticOut,
-                child: PulseAnimation(
-                  maxScale: 1.05,
-                  child: CredButtonPress(
-                    onTap: () async {
-                      await sl<HapticService>().medium();
-                      if (!context.mounted) return;
-                      unawaited(
-                        context.push('/transfer').then((_) {
-                          if (!context.mounted) return;
-                          context.read<UserBloc>().add(const LoadUserEvent());
-                          context.read<TransactionBloc>().add(
-                            const LoadTransactionsEvent(),
-                          );
-                        }),
-                      );
-                    },
-                    child: const FloatingActionButton(
-                      onPressed: null,
-                      backgroundColor: AppTheme.credOrangeSunshine,
-                      elevation: 12,
-                      child: IconMorph(
-                        startIcon: Icons.send,
-                        endIcon: Icons.send,
-                        color: AppTheme.credWhite,
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.centerDocked,
-            );
-          },
-        );
-      },
-    );
+  void initState() {
+    super.initState();
+    final user = context.read<UserBloc>();
+    if (user.state is UserInitial) user.add(const LoadUserEvent());
+    final transactions = context.read<TransactionBloc>();
+    if (transactions.state is TransactionInitial) {
+      transactions.add(const LoadTransactionsEvent());
+    }
+    final cards = context.read<CardBloc>();
+    if (cards.state is CardInitial) cards.add(const LoadCardsEvent());
   }
 
-  Widget _buildHeader(BuildContext context, User? user) {
-    final balance = (user?.balance ?? Money.zero).rupees;
-    final hour = sl<Clock>().now().hour;
-    final greeting = hour < 12
-        ? 'Good Morning'
-        : hour < 17
-        ? 'Good Afternoon'
-        : 'Good Evening';
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reselect = AppShell.reselectOf(context);
+    if (reselect != _reselect) {
+      _reselect?.removeListener(_onReselect);
+      _reselect = reselect;
+      _seenReselects = reselect?.count ?? 0;
+      reselect?.addListener(_onReselect);
+    }
+  }
 
-    final firstName = user?.fullName.split(' ').first ?? 'User';
+  void _onReselect() {
+    final r = _reselect;
+    if (r == null || r.count == _seenReselects) return;
+    _seenReselects = r.count;
+    if (r.index != HomeScreen.tabIndex || !_scroll.hasClients) return;
+    if (FpMotion.of(context).reduce) {
+      _scroll.jumpTo(0);
+    } else {
+      _scroll.animateTo(
+        0,
+        duration: FpMotion.emphasized,
+        curve: FpMotion.standardCurve,
+      );
+    }
+  }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: const BoxDecoration(
-        gradient: AppTheme.credOrangeGradient,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          custom.FadeInAnimation(
-            delay: const Duration(milliseconds: 100),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RepaintBoundary(
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Opacity(
-                              opacity: value,
-                              child: Transform.translate(
-                                offset: Offset(-20 * (1 - value), 0),
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: Text(
-                            '$greeting.',
-                            style: const TextStyle(
-                              color: AppTheme.credTextSecondary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+  @override
+  void dispose() {
+    _reselect?.removeListener(_onReselect);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() => refreshHome(
+    user: context.read<UserBloc>(),
+    transactions: context.read<TransactionBloc>(),
+    cards: context.read<CardBloc>(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final hidden = context.select<SettingsCubit, bool>(
+      (s) => s.state.hideBalance,
+    );
+    return HeroMode(
+      enabled: AppShell.isVisibleTab(context, HomeScreen.tabIndex),
+      child: Scaffold(
+        backgroundColor: c.background,
+        body: FpRefreshIndicator(
+          onRefresh: _refresh,
+          child: CustomScrollView(
+            key: const ValueKey('home-scroll'),
+            controller: _scroll,
+            slivers: [
+              BalanceHeader(
+                now: _clock().now(),
+                onNotifications: () =>
+                    unawaited(context.push(AppRoutes.notifications)),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  FpSpacing.lg,
+                  FpSpacing.xl,
+                  FpSpacing.lg,
+                  0,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: QuickActions(
+                    actions: [
+                      QuickAction(
+                        key: const ValueKey('home-action-send'),
+                        icon: Icons.north_east,
+                        label: 'Send',
+                        onPressed: () =>
+                            unawaited(context.push(AppRoutes.transfer)),
                       ),
-                      const SizedBox(height: 4),
-                      custom.FadeInAnimation(
-                        delay: const Duration(milliseconds: 100),
-                        child: Text(
-                          'Hello $firstName',
-                          style: const TextStyle(
-                            color: AppTheme.credWhite,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      QuickAction(
+                        key: const ValueKey('home-action-add-card'),
+                        icon: Icons.add_card_outlined,
+                        label: 'Add card',
+                        onPressed: () =>
+                            unawaited(context.push(AppRoutes.addCard)),
+                      ),
+                      QuickAction(
+                        key: const ValueKey('home-action-stats'),
+                        icon: Icons.bar_chart_outlined,
+                        label: 'Stats',
+                        onPressed: () => context.go(AppRoutes.statistics),
+                      ),
+                      QuickAction(
+                        key: const ValueKey('home-action-history'),
+                        icon: Icons.receipt_long_outlined,
+                        label: 'History',
+                        onPressed: () =>
+                            unawaited(context.push(AppRoutes.transactions)),
                       ),
                     ],
                   ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RippleEffect(
-                      borderRadius: 20,
-                      onTap: () async {
-                        await sl<HapticService>().light();
-                        if (!context.mounted) return;
-                        unawaited(context.push('/notifications'));
-                      },
-                      child: const IconButton(
-                        icon: IconMorph(
-                          startIcon: Icons.notifications_outlined,
-                          endIcon: Icons.notifications,
-                          color: AppTheme.credSurfaceCard,
-                          animateOnTap: false,
-                        ),
-                        onPressed: null,
-                      ),
-                    ),
-                    RippleEffect(
-                      borderRadius: 20,
-                      onTap: () async {
-                        await sl<HapticService>().light();
-                        if (!context.mounted) return;
-                        unawaited(context.push('/profile'));
-                      },
-                      child: const IconButton(
-                        icon: IconMorph(
-                          startIcon: Icons.settings_outlined,
-                          endIcon: Icons.settings,
-                          color: AppTheme.credSurfaceCard,
-                          animateOnTap: false,
-                        ),
-                        onPressed: null,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          custom.FadeInAnimation(
-            delay: const Duration(milliseconds: 200),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Available Balance',
-                  style: TextStyle(
-                    color: AppTheme.credTextSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                CredNumberCounter(
-                  value: balance,
-                  prefix: r'$',
-                  style: const TextStyle(
-                    color: AppTheme.credWhite,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildQuickActionIcon(Icons.directions_car, 'Transport', 0),
-              _buildQuickActionIcon(Icons.shopping_cart, 'Shopping', 1),
-              _buildQuickActionIcon(Icons.card_giftcard, 'Gift', 2),
-              _buildQuickActionIcon(Icons.account_balance, 'Finance', 3),
-              _buildQuickActionIcon(Icons.add, 'More', 4),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionIcon(IconData icon, String label, int index) {
-    return CredSlideIn(
-      delay: Duration(milliseconds: 400 + (index * 50)),
-      child: CredButtonPress(
-        onTap: () async {
-          await sl<HapticService>().selection();
-          _handleQuickActionTap(label);
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            PulseAnimation(
-              minScale: 0.98,
-              maxScale: 1.02,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppTheme.credSurfaceCard,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.credMediumGray.withValues(alpha: 0.3),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.credOrangeSunshine.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: AppTheme.credWhite, size: 24),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppTheme.credTextSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleQuickActionTap(String label) {
-    final context = this.context;
-    switch (label) {
-      case 'Transport':
-        _showComingSoonSnackBar(context, 'Transport booking coming soon!');
-      case 'Shopping':
-        _showComingSoonSnackBar(context, 'Shopping features coming soon!');
-      case 'Gift':
-        _showComingSoonSnackBar(context, 'Gift cards coming soon!');
-      case 'Finance':
-        unawaited(context.push('/statistics'));
-      case 'More':
-        _showMoreOptions(context);
-    }
-  }
-
-  void _showComingSoonSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.credSurfaceCard,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _showMoreOptions(BuildContext context) {
-    unawaited(
-      showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: AppTheme.credSurfaceCard,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (context) => Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.credTextTertiary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildMoreOption(Icons.qr_code, 'Scan QR Code', () {
-                Navigator.pop(context);
-                _showComingSoonSnackBar(
-                  context,
-                  'QR Code scanner coming soon!',
-                );
-              }),
-              _buildMoreOption(Icons.request_quote, 'Request Money', () {
-                Navigator.pop(context);
-                _showComingSoonSnackBar(
-                  context,
-                  'Request money feature coming soon!',
-                );
-              }),
-              _buildMoreOption(Icons.account_balance_wallet, 'Top Up', () {
-                Navigator.pop(context);
-                _showComingSoonSnackBar(context, 'Top up feature coming soon!');
-              }),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMoreOption(IconData icon, String label, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.credOrangeSunshine),
-      title: Text(
-        label,
-        style: const TextStyle(color: AppTheme.credTextPrimary),
-      ),
-      trailing: const Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: AppTheme.credTextSecondary,
-      ),
-      onTap: () async {
-        await sl<HapticService>().selection();
-        onTap();
-      },
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return const SizedBox(height: 16);
-  }
-
-  Widget _buildPaymentList(BuildContext context) {
-    return custom.FadeInAnimation(
-      delay: const Duration(milliseconds: 200),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Quick Pay',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.credTextPrimary,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.85,
-              children: [
-                _buildAnimatedPaymentItem(
-                  Icons.wifi,
-                  'Internet',
-                  AppTheme.credOrange,
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  FpSpacing.lg,
+                  FpSpacing.xl,
+                  FpSpacing.lg,
                   0,
                 ),
-                _buildAnimatedPaymentItem(
-                  Icons.bolt,
-                  'Electricity',
-                  AppTheme.credError,
-                  1,
-                ),
-                _buildAnimatedPaymentItem(
-                  Icons.phone,
-                  'Mobile',
-                  AppTheme.credOrangeSunshine,
-                  2,
-                ),
-                _buildAnimatedPaymentItem(
-                  Icons.water_drop,
-                  'Water',
-                  AppTheme.credBlue,
-                  3,
-                ),
-                _buildAnimatedPaymentItem(
-                  Icons.local_gas_station,
-                  'Gas',
-                  AppTheme.credNeoPaccha,
-                  4,
-                ),
-                _buildAnimatedPaymentItem(
-                  Icons.tv,
-                  'TV',
-                  AppTheme.credOrangeSunshine.withValues(alpha: 0.7),
-                  5,
-                ),
-                _buildAnimatedPaymentItem(
-                  Icons.store,
-                  'Merchant',
-                  AppTheme.credOrangeSunshine,
-                  6,
-                ),
-                _buildAnimatedPaymentItem(
-                  Icons.more_horiz,
-                  'More',
-                  AppTheme.credTextSecondary,
-                  7,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAnimatedPaymentItem(
-    IconData icon,
-    String label,
-    Color color,
-    int index,
-  ) {
-    return CredSlideIn(
-      delay: Duration(milliseconds: 500 + (index * 60)),
-      duration: Duration(milliseconds: 500 + (index * 50)),
-      curve: Curves.easeOutBack,
-      child: CredCardReveal(
-        duration: Duration(milliseconds: 400 + (index * 50)),
-        child: _buildPaymentItem(icon, label, color),
-      ),
-    );
-  }
-
-  Widget _buildPaymentItem(IconData icon, String label, Color color) {
-    return CredButtonPress(
-      onTap: () async {
-        await sl<HapticService>().selection();
-        _handlePaymentItemTap(label);
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppTheme.credSurfaceCard,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppTheme.credMediumGray.withValues(alpha: 0.3),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(height: 10),
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.credTextSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handlePaymentItemTap(String label) {
-    final context = this.context;
-    switch (label) {
-      case 'Internet':
-      case 'Electricity':
-      case 'Mobile':
-      case 'Water':
-      case 'Gas':
-      case 'TV':
-        _navigateToBillPayment(context, label);
-      case 'Merchant':
-        _showComingSoonSnackBar(context, 'Merchant payments coming soon!');
-      case 'More':
-        _showMorePaymentOptions(context);
-    }
-  }
-
-  void _navigateToBillPayment(BuildContext context, String billType) {
-    unawaited(context.push('/transfer'));
-  }
-
-  void _showMorePaymentOptions(BuildContext context) {
-    unawaited(
-      showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: AppTheme.credSurfaceCard,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (context) => Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.credTextTertiary,
-                  borderRadius: BorderRadius.circular(2),
+                sliver: SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: 'YOUR CARD',
+                    actionLabel: 'All cards',
+                    actionKey: const ValueKey('home-all-cards'),
+                    onAction: () => context.go(AppRoutes.cards),
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'More Payment Options',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.credTextPrimary,
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  FpSpacing.lg,
+                  FpSpacing.md,
+                  FpSpacing.lg,
+                  0,
+                ),
+                sliver: SliverToBoxAdapter(child: _CardPreview()),
+              ),
+              const SliverPadding(
+                padding: EdgeInsets.only(top: FpSpacing.xl),
+                sliver: SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: FpSpacing.lg),
+                    child: _SectionHeader(title: 'FOR YOU'),
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-              _buildMoreOption(Icons.school, 'Education', () {
-                Navigator.pop(context);
-                _navigateToBillPayment(context, 'Education');
-              }),
-              _buildMoreOption(Icons.local_hospital, 'Healthcare', () {
-                Navigator.pop(context);
-                _navigateToBillPayment(context, 'Healthcare');
-              }),
-              _buildMoreOption(Icons.home, 'Rent', () {
-                Navigator.pop(context);
-                _navigateToBillPayment(context, 'Rent');
-              }),
-              _buildMoreOption(Icons.subscriptions, 'Subscriptions', () {
-                Navigator.pop(context);
-                _navigateToBillPayment(context, 'Subscriptions');
-              }),
-              const SizedBox(height: 16),
+              const SliverPadding(
+                padding: EdgeInsets.only(top: FpSpacing.md),
+                sliver: SliverToBoxAdapter(child: OffersCarousel()),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  FpSpacing.lg,
+                  FpSpacing.xl,
+                  FpSpacing.lg,
+                  FpSpacing.md,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: 'RECENT',
+                    actionLabel: 'See all',
+                    actionKey: const ValueKey('home-see-all'),
+                    onAction: () =>
+                        unawaited(context.push(AppRoutes.transactions)),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  FpSpacing.lg,
+                  0,
+                  FpSpacing.lg,
+                  FpSpacing.xxxl,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: _RecentTransactions(hidden: hidden),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildPromoSection() {
-    return CredSlideIn(
-      delay: const Duration(milliseconds: 600),
-      offset: const Offset(0, 40),
-      duration: const Duration(milliseconds: 700),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: CredCardReveal(
-          duration: const Duration(milliseconds: 600),
-          perspective: 0.0008,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: AppTheme.credOrangeGradient,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.credOrangeSunshine.withValues(alpha: 0.4),
-                  blurRadius: 24,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CredSlideIn(
-                  delay: Duration(milliseconds: 100),
-                  offset: Offset(-20, 0),
-                  child: Text(
-                    "Today's Promo",
-                    style: TextStyle(
-                      color: AppTheme.credWhite,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
-                PulseAnimation(
-                  minScale: 0.98,
-                  maxScale: 1.02,
-                  child: Text(
-                    '40%',
-                    style: TextStyle(
-                      color: AppTheme.credWhite,
-                      fontSize: 40,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
-                CredSlideIn(
-                  delay: Duration(milliseconds: 200),
-                  offset: Offset(0, 10),
-                  child: Text(
-                    'Get discount for every top-up, transfer and payment',
-                    style: TextStyle(color: AppTheme.credWhite, fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    this.actionLabel,
+    this.actionKey,
+    this.onAction,
+  });
+
+  final String title;
+  final String? actionLabel;
+  final Key? actionKey;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Text(title, style: fp.text.overline),
           ),
         ),
-      ),
+        if (actionLabel != null)
+          FpButton(
+            key: actionKey,
+            label: actionLabel!,
+            variant: FpButtonVariant.ghost,
+            size: FpButtonSize.small,
+            expand: false,
+            onPressed: onAction,
+          ),
+      ],
     );
   }
+}
 
-  Widget _buildRecentTransactions(
-    BuildContext context,
-    List<models.Transaction> transactions,
-  ) {
-    return CredSlideIn(
-      delay: const Duration(milliseconds: 800),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CredSlideIn(
-              delay: const Duration(milliseconds: 850),
-              offset: const Offset(-20, 0),
+/// The newest card, compact, as the hero source for its details.
+class _CardPreview extends StatelessWidget {
+  const _CardPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    return BlocBuilder<CardBloc, CardState>(
+      builder: (context, state) {
+        switch (state) {
+          case CardInitial() || CardLoading():
+            return const FpSkeletonGroup(
+              key: ValueKey('home-card-loading'),
+              child: FpSkeleton(height: 96),
+            );
+          case CardError():
+            return FpSurface(
+              key: const ValueKey('home-card-error'),
+              variant: FpSurfaceVariant.flat,
+              semanticLabel: 'Cards unavailable. Tap to retry',
+              onTap: () => context.read<CardBloc>().add(const LoadCardsEvent()),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Recent Transaction',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.credTextPrimary,
-                    ),
-                  ),
-                  CredButtonPress(
-                    onTap: () {
-                      unawaited(
-                        context.push('/transactions').then((_) {
-                          if (!context.mounted) return;
-                          context.read<UserBloc>().add(const LoadUserEvent());
-                          context.read<TransactionBloc>().add(
-                            const LoadTransactionsEvent(),
-                          );
-                        }),
-                      );
-                    },
-                    child: const TextButton(
-                      onPressed: null,
-                      child: Text(
-                        'See All',
-                        style: TextStyle(color: AppTheme.credOrangeSunshine),
-                      ),
+                  Icon(Icons.refresh, color: c.alert),
+                  const SizedBox(width: FpSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'Cards unavailable · tap to retry',
+                      style: fp.text.bodySmall,
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-            if (transactions.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(
-                  child: Text(
-                    'No recent transactions',
-                    style: TextStyle(
-                      color: AppTheme.credTextSecondary,
-                      fontSize: 14,
+            );
+          case CardEmpty():
+            return FpSurface(
+              key: const ValueKey('home-card-empty'),
+              variant: FpSurfaceVariant.raised,
+              semanticLabel: 'Add your first card',
+              onTap: () => unawaited(context.push(AppRoutes.addCard)),
+              child: Row(
+                children: [
+                  Icon(Icons.add_card_outlined, color: c.accent),
+                  const SizedBox(width: FpSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Add your first card', style: fp.text.title),
+                        const SizedBox(height: FpSpacing.xs),
+                        Text(
+                          'Pay from a saved debit or credit card.',
+                          style: fp.text.bodySmall,
+                        ),
+                      ],
                     ),
                   ),
+                  Icon(Icons.chevron_right, color: c.textSecondary),
+                ],
+              ),
+            );
+          case CardContent(:final cards):
+            final card = cards.first;
+            return FpPressable(
+              key: const ValueKey('home-card-preview'),
+              semanticLabel: '${PaymentCardArt.describe(card)}. Open details',
+              onPressed: () =>
+                  unawaited(context.push(AppRoutes.cardDetailsFor(card.id))),
+              child: ExcludeSemantics(
+                child: FpHero(
+                  tag: cardHeroTag(card.id),
+                  child: PaymentCardArt.of(card),
                 ),
-              )
-            else
-              ...transactions.asMap().entries.map((entry) {
-                final index = entry.key;
-                final transaction = entry.value;
-                return StaggeredListAnimation(
-                  index: index,
-                  child: _buildTransactionItem(transaction),
-                );
-              }),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionItem(models.Transaction transaction) {
-    return CredButtonPress(
-      onTap: () async {
-        await sl<HapticService>().light();
+              ),
+            );
+        }
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.credSurfaceCard,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppTheme.credMediumGray.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color:
-                    (transaction.type == models.TransactionType.receiveMoney ||
-                                transaction.amount.isPositive
-                            ? AppTheme.credNeoPaccha
-                            : AppTheme.credError)
-                        .withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  transaction.icon,
-                  style: TextStyle(
-                    color:
-                        transaction.type ==
-                                models.TransactionType.receiveMoney ||
-                            transaction.amount.isPositive
-                        ? AppTheme.credNeoPaccha
-                        : AppTheme.credError,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    transaction.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.credTextPrimary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatDate(transaction.localDate),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.credTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  transaction.amount.abs().format(),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: transaction.amount.isNegative
-                        ? AppTheme.credError
-                        : AppTheme.credNeoPaccha,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        (transaction.amount.isNegative
-                                ? AppTheme.credError
-                                : AppTheme.credNeoPaccha)
-                            .withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    transaction.amount.isNegative ? 'Payment' : 'Received',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: transaction.amount.isNegative
-                          ? AppTheme.credError
-                          : AppTheme.credNeoPaccha,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
+}
 
-  String _formatDate(DateTime date) {
-    final now = sl<Clock>().now();
-    final difference = now.difference(date);
+class _RecentTransactions extends StatelessWidget {
+  const _RecentTransactions({required this.hidden});
 
-    if (difference.inDays == 0) {
-      return 'Today, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays == 1) {
-      final minute = date.minute.toString().padLeft(2, '0');
-      return 'Yesterday, ${date.hour}:$minute';
-    } else {
-      return '${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    }
-  }
+  final bool hidden;
 
-  Widget _buildSkeletonLoader() {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            SkeletonLoader(
-              width: double.infinity,
-              height: 180,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            const SizedBox(height: 24),
-            const SkeletonList(itemCount: 3),
-          ],
-        ),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<TransactionBloc, TransactionState>(
+      builder: (context, state) {
+        switch (state) {
+          case TransactionInitial() || TransactionLoading():
+            return const FpSkeletonGroup(
+              key: ValueKey('home-recent-loading'),
+              child: Column(
+                children: [FpSkeletonRow(), FpSkeletonRow(), FpSkeletonRow()],
+              ),
+            );
+          case TransactionError(:final message):
+            return FpErrorState(
+              key: const ValueKey('home-recent-error'),
+              title: 'Could not load transactions',
+              message: message,
+              onRetry: () => context.read<TransactionBloc>().add(
+                const LoadTransactionsEvent(),
+              ),
+            );
+          case TransactionEmpty():
+            return FpEmptyState(
+              key: const ValueKey('home-recent-empty'),
+              icon: Icons.receipt_long_outlined,
+              title: 'No transactions yet',
+              message: 'Send money to see it here.',
+              actionLabel: 'Send money',
+              onAction: () => unawaited(context.push(AppRoutes.transfer)),
+            );
+          case TransactionContent(:final transactions):
+            final recent = transactions.take(HomeScreen.recentLimit).toList();
+            return FpStaggeredEntrance(
+              key: ValueKey('home-recent-${recent.length}-${recent.first.id}'),
+              children: [
+                for (final t in recent)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: FpSpacing.sm),
+                    child: TransactionRow(
+                      transaction: t,
+                      hideAmount: hidden,
+                      onTap: () =>
+                          unawaited(context.push(AppRoutes.transactions)),
+                    ),
+                  ),
+              ],
+            );
+        }
+      },
     );
   }
 }

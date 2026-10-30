@@ -17,6 +17,8 @@ void main() {
     await h.init(tester, signedIn: true);
     await h.pump(tester, at);
     await h.settle(tester);
+    // These tests run on the real in-memory database; let its reads finish.
+    await h.flush(tester, rounds: 3);
   }
 
   Future<void> tapTab(WidgetTester tester, String label) async {
@@ -135,6 +137,7 @@ void main() {
     await h.init(tester, signedIn: true);
     await h.pump(tester, AppRoutes.home, textScale: 1.3);
     await h.settle(tester);
+    await h.flush(tester, rounds: 3);
     expect(tester.takeException(), isNull);
     expect(find.byType(FpBottomNav), findsOneWidget);
   });

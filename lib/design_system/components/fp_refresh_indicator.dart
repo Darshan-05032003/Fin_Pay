@@ -21,6 +21,10 @@ class FpRefreshMath {
   /// Size of the drawn glyph.
   static const double glyphSize = 44;
 
+  /// One turn of the arc while a refresh runs (a continuous rotation, so
+  /// not one of the one-shot motion tokens).
+  static const Duration spinPeriod = Duration(milliseconds: 900);
+
   /// Arc progress for [drag]: 0 at rest, 1 once armed, never more.
   static double progress(double drag) => (drag / armDistance).clamp(0.0, 1.0);
 
@@ -68,7 +72,7 @@ class _FpRefreshIndicatorState extends State<FpRefreshIndicator>
   final ValueNotifier<double> _drag = ValueNotifier(0);
   late final AnimationController _spin = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 900),
+    duration: FpRefreshMath.spinPeriod,
   );
   late final AnimationController _settle = AnimationController(
     vsync: this,

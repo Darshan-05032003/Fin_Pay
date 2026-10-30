@@ -56,7 +56,7 @@ abstract final class CardStackMath {
   static const int maxPileDepth = 4;
 
   /// Fraction of the width one fanned page occupies.
-  static const double viewportFraction = 0.84;
+  static const double viewportFraction = 0.78;
 
   /// Rotation of a neighbour one page away, in radians.
   static const double fanAngle = 0.42;

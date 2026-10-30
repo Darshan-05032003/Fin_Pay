@@ -314,10 +314,17 @@ class _Details extends StatelessWidget {
                           children: [
                             Text('CARD NUMBER', style: fp.text.overline),
                             const SizedBox(height: FpSpacing.xs),
-                            Text(
-                              PaymentCardArt.maskedNumber(card.last4),
-                              key: const ValueKey('card-details-number'),
-                              style: fp.text.numeric.copyWith(letterSpacing: 2),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                PaymentCardArt.maskedNumber(card.last4),
+                                key: const ValueKey('card-details-number'),
+                                style: fp.text.numeric.copyWith(
+                                  letterSpacing: 1.5,
+                                ),
+                                maxLines: 1,
+                              ),
                             ),
                           ],
                         ),
