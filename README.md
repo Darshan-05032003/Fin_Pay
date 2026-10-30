@@ -1,6 +1,6 @@
 # FinPay 💸
 
-Sup everyone! 👋 This is my first proper Flutter app. I built this while learning how to code mobile apps. I really liked how CRED looks so I tried to copy their design style (dark mode + smooth animations).
+Sup everyone! 👋 This is my first proper Flutter app. I built this while learning how to code mobile apps. I really liked how CRED looks so I tried to copy their design style (dark mode + smooth animations). FinPay is inspired by CRED's NeoPOP design language; it is not affiliated with CRED.
 
 ## What it does
 - You can "send" money to people (fake money, don't worry)
@@ -26,11 +26,26 @@ Run `flutter test` to see them pass.
 2. run `flutter pub get`
 3. run `flutter run`
 
-**Login details:**
+**Login details (demo account):**
 Email: `user@finpay.com`
 Pass: `FinPay123`
 
 (Just use these defaults, I haven't made a working sign up screen yet lol)
+
+The password is not stored anywhere in the app code: `lib/core/auth/demo_credentials.dart` holds a precomputed PBKDF2-HMAC-SHA256 `(salt, hash)` pair that is seeded into secure storage on first run, and a test fails if the plaintext ever shows up under `lib/`. After 5 wrong attempts the account locks for 30 seconds.
+
+## Release build
+```
+flutter build apk --release --obfuscate --split-debug-info=build/symbols
+```
+R8 minify/shrink is on in `android/app/build.gradle.kts`; `--obfuscate` hides Dart symbols and `--split-debug-info` keeps the symbol files out of the APK (keep `build/symbols` to symbolicate crash reports). Logging is compiled out in release.
+
+## Tests
+```
+flutter test                     # unit + widget
+flutter test --coverage          # writes coverage/lcov.info
+flutter test --tags stress --dart-define=FINPAY_STRESS=true --concurrency=1 test/stress
+```
 
 ## Note
 This is just for learning purposes. If you see some bad code or weird practices, let me know! I'm still learning best practices.
