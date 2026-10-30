@@ -4,9 +4,9 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 
 class ConfettiEffect extends StatefulWidget {
-
   const ConfettiEffect({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.autoPlay = false,
     this.duration = const Duration(seconds: 3),
   });
@@ -91,4 +91,3 @@ class _ConfettiEffectState extends State<ConfettiEffect> {
     );
   }
 }
-

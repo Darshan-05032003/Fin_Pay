@@ -9,7 +9,6 @@ import 'package:fin_pay/services/database_service.dart';
 
 /// Concrete implementation of LocalDataSource using SQLite
 class LocalDataSourceImpl implements LocalDataSource {
-
   LocalDataSourceImpl(this._db);
   final DatabaseService _db;
 
@@ -18,8 +17,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       final user = await _db.getUser();
       return Success(user);
-    } catch (e) {
-      return Failure('Failed to get user', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to get user',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -28,8 +30,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.insertUser(user);
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to save user', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to save user',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -38,8 +43,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.updateUser(user);
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to update user', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to update user',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -48,8 +56,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.deleteUser();
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to delete user', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to delete user',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -58,8 +69,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       final cards = await _db.getCards();
       return Success(cards);
-    } catch (e) {
-      return Failure('Failed to get cards', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to get cards',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -68,8 +82,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.insertCard(card);
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to save card', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to save card',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -78,8 +95,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       // Implement delete card in DatabaseService if needed
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to delete card', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to delete card',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -87,10 +107,15 @@ class LocalDataSourceImpl implements LocalDataSource {
   Future<Result<List<models.Transaction>>> getTransactions({int? limit}) async {
     try {
       final transactions = await _db.getTransactions();
-      final limited = limit != null ? transactions.take(limit).toList() : transactions;
+      final limited = limit != null
+          ? transactions.take(limit).toList()
+          : transactions;
       return Success(limited);
-    } catch (e) {
-      return Failure('Failed to get transactions', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to get transactions',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -99,8 +124,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.insertTransaction(transaction);
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to save transaction', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to save transaction',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -109,8 +137,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.deleteTransaction(transactionId);
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to delete transaction', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to delete transaction',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -118,10 +149,15 @@ class LocalDataSourceImpl implements LocalDataSource {
   Future<Result<List<NotificationItem>>> getNotifications({int? limit}) async {
     try {
       final notifications = await _db.getNotifications();
-      final limited = limit != null ? notifications.take(limit).toList() : notifications;
+      final limited = limit != null
+          ? notifications.take(limit).toList()
+          : notifications;
       return Success(limited);
-    } catch (e) {
-      return Failure('Failed to get notifications', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to get notifications',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -130,8 +166,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.insertNotification(notification);
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to save notification', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to save notification',
+        DatabaseException('Database error', e),
+      );
     }
   }
 
@@ -140,9 +179,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _db.deleteNotification(notificationId);
       return const Success(null);
-    } catch (e) {
-      return Failure('Failed to delete notification', DatabaseException('Database error', e));
+    } on Exception catch (e) {
+      return Failure(
+        'Failed to delete notification',
+        DatabaseException('Database error', e),
+      );
     }
   }
 }
-

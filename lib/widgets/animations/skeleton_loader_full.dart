@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class SkeletonLoader extends StatelessWidget {
-
   const SkeletonLoader({
-    required this.width, required this.height, super.key,
+    required this.width,
+    required this.height,
+    super.key,
     this.borderRadius,
     this.baseColor,
     this.highlightColor,
@@ -46,7 +47,11 @@ class SkeletonCard extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          SkeletonLoader(width: 48, height: 48, borderRadius: BorderRadius.all(Radius.circular(24))),
+          SkeletonLoader(
+            width: 48,
+            height: 48,
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+          ),
           SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -66,7 +71,6 @@ class SkeletonCard extends StatelessWidget {
 }
 
 class SkeletonList extends StatelessWidget {
-  
   const SkeletonList({super.key, this.itemCount = 5});
   final int itemCount;
 
@@ -82,4 +86,3 @@ class SkeletonList extends StatelessWidget {
     );
   }
 }
-

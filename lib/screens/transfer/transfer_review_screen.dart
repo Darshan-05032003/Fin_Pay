@@ -12,9 +12,11 @@ import 'package:fin_pay/widgets/animations/spring_animation.dart';
 import 'package:flutter/material.dart';
 
 class TransferReviewScreen extends StatelessWidget {
-
   const TransferReviewScreen({
-    required this.recipientName, required this.recipientAccount, required this.amount, super.key,
+    required this.recipientName,
+    required this.recipientAccount,
+    required this.amount,
+    super.key,
   });
   final String recipientName;
   final String recipientAccount;
@@ -30,6 +32,7 @@ class TransferReviewScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
             await HapticService.lightImpact();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
@@ -78,19 +81,31 @@ class TransferReviewScreen extends StatelessWidget {
                     color: AppTheme.credSurfaceCard,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppTheme.credMediumGray.withOpacity(0.2),
+                      color: AppTheme.credMediumGray.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
                     children: [
                       _buildDetailRow('Transaction ID', 'TXN 30342303'),
-                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
+                      const Divider(
+                        color: AppTheme.credMediumGray,
+                        thickness: 0.5,
+                      ),
                       _buildDetailRow('Recipient', recipientName),
-                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
+                      const Divider(
+                        color: AppTheme.credMediumGray,
+                        thickness: 0.5,
+                      ),
                       _buildDetailRow('Amount', '\$$amount'),
-                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
+                      const Divider(
+                        color: AppTheme.credMediumGray,
+                        thickness: 0.5,
+                      ),
                       _buildDetailRow('Fees', r'$0.00'),
-                      const Divider(color: AppTheme.credMediumGray, thickness: 0.5),
+                      const Divider(
+                        color: AppTheme.credMediumGray,
+                        thickness: 0.5,
+                      ),
                       _buildDetailRow(
                         'Total Amount',
                         '\$$amount',
@@ -120,7 +135,9 @@ class TransferReviewScreen extends StatelessWidget {
                           border: Border.all(
                             color: hasFocus
                                 ? AppTheme.credOrangeSunshine
-                                : AppTheme.credMediumGray.withOpacity(0.2),
+                                : AppTheme.credMediumGray.withValues(
+                                    alpha: 0.2,
+                                  ),
                             width: hasFocus ? 2 : 1,
                           ),
                         ),
@@ -147,94 +164,99 @@ class TransferReviewScreen extends StatelessWidget {
               delay: const Duration(milliseconds: 500),
               child: CredButtonPress(
                 onTap: () async {
-                    final transferAmount = double.tryParse(amount);
-                    if (transferAmount == null || transferAmount <= 0) {
-                      await HapticService.error();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Invalid amount'),
-                          backgroundColor: AppTheme.red,
-                        ),
-                      );
-                      return;
-                    }
-
-                    final currentBalance = await UserService.getBalance();
-                    if (transferAmount > currentBalance) {
-                      await HapticService.error();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Insufficient balance'),
-                          backgroundColor: AppTheme.red,
-                        ),
-                      );
-                      return;
-                    }
-
-                    await HapticService.heavyImpact();
-
-                    // Create transaction
-                    final transaction = Transaction(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      title: 'Transfer to $recipientName',
-                      amount: -transferAmount,
-                      date: DateTime.now(),
-                      type: TransactionType.sendMoney,
-                      icon: recipientName[0].toUpperCase(),
-                      recipient: recipientName,
-                    );
-
-                    await UserService.addTransaction(transaction);
-
-                    // Add notification
-                    final notification = NotificationItem(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      title: 'Transfer Successful!',
-                      message: 'You transferred \$$amount to $recipientName',
-                      time: DateTime.now(),
-                      type: NotificationType.paymentRequest,
-                    );
-                    await UserService.addNotification(notification);
-
-                    Navigator.pushReplacementNamed(
-                      context,
-                      '/transfer-success',
-                      arguments: {
-                        'recipientName': recipientName,
-                        'amount': amount,
-                      },
-                    );
-                  },
-                  child: SpringAnimation(
-                    startOffset: const Offset(0, 20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.credOrangeGradient,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
+                  final transferAmount = double.tryParse(amount);
+                  if (transferAmount == null || transferAmount <= 0) {
+                    await HapticService.error();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Invalid amount'),
+                        backgroundColor: AppTheme.red,
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: const Center(
-                        child: Text(
-                          'Confirm & Transfer',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.credWhite,
-                            letterSpacing: 0.5,
+                    );
+                    return;
+                  }
+
+                  final currentBalance = await UserService.getBalance();
+                  if (transferAmount > currentBalance) {
+                    await HapticService.error();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Insufficient balance'),
+                        backgroundColor: AppTheme.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  await HapticService.heavyImpact();
+
+                  // Create transaction
+                  final transaction = Transaction(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    title: 'Transfer to $recipientName',
+                    amount: -transferAmount,
+                    date: DateTime.now(),
+                    type: TransactionType.sendMoney,
+                    icon: recipientName[0].toUpperCase(),
+                    recipient: recipientName,
+                  );
+
+                  await UserService.addTransaction(transaction);
+
+                  // Add notification
+                  final notification = NotificationItem(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    title: 'Transfer Successful!',
+                    message: 'You transferred \$$amount to $recipientName',
+                    time: DateTime.now(),
+                    type: NotificationType.paymentRequest,
+                  );
+                  await UserService.addNotification(notification);
+
+                  if (!context.mounted) return;
+                  Navigator.pushReplacementNamed(
+                    context,
+                    '/transfer-success',
+                    arguments: {
+                      'recipientName': recipientName,
+                      'amount': amount,
+                    },
+                  );
+                },
+                child: SpringAnimation(
+                  startOffset: const Offset(0, 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.credOrangeGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.credOrangeSunshine.withValues(
+                            alpha: 0.4,
                           ),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    child: const Center(
+                      child: Text(
+                        'Confirm & Transfer',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.credWhite,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -287,7 +309,7 @@ class TransferReviewScreen extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                  color: AppTheme.credOrangeSunshine.withValues(alpha: 0.4),
                   blurRadius: 16,
                 ),
               ],
@@ -335,7 +357,9 @@ class TransferReviewScreen extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: isTotal ? 18 : 16,
-              color: isTotal ? AppTheme.credOrangeSunshine : AppTheme.credTextPrimary,
+              color: isTotal
+                  ? AppTheme.credOrangeSunshine
+                  : AppTheme.credTextPrimary,
               fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
@@ -344,4 +368,3 @@ class TransferReviewScreen extends StatelessWidget {
     );
   }
 }
-

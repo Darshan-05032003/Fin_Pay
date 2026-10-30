@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'package:fin_pay/services/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class DraggableCard extends StatefulWidget {
-
   const DraggableCard({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.onSwipeLeft,
     this.onSwipeRight,
     this.threshold = 100.0,
@@ -39,26 +40,17 @@ class _DraggableCardState extends State<DraggableCard>
     _offsetAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _rotationAnimation = Tween<double>(
       begin: 0,
       end: 0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _scaleAnimation = Tween<double>(
       begin: 1,
       end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -72,7 +64,7 @@ class _DraggableCardState extends State<DraggableCard>
       _isDragging = true;
       _position += details.delta;
     });
-    HapticService.lightImpact();
+    unawaited(HapticService.lightImpact());
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -99,26 +91,17 @@ class _DraggableCardState extends State<DraggableCard>
     _offsetAnimation = Tween<Offset>(
       begin: _position / screenWidth,
       end: target,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _rotationAnimation = Tween<double>(
       begin: _position.dx / screenWidth * 0.1,
       end: target.dx * 0.2,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _scaleAnimation = Tween<double>(
       begin: 1,
       end: 0.8,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _controller.forward();
   }
@@ -128,44 +111,42 @@ class _DraggableCardState extends State<DraggableCard>
     _offsetAnimation = Tween<Offset>(
       begin: _position / screenWidth,
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
     _rotationAnimation = Tween<double>(
       begin: _position.dx / screenWidth * 0.1,
       end: 0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
     _scaleAnimation = Tween<double>(
       begin: 1,
       end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
-    _controller.forward().then((_) {
-      _controller.reset();
-      setState(() {
-        _position = Offset.zero;
-      });
-    });
+    unawaited(
+      _controller.forward().then((_) {
+        _controller.reset();
+        setState(() {
+          _position = Offset.zero;
+        });
+      }),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final offset = _isDragging ? _position / screenWidth : _offsetAnimation.value;
+    final offset = _isDragging
+        ? _position / screenWidth
+        : _offsetAnimation.value;
     final rotation = _isDragging
         ? _position.dx / screenWidth * 0.1
         : _rotationAnimation.value;
-    final scale = _isDragging ? 1.0 - (_position.distance.abs() / screenWidth * 0.1).clamp(0.0, 0.1) : _scaleAnimation.value;
-    final opacity = 1.0 - (_position.dx.abs() / screenWidth * 0.5).clamp(0.0, 0.5);
+    final scale = _isDragging
+        ? 1.0 - (_position.distance.abs() / screenWidth * 0.1).clamp(0.0, 0.1)
+        : _scaleAnimation.value;
+    final opacity =
+        1.0 - (_position.dx.abs() / screenWidth * 0.5).clamp(0.0, 0.5);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -175,14 +156,17 @@ class _DraggableCardState extends State<DraggableCard>
           transform: Matrix4.identity()
             ..setEntry(3, 2, 0.001)
             ..rotateZ(rotation)
-            ..scale(scale),
+            ..scaleByDouble(scale, scale, scale, 1),
           child: Opacity(
             opacity: opacity,
             child: GestureDetector(
               onPanUpdate: _onPanUpdate,
               onPanEnd: _onPanEnd,
               child: Transform.translate(
-                offset: Offset(offset.dx * screenWidth, offset.dy * screenWidth),
+                offset: Offset(
+                  offset.dx * screenWidth,
+                  offset.dy * screenWidth,
+                ),
                 child: widget.child,
               ),
             ),
@@ -192,4 +176,3 @@ class _DraggableCardState extends State<DraggableCard>
     );
   }
 }
-

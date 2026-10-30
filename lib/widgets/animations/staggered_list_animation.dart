@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class StaggeredListAnimation extends StatelessWidget {
-
   const StaggeredListAnimation({
-    required this.child, required this.index, super.key,
+    required this.child,
+    required this.index,
+    super.key,
     this.duration = const Duration(milliseconds: 300),
   });
   final Widget child;
@@ -29,4 +30,3 @@ class StaggeredListAnimation extends StatelessWidget {
     );
   }
 }
-

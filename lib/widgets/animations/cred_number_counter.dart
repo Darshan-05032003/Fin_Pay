@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// CRED-style animated number counter with smooth transitions
 class CredNumberCounter extends StatefulWidget {
-
   const CredNumberCounter({
-    required this.value, super.key,
+    required this.value,
+    super.key,
     this.style,
     this.prefix,
     this.suffix,
@@ -34,17 +34,11 @@ class _CredNumberCounterState extends State<CredNumberCounter>
   void initState() {
     super.initState();
     _previousValue = widget.value;
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
     _animation = Tween<double>(
       begin: _previousValue,
       end: widget.value,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
     _controller.forward();
   }
 
@@ -56,12 +50,10 @@ class _CredNumberCounterState extends State<CredNumberCounter>
       _animation = Tween<double>(
         begin: _previousValue,
         end: widget.value,
-      ).animate(CurvedAnimation(
-        parent: _controller,
-        curve: widget.curve,
-      ));
-      _controller.reset();
-      _controller.forward();
+      ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+      _controller
+        ..reset()
+        ..forward();
     }
   }
 
@@ -78,7 +70,9 @@ class _CredNumberCounterState extends State<CredNumberCounter>
         animation: _animation,
         builder: (context, child) {
           final displayValue = _animation.value;
-          final formattedValue = displayValue.toStringAsFixed(widget.decimalPlaces);
+          final formattedValue = displayValue.toStringAsFixed(
+            widget.decimalPlaces,
+          );
           return Text(
             '${widget.prefix ?? ''}$formattedValue${widget.suffix ?? ''}',
             style: widget.style,
@@ -88,4 +82,3 @@ class _CredNumberCounterState extends State<CredNumberCounter>
     );
   }
 }
-

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/models/transaction.dart';
 import 'package:fin_pay/services/haptic_service.dart';
@@ -31,15 +32,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadStatistics();
+    unawaited(_loadStatistics());
   }
 
   Future<void> _loadStatistics() async {
     final transactions = await UserService.getTransactions();
-    
-    var totalSpending = 0;
-    var income = 0;
-    var expenses = 0;
+
+    double totalSpending = 0;
+    double income = 0;
+    double expenses = 0;
 
     for (final transaction in transactions) {
       if (transaction.amount < 0) {
@@ -69,6 +70,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
             await HapticService.lightImpact();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
@@ -84,164 +86,183 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 100),
-                    offset: const Offset(0, 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Flexible(
-                          child: Text(
-                            'Total Spending',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.credTextPrimary,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                        ),
-                        CredButtonPress(
-                          onTap: () async {
-                            await HapticService.mediumImpact();
-                          },
-                          child: CredCardReveal(
-                            duration: const Duration(milliseconds: 400),
-                            perspective: 0.0006,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: AppTheme.credSurfaceCard,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppTheme.credMediumGray.withOpacity(0.2),
+                      CredSlideIn(
+                        delay: const Duration(milliseconds: 100),
+                        offset: const Offset(0, 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Flexible(
+                              child: Text(
+                                'Total Spending',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.credTextPrimary,
+                                  letterSpacing: -0.5,
                                 ),
                               ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Monthly',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.credTextPrimary,
+                            ),
+                            CredButtonPress(
+                              onTap: () async {
+                                await HapticService.mediumImpact();
+                              },
+                              child: CredCardReveal(
+                                duration: const Duration(milliseconds: 400),
+                                perspective: 0.0006,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.credSurfaceCard,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppTheme.credMediumGray.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Icon(Icons.arrow_drop_down, size: 20, color: AppTheme.credTextPrimary),
-                                ],
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Monthly',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.credTextPrimary,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4),
+                                      Icon(
+                                        Icons.arrow_drop_down,
+                                        size: 20,
+                                        color: AppTheme.credTextPrimary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      CredSlideIn(
+                        delay: const Duration(milliseconds: 200),
+                        child: CredNumberCounter(
+                          value: _totalSpending,
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.credOrangeSunshine,
+                            letterSpacing: -1,
+                          ),
+                          prefix: r'$',
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      CredSlideIn(
+                        delay: const Duration(milliseconds: 300),
+                        offset: const Offset(0, 40),
+                        child: CredCardReveal(
+                          duration: const Duration(milliseconds: 600),
+                          perspective: 0.0008,
+                          child: _buildChart(),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      CredSlideIn(
+                        delay: const Duration(milliseconds: 400),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: CredSlideIn(
+                                delay: const Duration(milliseconds: 450),
+                                offset: const Offset(-20, 0),
+                                child: _buildStatCard(
+                                  Icons.account_balance_wallet,
+                                  'Income',
+                                  _income,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: CredSlideIn(
+                                delay: const Duration(milliseconds: 500),
+                                offset: const Offset(20, 0),
+                                child: _buildStatCard(
+                                  Icons.shopping_cart,
+                                  'Expenses',
+                                  _expenses,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      const AnimationConfiguration.staggeredList(
+                        position: 3,
+                        duration: Duration(milliseconds: 375),
+                        child: SlideAnimation(
+                          verticalOffset: 50,
+                          child: custom.FadeInAnimation(
+                            child: Text(
+                              'Recent Transaction',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.credTextPrimary,
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 200),
-                    child: CredNumberCounter(
-                      value: _totalSpending,
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.credOrangeSunshine,
-                        letterSpacing: -1,
                       ),
-                      prefix: r'$',
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 300),
-                    offset: const Offset(0, 40),
-                    child: CredCardReveal(
-                      duration: const Duration(milliseconds: 600),
-                      perspective: 0.0008,
-                      child: _buildChart(),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 400),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: CredSlideIn(
-                            delay: const Duration(milliseconds: 450),
-                            offset: const Offset(-20, 0),
-                            child: _buildStatCard(Icons.account_balance_wallet, 'Income', _income),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: CredSlideIn(
-                            delay: const Duration(milliseconds: 500),
-                            offset: const Offset(20, 0),
-                            child: _buildStatCard(Icons.shopping_cart, 'Expenses', _expenses),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  const AnimationConfiguration.staggeredList(
-                    position: 3,
-                    duration: Duration(milliseconds: 375),
-                    child: SlideAnimation(
-                      verticalOffset: 50,
-                      child: custom.FadeInAnimation(
-                        child: Text(
-                          'Recent Transaction',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.credTextPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_recentTransactions.isEmpty)
-                    const AnimationConfiguration.staggeredList(
-                      position: 4,
-                      duration: Duration(milliseconds: 375),
-                      child: SlideAnimation(
-                        verticalOffset: 50,
-                        child: custom.FadeInAnimation(
-                          child: Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Center(
-                              child: Text(
-                                'No recent transactions',
-                                style: TextStyle(
-                                  color: AppTheme.credTextSecondary,
-                                  fontSize: 14,
+                      const SizedBox(height: 16),
+                      if (_recentTransactions.isEmpty)
+                        const AnimationConfiguration.staggeredList(
+                          position: 4,
+                          duration: Duration(milliseconds: 375),
+                          child: SlideAnimation(
+                            verticalOffset: 50,
+                            child: custom.FadeInAnimation(
+                              child: Padding(
+                                padding: EdgeInsets.all(24),
+                                child: Center(
+                                  child: Text(
+                                    'No recent transactions',
+                                    style: TextStyle(
+                                      color: AppTheme.credTextSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+                        )
+                      else
+                        AnimationConfiguration.staggeredList(
+                          position: 4,
+                          duration: const Duration(milliseconds: 375),
+                          child: SlideAnimation(
+                            verticalOffset: 50,
+                            child: custom.FadeInAnimation(
+                              child: _buildRecentTransaction(
+                                _recentTransactions.first,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    )
-                  else
-                    AnimationConfiguration.staggeredList(
-                      position: 4,
-                      duration: const Duration(milliseconds: 375),
-                      child: SlideAnimation(
-                        verticalOffset: 50,
-                        child: custom.FadeInAnimation(
-                          child: _buildRecentTransaction(_recentTransactions.first),
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
       bottomNavigationBar: _buildBottomNavigationBar(context, 1),
     );
   }
@@ -260,20 +281,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('10K', style: TextStyle(fontSize: 12, color: AppTheme.credTextSecondary)),
-              Text('20K', style: TextStyle(fontSize: 12, color: AppTheme.credTextSecondary)),
-              Text('30K', style: TextStyle(fontSize: 12, color: AppTheme.credTextSecondary)),
-              Text('40K', style: TextStyle(fontSize: 12, color: AppTheme.credTextSecondary)),
+              Text(
+                '10K',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.credTextSecondary,
+                ),
+              ),
+              Text(
+                '20K',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.credTextSecondary,
+                ),
+              ),
+              Text(
+                '30K',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.credTextSecondary,
+                ),
+              ),
+              Text(
+                '40K',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.credTextSecondary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final maxHeight = constraints.maxHeight - 25; // Reserve space for label and spacing
+                final maxHeight =
+                    constraints.maxHeight -
+                    25; // Reserve space for label and spacing
                 const maxBarHeight = 160.0;
                 final scaleFactor = maxHeight / maxBarHeight;
-                
+
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -337,7 +384,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             color: AppTheme.credSurfaceCard,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.credMediumGray.withOpacity(0.2),
+              color: AppTheme.credMediumGray.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -354,7 +401,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                        color: AppTheme.credOrangeSunshine.withValues(
+                          alpha: 0.3,
+                        ),
                         blurRadius: 8,
                       ),
                     ],
@@ -403,7 +452,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.credError.withOpacity(0.1),
+              color: AppTheme.credError.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -457,15 +506,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.credError.withOpacity(0.1),
+                  color: AppTheme.credError.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
                   'Payment',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: AppTheme.credError,
-                  ),
+                  style: TextStyle(fontSize: 10, color: AppTheme.credError),
                 ),
               ),
             ],
@@ -482,7 +528,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (difference.inDays == 0) {
       return 'Today, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
-      return 'Yesterday, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+      final minute = date.minute.toString().padLeft(2, '0');
+      return 'Yesterday, ${date.hour}:$minute';
     } else {
       return '${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     }

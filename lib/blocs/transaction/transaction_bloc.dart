@@ -7,19 +7,18 @@ import 'package:fin_pay/domain/usecases/get_transactions_usecase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// BLoC for managing transaction state
-/// 
+///
 /// This BLoC handles all transaction-related operations including:
 /// - Loading transactions
 /// - Adding new transactions
 /// - Deleting transactions
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
-
   TransactionBloc({
     required GetTransactionsUseCase getTransactionsUseCase,
     required AddTransactionUseCase addTransactionUseCase,
-  })  : _getTransactionsUseCase = getTransactionsUseCase,
-        _addTransactionUseCase = addTransactionUseCase,
-        super(const TransactionInitial()) {
+  }) : _getTransactionsUseCase = getTransactionsUseCase,
+       _addTransactionUseCase = addTransactionUseCase,
+       super(const TransactionInitial()) {
     on<LoadTransactionsEvent>(_onLoadTransactions);
     on<AddTransactionEvent>(_onAddTransaction);
     on<DeleteTransactionEvent>(_onDeleteTransaction);
@@ -46,7 +45,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             emit(TransactionError(message));
             Logger.error('Failed to load transactions: $message', error);
           });
-    } catch (e) {
+    } on Exception catch (e) {
       emit(TransactionError('Unexpected error: $e'));
       Logger.error('Unexpected error loading transactions', e);
     }
@@ -70,7 +69,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             emit(TransactionError(message));
             Logger.error('Failed to add transaction: $message', error);
           });
-    } catch (e) {
+    } on Exception catch (e) {
       emit(TransactionError('Unexpected error: $e'));
       Logger.error('Unexpected error adding transaction', e);
     }
@@ -84,11 +83,12 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     final currentState = state;
     if (currentState is TransactionLoaded) {
       try {
-        // Note: You may need to add a DeleteTransactionUseCase if it doesn't exist
+        // Note: You may need to add a DeleteTransactionUseCase if it
+        // doesn't exist
         // For now, we'll reload transactions after deletion
         add(const LoadTransactionsEvent());
         Logger.info('Transaction deleted successfully');
-      } catch (e) {
+      } on Exception catch (e) {
         emit(TransactionError('Failed to delete transaction: $e'));
         Logger.error('Error deleting transaction', e);
       }

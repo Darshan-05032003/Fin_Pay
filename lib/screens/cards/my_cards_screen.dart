@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/models/card.dart' as models;
 import 'package:fin_pay/screens/cards/add_card_screen.dart';
@@ -24,7 +25,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCards();
+    unawaited(_loadCards());
   }
 
   Future<void> _loadCards() async {
@@ -90,13 +91,14 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                       borderRadius: 12,
                       onTap: () async {
                         await HapticService.mediumImpact();
+                        if (!context.mounted) return;
                         await Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder: (context) => const AddCardScreen(),
                           ),
                         );
-                        _loadCards();
+                        await _loadCards();
                       },
                       child: TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0, end: 1),
@@ -107,7 +109,9 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                             scale: value,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: AppTheme.credOrangeSunshine.withOpacity(0.15),
+                                color: AppTheme.credOrangeSunshine.withValues(
+                                  alpha: 0.15,
+                                ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: ElevatedButton(
@@ -115,7 +119,9 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   foregroundColor: AppTheme.credOrangeSunshine,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -152,112 +158,116 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
             child: Opacity(
               opacity: value,
               child: Container(
-              height: 200,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: AppTheme.credOrangeGradient,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.credOrangeSunshine.withOpacity(0.4 * value),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                    offset: Offset(0, 10 * value),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        card.cardType == models.CardType.visa
-                            ? 'VISA'
-                            : card.cardType == models.CardType.mastercard
-                                ? 'MASTERCARD'
-                                : 'AMEX',
-                        style: const TextStyle(
-                          color: AppTheme.credSurfaceCard,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 2,
-                        ),
+                height: 200,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.credOrangeGradient,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.credOrangeSunshine.withValues(
+                        alpha: 0.4 * value,
                       ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        card.maskedNumber,
-                        style: const TextStyle(
-                          color: AppTheme.credSurfaceCard,
-                          fontSize: 18,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Card Holder',
-                                  style: TextStyle(
-                                    color: AppTheme.credSurfaceCard.withOpacity(0.7),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                Text(
-                                  card.cardHolderName,
-                                  style: const TextStyle(
-                                    color: AppTheme.credSurfaceCard,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                      offset: Offset(0, 10 * value),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          card.cardType == models.CardType.visa
+                              ? 'VISA'
+                              : card.cardType == models.CardType.mastercard
+                              ? 'MASTERCARD'
+                              : 'AMEX',
+                          style: const TextStyle(
+                            color: AppTheme.credSurfaceCard,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2,
                           ),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Expire',
-                                  style: TextStyle(
-                                    color: AppTheme.credSurfaceCard.withOpacity(0.7),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                Text(
-                                  card.expireDate,
-                                  style: const TextStyle(
-                                    color: AppTheme.credSurfaceCard,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.maskedNumber,
+                          style: const TextStyle(
+                            color: AppTheme.credSurfaceCard,
+                            fontSize: 18,
+                            letterSpacing: 2,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Card Holder',
+                                    style: TextStyle(
+                                      color: AppTheme.credSurfaceCard
+                                          .withValues(alpha: 0.7),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    card.cardHolderName,
+                                    style: const TextStyle(
+                                      color: AppTheme.credSurfaceCard,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Expire',
+                                    style: TextStyle(
+                                      color: AppTheme.credSurfaceCard
+                                          .withValues(alpha: 0.7),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    card.expireDate,
+                                    style: const TextStyle(
+                                      color: AppTheme.credSurfaceCard,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
       ),
     );
   }
@@ -270,7 +280,10 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
         gradient: LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [AppTheme.credOrangeSunshine.withOpacity(0.5), AppTheme.credOrangeSunshine],
+          colors: [
+            AppTheme.credOrangeSunshine.withValues(alpha: 0.5),
+            AppTheme.credOrangeSunshine,
+          ],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -282,7 +295,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
           Container(
             height: 40,
             width: double.infinity,
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,7 +303,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -353,7 +366,10 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
           const SizedBox(height: 16),
           _buildDetailRow('Balance', '\$${card.balance.toStringAsFixed(2)}'),
           const Divider(),
-          _buildDetailRow('Card Type', card.cardType.toString().split('.').last.toUpperCase()),
+          _buildDetailRow(
+            'Card Type',
+            card.cardType.toString().split('.').last.toUpperCase(),
+          ),
           const Divider(),
           _buildDetailRow('Card Holder Name', card.cardHolderName),
           const Divider(),

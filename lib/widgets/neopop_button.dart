@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,9 +6,9 @@ import 'package:flutter/services.dart';
 /// CRED NeoPOP Button - 100% Authentic Implementation
 /// Features hard 45-degree shadows (8dp depth) and haptic feedback
 class NeoPopButton extends StatefulWidget {
-
   const NeoPopButton({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.onTapUp,
     this.onTapDown,
     this.color,
@@ -44,9 +45,10 @@ class _NeoPopButtonState extends State<NeoPopButton>
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -59,7 +61,7 @@ class _NeoPopButtonState extends State<NeoPopButton>
     if (widget.isDisabled) return;
     setState(() => _isPressed = true);
     _controller.forward();
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     widget.onTapDown?.call();
   }
 
@@ -82,7 +84,8 @@ class _NeoPopButtonState extends State<NeoPopButton>
     final backgroundColor = widget.color ?? AppTheme.credSurfaceCard;
     final borderColor = widget.borderColor ?? AppTheme.credOrangeSunshine;
     final borderWidth = widget.borderWidth ?? 1.0;
-    final padding = widget.padding ??
+    final padding =
+        widget.padding ??
         EdgeInsets.symmetric(
           horizontal: AppTheme.grid(2.5), // 20px
           vertical: AppTheme.grid(1.875), // 15px
@@ -108,7 +111,7 @@ class _NeoPopButtonState extends State<NeoPopButton>
             ),
             borderRadius: BorderRadius.circular(AppTheme.grid(2)), // 16px
             boxShadow: AppTheme.neopopHardShadow(
-              shadowColor: Colors.black.withOpacity(0.5),
+              shadowColor: Colors.black.withValues(alpha: 0.5),
               depth: _isPressed ? 0 : depth,
               isPressed: _isPressed,
             ),
@@ -131,9 +134,9 @@ class _NeoPopButtonState extends State<NeoPopButton>
 
 /// NeoPOP Button with Orange Sunshine accent (Primary CTA)
 class NeoPopPrimaryButton extends StatelessWidget {
-
   const NeoPopPrimaryButton({
-    required this.text, super.key,
+    required this.text,
+    super.key,
     this.onTap,
     this.isDisabled = false,
     this.padding,
@@ -166,9 +169,9 @@ class NeoPopPrimaryButton extends StatelessWidget {
 
 /// NeoPOP Button with Neon Green (Success/Cash)
 class NeoPopSuccessButton extends StatelessWidget {
-
   const NeoPopSuccessButton({
-    required this.text, super.key,
+    required this.text,
+    super.key,
     this.onTap,
     this.isDisabled = false,
   });
@@ -198,9 +201,9 @@ class NeoPopSuccessButton extends StatelessWidget {
 
 /// NeoPOP Card with hard shadows
 class NeoPopCard extends StatelessWidget {
-
   const NeoPopCard({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.padding,
     this.margin,
     this.color,
@@ -220,12 +223,9 @@ class NeoPopCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(AppTheme.grid(2.5)), // 20px
-        boxShadow: AppTheme.neopopHardShadow(
-          depth: depth ?? 8.0,
-        ),
+        boxShadow: AppTheme.neopopHardShadow(depth: depth ?? 8.0),
       ),
       child: child,
     );
   }
 }
-

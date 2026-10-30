@@ -24,13 +24,15 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    _slideAnimation = Tween<double>(begin: 50, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _slideAnimation = Tween<double>(
+      begin: 50,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
   }
@@ -95,10 +97,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           builder: (context, value, child) {
                             return Transform.scale(
                               scale: value,
-                              child: Opacity(
-                                opacity: value,
-                                child: child,
-                              ),
+                              child: Opacity(opacity: value, child: child),
                             );
                           },
                           child: ElevatedButton(
@@ -106,8 +105,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               Navigator.pushNamed(context, '/onboarding');
                             },
                             style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.credOrangeSunshine,
-            foregroundColor: AppTheme.credWhite,
+                              backgroundColor: AppTheme.credOrangeSunshine,
+                              foregroundColor: AppTheme.credWhite,
                               minimumSize: const Size(double.infinity, 60),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// CRED-style staggered grid animation
 class CredStaggeredGrid extends StatelessWidget {
-
   const CredStaggeredGrid({
-    required this.children, super.key,
+    required this.children,
+    super.key,
     this.crossAxisCount = 2,
     this.mainAxisSpacing = 16,
     this.crossAxisSpacing = 16,
@@ -44,7 +44,6 @@ class CredStaggeredGrid extends StatelessWidget {
 }
 
 class _StaggeredItem extends StatefulWidget {
-
   const _StaggeredItem({
     required this.child,
     required this.delay,
@@ -69,26 +68,17 @@ class _StaggeredItemState extends State<_StaggeredItem>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
 
     _scaleAnimation = Tween<double>(
       begin: 0.8,
       end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
     _opacityAnimation = Tween<double>(
       begin: 0,
       end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
     Future.delayed(widget.delay, () {
       if (mounted) {
@@ -119,4 +109,3 @@ class _StaggeredItemState extends State<_StaggeredItem>
     );
   }
 }
-

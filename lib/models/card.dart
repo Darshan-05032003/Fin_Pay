@@ -1,5 +1,4 @@
 class Card {
-
   Card({
     required this.id,
     required this.cardNumber,
@@ -26,9 +25,4 @@ class Card {
   }
 }
 
-enum CardType {
-  visa,
-  mastercard,
-  amex,
-}
-
+enum CardType { visa, mastercard, amex }

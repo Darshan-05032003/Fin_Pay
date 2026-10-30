@@ -6,39 +6,38 @@ import 'package:fin_pay/services/user_service.dart';
 
 /// Implementation of IUserRepository
 class UserRepositoryImpl implements IUserRepository {
-
   UserRepositoryImpl(this._localDataSource);
   final LocalDataSource _localDataSource;
 
   @override
   Future<Result<User?>> getCurrentUser() async {
-    return _localDataSource.getUser();
+    return await _localDataSource.getUser();
   }
 
   @override
   Future<Result<void>> saveUser(User user) async {
-    return _localDataSource.saveUser(user);
+    return await _localDataSource.saveUser(user);
   }
 
   @override
   Future<Result<void>> updateUser(User user) async {
-    return _localDataSource.updateUser(user);
+    return await _localDataSource.updateUser(user);
   }
 
   @override
   Future<Result<void>> deleteUser() async {
-    return _localDataSource.deleteUser();
+    return await _localDataSource.deleteUser();
   }
 
   @override
   Future<Result<void>> updateBalance(double balance) async {
     final userResult = await getCurrentUser();
-    return userResult.flatMapAsync((user) async {
+    return await userResult.flatMapAsync((user) async {
       if (user == null) {
         return const Failure('No user found');
       }
       final updatedUser = user.copyWith(balance: balance);
-      return updateUser(updatedUser);
+      return await updateUser(updatedUser);
     });
   }
 
@@ -60,4 +59,3 @@ class UserRepositoryImpl implements IUserRepository {
     return const Failure('Invalid credentials');
   }
 }
-

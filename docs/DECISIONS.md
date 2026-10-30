@@ -23,5 +23,11 @@ Every judgement call made during the UI upgrade, with the reason. Newest at the 
 ### D-004: Wave 1 runs sequentially
 The build machine has 15 GiB of RAM, with ~1.4 GiB free while an emulator is running. The spec requires ≥ 16 GiB to run Wave 1 in parallel, so agents C → D → E → F run one after another, each in its own worktree.
 
+### D-005: The preflight commit is pushed together with F0
+The spec asks for a push right after the preflight commit, and also that every push keeps CI green. The preflight commit alone would be red (the baseline fails format, analyze and test), so it is committed locally and pushed with the F0 "baseline green" commit. No history is rewritten; the commits stay separate.
+
+### D-006: Gradle wrapper uses the `-bin` distribution
+The wrapper's download of `gradle-8.14-all.zip` (230 MB, sources and docs included) stalled repeatedly on this network and restarts from zero each time. `gradle-8.14-bin.zip` is the same Gradle without IDE sources, which the build never needs. One-line change in `android/gradle/wrapper/gradle-wrapper.properties`.
+
 ## Compromises
 _None yet._

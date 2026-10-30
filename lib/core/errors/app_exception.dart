@@ -1,10 +1,9 @@
 /// Base exception class for the application
 abstract class AppException implements Exception {
-  
   const AppException(this.message, [this.originalError]);
   final String message;
   final Object? originalError;
-  
+
   @override
   String toString() => message;
 }
@@ -38,4 +37,3 @@ class NotFoundException extends AppException {
 class AppError extends AppException {
   const AppError(super.message, [super.originalError]);
 }
-

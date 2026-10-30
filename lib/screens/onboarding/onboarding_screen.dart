@@ -22,17 +22,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Pay for everything easily and conveniently!',
-      subtitle: 'Handle all your payments easily, anytime, from one secure app.',
+      subtitle:
+          'Handle all your payments easily, anytime, from one secure app.',
       image: Icons.account_balance_wallet,
     ),
     OnboardingPage(
       title: 'Take control of your money like never before!',
-      subtitle: 'Track expenses, make payments, and manage your money securely in one place.',
+      subtitle:
+          'Track expenses, make payments, and manage your money securely '
+          'in one place.',
       image: Icons.pie_chart,
     ),
     OnboardingPage(
       title: 'Spend smarter every day with smarter tools in one app!',
-      subtitle: 'Monitor spending, pay securely, and stay in control of your money in one place.',
+      subtitle:
+          'Monitor spending, pay securely, and stay in control of your '
+          'money in one place.',
       image: Icons.credit_card,
     ),
   ];
@@ -52,6 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: CredButtonPress(
                   onTap: () async {
                     await HapticService.lightImpact();
+                    if (!context.mounted) return;
                     Navigator.pushReplacementNamed(context, '/login');
                   },
                   child: const Padding(
@@ -107,6 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       CredButtonPress(
                         onTap: () async {
                           await HapticService.lightImpact();
+                          if (!context.mounted) return;
                           Navigator.pushReplacementNamed(context, '/login');
                         },
                         child: const Text(
@@ -128,6 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             curve: Curves.easeInOutCubic,
                           );
                         } else {
+                          if (!context.mounted) return;
                           Navigator.pushReplacementNamed(context, '/login');
                         }
                       },
@@ -139,13 +147,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                                color: AppTheme.credOrangeSunshine.withValues(
+                                  alpha: 0.4,
+                                ),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
                             ],
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 18,
+                          ),
                           child: const Text(
                             'Continue',
                             style: TextStyle(
@@ -171,7 +184,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildAnimatedPage(OnboardingPage page, int index) {
     final isCurrentPage = _currentPage == index;
-    
+
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: isCurrentPage ? 1.0 : 0.0),
@@ -235,7 +248,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                                  color: AppTheme.credOrangeSunshine.withValues(
+                                    alpha: 0.4,
+                                  ),
                                   blurRadius: 24,
                                   offset: const Offset(0, 12),
                                 ),
@@ -268,7 +283,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class OnboardingPage {
-
   OnboardingPage({
     required this.title,
     required this.subtitle,

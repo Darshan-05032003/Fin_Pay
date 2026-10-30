@@ -5,28 +5,28 @@ import 'package:fin_pay/models/transaction.dart' as models;
 
 /// Implementation of ITransactionRepository
 class TransactionRepositoryImpl implements ITransactionRepository {
-
   TransactionRepositoryImpl(this._localDataSource);
   final LocalDataSource _localDataSource;
 
   @override
   Future<Result<List<models.Transaction>>> getTransactions({int? limit}) async {
-    return _localDataSource.getTransactions(limit: limit);
+    return await _localDataSource.getTransactions(limit: limit);
   }
 
   @override
   Future<Result<void>> addTransaction(models.Transaction transaction) async {
-    return _localDataSource.saveTransaction(transaction);
+    return await _localDataSource.saveTransaction(transaction);
   }
 
   @override
   Future<Result<void>> deleteTransaction(String transactionId) async {
-    return _localDataSource.deleteTransaction(transactionId);
+    return await _localDataSource.deleteTransaction(transactionId);
   }
 
   @override
-  Future<Result<List<models.Transaction>>> getRecentTransactions({int limit = 5}) async {
-    return getTransactions(limit: limit);
+  Future<Result<List<models.Transaction>>> getRecentTransactions({
+    int limit = 5,
+  }) async {
+    return await getTransactions(limit: limit);
   }
 }
-

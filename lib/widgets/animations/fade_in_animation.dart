@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class FadeInAnimation extends StatefulWidget {
-
   const FadeInAnimation({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.delay = Duration.zero,
     this.duration = const Duration(milliseconds: 500),
     this.curve = Curves.easeOutCubic,
@@ -26,26 +26,17 @@ class _FadeInAnimationState extends State<FadeInAnimation>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
 
     _fadeAnimation = Tween<double>(
       begin: 0,
       end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
     Future.delayed(widget.delay, () {
       if (mounted) {
@@ -65,12 +56,8 @@ class _FadeInAnimationState extends State<FadeInAnimation>
     return RepaintBoundary(
       child: FadeTransition(
         opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: widget.child,
-        ),
+        child: SlideTransition(position: _slideAnimation, child: widget.child),
       ),
     );
   }
 }
-

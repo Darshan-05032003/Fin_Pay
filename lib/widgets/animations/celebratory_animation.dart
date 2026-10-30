@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:confetti/confetti.dart';
@@ -5,9 +6,11 @@ import 'package:fin_pay/services/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class CelebratoryAnimation extends StatefulWidget {
-
   const CelebratoryAnimation({
-    required this.child, required this.title, required this.icon, super.key,
+    required this.child,
+    required this.title,
+    required this.icon,
+    super.key,
     this.subtitle,
     this.color = Colors.green,
     this.onComplete,
@@ -34,7 +37,9 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -52,7 +57,7 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
       CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
     );
 
-    _startCelebration();
+    unawaited(_startCelebration());
   }
 
   Future<void> _startCelebration() async {
@@ -60,12 +65,13 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
     _confettiController.play();
     _scaleController.forward();
     _rotationController.repeat();
-    
-    await Future.delayed(const Duration(milliseconds: 800));
-    _rotationController.stop();
-    _rotationController.reset();
-    
-    await Future.delayed(const Duration(seconds: 3));
+
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    _rotationController
+      ..stop()
+      ..reset();
+
+    await Future<void>.delayed(const Duration(seconds: 3));
     widget.onComplete?.call();
   }
 
@@ -94,7 +100,7 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
             gravity: 0.3,
             colors: [
               widget.color,
-              widget.color.withOpacity(0.7),
+              widget.color.withValues(alpha: 0.7),
               Colors.white,
               Colors.yellow,
               Colors.orange,
@@ -112,14 +118,10 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
                   child: Container(
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: widget.color.withOpacity(0.1),
+                      color: widget.color.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      widget.icon,
-                      size: 80,
-                      color: widget.color,
-                    ),
+                    child: Icon(widget.icon, size: 80, color: widget.color),
                   ),
                 ),
               );
@@ -130,4 +132,3 @@ class _CelebratoryAnimationState extends State<CelebratoryAnimation>
     );
   }
 }
-

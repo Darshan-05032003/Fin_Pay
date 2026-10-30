@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ParallaxScroll extends StatelessWidget {
-
   const ParallaxScroll({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.parallaxFactor = 0.5,
   });
   final Widget child;
@@ -35,9 +35,10 @@ class ParallaxScroll extends StatelessWidget {
 }
 
 class ParallaxWidget extends StatelessWidget {
-
   const ParallaxWidget({
-    required this.child, required this.scrollController, super.key,
+    required this.child,
+    required this.scrollController,
+    super.key,
     this.parallaxFactor = 0.5,
   });
   final Widget child;
@@ -53,13 +54,9 @@ class ParallaxWidget extends StatelessWidget {
             ? scrollController.offset * parallaxFactor
             : 0.0;
 
-        return Transform.translate(
-          offset: Offset(0, offset),
-          child: child,
-        );
+        return Transform.translate(offset: Offset(0, offset), child: child);
       },
       child: child,
     );
   }
 }
-

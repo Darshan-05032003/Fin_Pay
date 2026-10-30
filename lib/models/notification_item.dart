@@ -1,5 +1,4 @@
 class NotificationItem {
-
   NotificationItem({
     required this.id,
     required this.title,
@@ -22,4 +21,3 @@ enum NotificationType {
   cardLinked,
   billDue,
 }
-

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// CRED-style card reveal animation with 3D perspective
 class CredCardReveal extends StatefulWidget {
-
   const CredCardReveal({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.duration = const Duration(milliseconds: 500),
     this.curve = Curves.easeOutCubic,
     this.perspective = 0.001,
@@ -30,25 +30,16 @@ class _CredCardRevealState extends State<CredCardReveal>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
 
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
 
     _rotationAnimation = Tween<double>(
       begin: widget.revealFromBottom ? 0.1 : -0.1,
       end: 0,
     ).animate(_animation);
 
-    _opacityAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(_animation);
+    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(_animation);
 
     _controller.forward();
   }
@@ -84,4 +75,3 @@ class _CredCardRevealState extends State<CredCardReveal>
     );
   }
 }
-

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/services/user_service.dart';
@@ -16,7 +17,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -51,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           icon: const Icon(Icons.arrow_back, color: AppTheme.credTextPrimary),
           onPressed: () async {
             await HapticService.lightImpact();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
@@ -79,7 +82,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 delay: Duration(milliseconds: 200),
                 offset: Offset(0, 20),
                 child: Text(
-                  'Log in to securely access your account and manage your money anytime.',
+                  'Log in to securely access your account and manage your '
+                  'money anytime.',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppTheme.credTextSecondary,
@@ -108,17 +112,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 border: Border.all(
                                   color: hasFocus
                                       ? AppTheme.credOrangeSunshine
-                                      : AppTheme.credMediumGray.withOpacity(0.2),
+                                      : AppTheme.credMediumGray.withValues(
+                                          alpha: 0.2,
+                                        ),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
                               child: TextField(
                                 controller: _emailController,
-                                style: const TextStyle(color: AppTheme.credTextPrimary),
+                                style: const TextStyle(
+                                  color: AppTheme.credTextPrimary,
+                                ),
                                 decoration: const InputDecoration(
                                   labelText: 'Email or phone',
                                   hintText: 'user@finpay.com',
-                                  prefixIcon: Icon(Icons.email_outlined, color: AppTheme.credTextSecondary),
+                                  prefixIcon: Icon(
+                                    Icons.email_outlined,
+                                    color: AppTheme.credTextSecondary,
+                                  ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.all(20),
                                 ),
@@ -134,15 +145,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.credOrangeSunshine.withOpacity(0.15),
+                            color: AppTheme.credOrangeSunshine.withValues(
+                              alpha: 0.15,
+                            ),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                              color: AppTheme.credOrangeSunshine.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
+                              Icon(
+                                Icons.info_outline,
+                                color: AppTheme.credOrangeSunshine,
+                                size: 18,
+                              ),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -181,28 +200,37 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             border: Border.all(
                               color: hasFocus
                                   ? AppTheme.credOrangeSunshine
-                                  : AppTheme.credMediumGray.withOpacity(0.2),
+                                  : AppTheme.credMediumGray.withValues(
+                                      alpha: 0.2,
+                                    ),
                               width: hasFocus ? 2 : 1,
                             ),
                           ),
                           child: TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            style: const TextStyle(color: AppTheme.credTextPrimary),
+                            style: const TextStyle(
+                              color: AppTheme.credTextPrimary,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Password',
                               hintText: 'Enter password',
-                              prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.credTextSecondary),
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: AppTheme.credTextSecondary,
+                              ),
                               suffixIcon: CredButtonPress(
                                 onTap: () {
                                   setState(() {
                                     _obscurePassword = !_obscurePassword;
                                   });
-                                  HapticService.selection();
+                                  unawaited(HapticService.selection());
                                 },
                                 child: IconButton(
                                   icon: Icon(
-                                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                    _obscurePassword
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
                                     color: AppTheme.credTextSecondary,
                                   ),
                                   onPressed: null,
@@ -231,6 +259,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     TextButton(
                       onPressed: () async {
                         await HapticService.lightImpact();
+                        if (!context.mounted) return;
                         Navigator.pushNamed(context, '/forgot-password');
                       },
                       child: const Text(
@@ -249,6 +278,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     if (_emailController.text.trim().isEmpty ||
                         _passwordController.text.trim().isEmpty) {
                       await HapticService.error();
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Please fill all fields'),
@@ -259,18 +289,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     }
 
                     await HapticService.mediumImpact();
-                    
+
                     // Only accept default credentials
                     final email = _emailController.text.trim();
                     final password = _passwordController.text.trim();
-                    
-                    final loginSuccess = await UserService.loginUser(email, password);
-                    
+
+                    final loginSuccess = await UserService.loginUser(
+                      email,
+                      password,
+                    );
+
                     if (!loginSuccess) {
                       await HapticService.error();
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Invalid email or password. Use: user@finpay.com / FinPay123'),
+                          content: Text(
+                            'Invalid email or password. Use: user@finpay.com / FinPay123',
+                          ),
                           backgroundColor: AppTheme.credError,
                           duration: Duration(seconds: 3),
                         ),
@@ -279,6 +315,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     }
 
                     await HapticService.success();
+                    if (!context.mounted) return;
                     Navigator.pushReplacementNamed(context, '/home');
                   },
                   child: SpringAnimation(
@@ -289,7 +326,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -316,7 +355,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 delay: const Duration(milliseconds: 700),
                 child: Row(
                   children: [
-                    Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
+                    Expanded(
+                      child: Divider(
+                        color: AppTheme.credMediumGray.withValues(alpha: 0.3),
+                      ),
+                    ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
@@ -324,7 +367,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         style: TextStyle(color: AppTheme.credTextTertiary),
                       ),
                     ),
-                    Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
+                    Expanded(
+                      child: Divider(
+                        color: AppTheme.credMediumGray.withValues(alpha: 0.3),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -355,6 +402,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     TextButton(
                       onPressed: () async {
                         await HapticService.lightImpact();
+                        if (!context.mounted) return;
                         Navigator.pushNamed(context, '/create-account');
                       },
                       child: const Text(
@@ -390,7 +438,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 color: AppTheme.credSurfaceCard,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppTheme.credMediumGray.withOpacity(0.3),
+                  color: AppTheme.credMediumGray.withValues(alpha: 0.3),
                 ),
               ),
               child: Icon(icon, color: color, size: 28),

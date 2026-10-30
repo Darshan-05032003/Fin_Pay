@@ -31,7 +31,7 @@ void main() async {
   try {
     await di.init();
     Logger.info('Dependency injection initialized');
-  } catch (e) {
+  } on Exception catch (e) {
     Logger.error('Failed to initialize dependency injection', e);
   }
 
@@ -39,7 +39,7 @@ void main() async {
   try {
     await UserService.init();
     Logger.info('Default user initialized');
-  } catch (e) {
+  } on Exception catch (e) {
     Logger.error('Failed to initialize default user', e);
   }
 
@@ -53,11 +53,16 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => di.sl<UserBloc>()..add(const LoadUserEvent())),
         BlocProvider(
-          create: (_) => di.sl<TransactionBloc>()..add(const LoadTransactionsEvent()),
+          create: (_) => di.sl<UserBloc>()..add(const LoadUserEvent()),
         ),
-        BlocProvider(create: (_) => di.sl<CardBloc>()..add(const LoadCardsEvent())),
+        BlocProvider(
+          create: (_) =>
+              di.sl<TransactionBloc>()..add(const LoadTransactionsEvent()),
+        ),
+        BlocProvider(
+          create: (_) => di.sl<CardBloc>()..add(const LoadCardsEvent()),
+        ),
         BlocProvider(
           create: (_) =>
               di.sl<NotificationBloc>()..add(const LoadNotificationsEvent()),
@@ -75,7 +80,7 @@ class MainApp extends StatelessWidget {
           return MediaQuery(
             data: MediaQuery.of(
               context,
-            ).copyWith(textScaler: const TextScaler.linear(1)),
+            ).copyWith(textScaler: TextScaler.noScaling),
             child: child!,
           );
         },

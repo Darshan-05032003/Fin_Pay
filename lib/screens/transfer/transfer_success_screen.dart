@@ -6,9 +6,10 @@ import 'package:fin_pay/widgets/animations/fade_in_animation.dart';
 import 'package:flutter/material.dart';
 
 class TransferSuccessScreen extends StatefulWidget {
-
   const TransferSuccessScreen({
-    required this.recipientName, required this.amount, super.key,
+    required this.recipientName,
+    required this.amount,
+    super.key,
   });
   final String recipientName;
   final String amount;
@@ -46,7 +47,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
     );
 
     _controller.forward();
-    
+
     // Start haptic feedback
     Future.delayed(const Duration(milliseconds: 300), HapticService.success);
   }
@@ -80,7 +81,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
@@ -105,12 +106,18 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                                 gradient: LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
-                                  colors: [AppTheme.primaryGreen, AppTheme.credNeoPaccha.withOpacity(0.7)],
+                                  colors: [
+                                    AppTheme.primaryGreen,
+                                    AppTheme.credNeoPaccha.withValues(
+                                      alpha: 0.7,
+                                    ),
+                                  ],
                                 ),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                                    color: AppTheme.credOrangeSunshine
+                                        .withValues(alpha: 0.4),
                                     blurRadius: 20,
                                     spreadRadius: 5,
                                   ),
@@ -218,21 +225,24 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                           duration: const Duration(milliseconds: 1500),
                           child: RepaintBoundary(
                             child: TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: double.parse(widget.amount)),
+                              tween: Tween(
+                                begin: 0,
+                                end: double.parse(widget.amount),
+                              ),
                               duration: const Duration(milliseconds: 1200),
                               curve: Curves.easeOutCubic,
                               builder: (context, value, child) {
                                 return Text(
-                                '\$${value.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 42,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.credOrangeSunshine,
-                                  letterSpacing: 1,
-                                ),
-                                textAlign: TextAlign.center,
-                              );
-                            },
+                                  '\$${value.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 42,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.credOrangeSunshine,
+                                    letterSpacing: 1,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -285,12 +295,15 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppTheme.primaryGreen, AppTheme.credNeoPaccha.withOpacity(0.7)],
+              colors: [
+                AppTheme.primaryGreen,
+                AppTheme.credNeoPaccha.withValues(alpha: 0.7),
+              ],
             ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                color: AppTheme.credOrangeSunshine.withValues(alpha: 0.3),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),

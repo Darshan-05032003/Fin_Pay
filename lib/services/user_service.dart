@@ -34,13 +34,13 @@ class UserService {
   }
 
   static Future<User?> getCurrentUser() async {
-    return _db.getUser();
+    return await _db.getUser();
   }
-  
+
   // Login method that only accepts default credentials
   static Future<bool> loginUser(String email, String password) async {
     // Only allow default credentials
-    if (email.trim().toLowerCase() == defaultEmail.toLowerCase() && 
+    if (email.trim().toLowerCase() == defaultEmail.toLowerCase() &&
         password == defaultPassword) {
       // Ensure default user exists
       await init();
@@ -67,7 +67,7 @@ class UserService {
 
   // Cards Management - Now using database
   static Future<List<card_models.Card>> getCards() async {
-    return _db.getCards();
+    return await _db.getCards();
   }
 
   static Future<void> addCard(card_models.Card card) async {
@@ -76,12 +76,12 @@ class UserService {
 
   // Transactions Management - Now using database
   static Future<List<Transaction>> getTransactions() async {
-    return _db.getTransactions();
+    return await _db.getTransactions();
   }
 
   static Future<void> addTransaction(Transaction transaction) async {
     await _db.insertTransaction(transaction);
-    
+
     // Update balance
     final user = await getCurrentUser();
     if (user != null) {
@@ -103,14 +103,16 @@ class UserService {
 
   // Notifications Management - Now using database
   static Future<List<NotificationItem>> getNotifications() async {
-    return _db.getNotifications();
+    return await _db.getNotifications();
   }
 
   static Future<void> addNotification(NotificationItem notification) async {
     await _db.insertNotification(notification);
   }
 
-  static Future<void> saveNotifications(List<NotificationItem> notifications) async {
+  static Future<void> saveNotifications(
+    List<NotificationItem> notifications,
+  ) async {
     // Clear and re-insert all notifications
     final existing = await getNotifications();
     for (final n in existing) {
@@ -125,4 +127,3 @@ class UserService {
     await _db.deleteUser();
   }
 }
-

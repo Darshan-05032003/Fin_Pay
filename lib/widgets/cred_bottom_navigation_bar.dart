@@ -5,12 +5,13 @@ import 'package:flutter/material.dart';
 /// CRED-style bottom navigation bar with "Light Switch" effect
 /// Selected items "light up" with bright colors against dark background
 class CredBottomNavigationBar extends StatelessWidget {
-
   const CredBottomNavigationBar({
-    required this.currentIndex, required this.onTap, super.key,
+    required this.currentIndex,
+    required this.onTap,
+    super.key,
   });
   final int currentIndex;
-  final Function(int) onTap;
+  final void Function(int) onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,7 @@ class CredBottomNavigationBar extends StatelessWidget {
         color: AppTheme.credSurfaceCard,
         border: Border(
           top: BorderSide(
-            color: AppTheme.credMediumGray.withOpacity(0.3),
+            color: AppTheme.credMediumGray.withValues(alpha: 0.3),
           ),
         ),
       ),
@@ -28,16 +29,16 @@ class CredBottomNavigationBar extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        selectedItemColor: AppTheme.credOrangeSunshine, // "Lights up" with orange
-        unselectedItemColor: AppTheme.credTextTertiary, // Dim grey when not selected
+        selectedItemColor:
+            AppTheme.credOrangeSunshine, // "Lights up" with orange
+        unselectedItemColor:
+            AppTheme.credTextTertiary, // Dim grey when not selected
         selectedFontSize: 12,
         selectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w400,
-        ),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
         onTap: (index) async {
           await HapticService.selection();
           onTap(index);
@@ -78,28 +79,21 @@ class CredBottomNavigationBar extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.credOrangeSunshine.withOpacity(0.15)
+              ? AppTheme.credOrangeSunshine.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          icon,
-          size: 24,
-        ),
+        child: Icon(icon, size: 24),
       ),
       activeIcon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppTheme.credOrangeSunshine.withOpacity(0.2),
+          color: AppTheme.credOrangeSunshine.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          icon,
-          size: 24,
-        ),
+        child: Icon(icon, size: 24),
       ),
       label: label,
     );
   }
 }
-

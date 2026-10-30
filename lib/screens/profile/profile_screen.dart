@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/models/user.dart';
 import 'package:fin_pay/services/haptic_service.dart';
@@ -28,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    unawaited(_loadUserData());
   }
 
   Future<void> _loadUserData() async {
@@ -58,9 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: const Center(
-          child: Text('No user data found'),
-        ),
+        body: const Center(child: Text('No user data found')),
       );
     }
 
@@ -72,6 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
             await HapticService.lightImpact();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
@@ -136,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.credMediumGray.withOpacity(0.2),
+          color: AppTheme.credMediumGray.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -152,7 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                    color: AppTheme.credOrangeSunshine.withValues(alpha: 0.4),
                     blurRadius: 16,
                   ),
                 ],
@@ -212,40 +212,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showPrivacyPolicyDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.credSurfaceCard,
-        title: const Text(
-          'Privacy Policy',
-          style: TextStyle(
-            color: AppTheme.credTextPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: const SingleChildScrollView(
-          child: Text(
-            'FinPay respects your privacy. We collect and use your information to provide and improve our services. Your data is stored locally on your device and is never shared with third parties without your consent.\n\n'
-            'For the complete privacy policy, please visit our website or contact us at privacy@finpay.app.\n\n'
-            'By using FinPay, you agree to our privacy practices as described in our Privacy Policy.',
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.credSurfaceCard,
+          title: const Text(
+            'Privacy Policy',
             style: TextStyle(
-              color: AppTheme.credTextSecondary,
-              fontSize: 14,
+              color: AppTheme.credTextPrimary,
+              fontWeight: FontWeight.w700,
             ),
           ),
+          content: const SingleChildScrollView(
+            child: Text(
+              'FinPay respects your privacy. We collect and use your '
+              'information to provide and improve our services. Your data is '
+              'stored locally on your device and is never shared with third '
+              'parties without your consent.\n\n'
+              'For the complete privacy policy, please visit our website or '
+              'contact us at privacy@finpay.app.\n\n'
+              'By using FinPay, you agree to our privacy practices as '
+              'described in our Privacy Policy.',
+              style: TextStyle(color: AppTheme.credTextSecondary, fontSize: 14),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await HapticService.lightImpact();
+                if (!context.mounted) return;
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Close',
+                style: TextStyle(color: AppTheme.credOrangeSunshine),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await HapticService.lightImpact();
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'Close',
-              style: TextStyle(color: AppTheme.credOrangeSunshine),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -254,38 +259,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final nameController = TextEditingController(text: _user!.fullName);
     final emailController = TextEditingController(text: _user!.email);
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Profile'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outline),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
               onPressed: () async {
                 await HapticService.success();
                 final updatedUser = _user!.copyWith(
@@ -293,12 +299,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   email: emailController.text.trim(),
                 );
                 await UserService.updateUser(updatedUser);
+                if (!context.mounted) return;
                 Navigator.pop(context);
-                _loadUserData();
+                await _loadUserData();
               },
-            child: const Text('Save'),
-          ),
-        ],
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -337,11 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pushNamed(context, '/transactions');
             },
           ),
-          _buildMenuItem(
-            icon: Icons.security,
-            title: 'Security',
-            onTap: () {},
-          ),
+          _buildMenuItem(icon: Icons.security, title: 'Security', onTap: () {}),
         ],
       ),
     );
@@ -383,6 +387,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               } else {
                 // Show privacy policy in-app if URL fails
+                if (!context.mounted) return;
                 _showPrivacyPolicyDialog(context);
               }
             },
@@ -409,7 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: AppTheme.credSurfaceCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.credMediumGray.withOpacity(0.2),
+            color: AppTheme.credMediumGray.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -422,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                    color: AppTheme.credOrangeSunshine.withValues(alpha: 0.3),
                     blurRadius: 8,
                   ),
                 ],
@@ -457,74 +462,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: SizedBox(
         width: double.infinity,
         child: RippleEffect(
-        borderRadius: 12,
-        onTap: () async {
-          await HapticService.mediumImpact();
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Logout'),
-              content: const Text('Are you sure you want to logout?'),
-              actions: [
-                TextButton(
-                  onPressed: () async {
-                    await HapticService.lightImpact();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    await HapticService.heavyImpact();
-                    await UserService.logout();
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/login',
-                      (route) => false,
-                    );
-                  },
-                  child: const Text(
-                    'Logout',
-                    style: TextStyle(color: AppTheme.credError),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-        child: CredButtonPress(
+          borderRadius: 12,
           onTap: () async {
-            await HapticService.heavyImpact();
-            await UserService.logout();
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/login',
-              (route) => false,
+            await HapticService.mediumImpact();
+            if (!context.mounted) return;
+            unawaited(
+              showDialog<void>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () async {
+                        await HapticService.lightImpact();
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        await HapticService.heavyImpact();
+                        await UserService.logout();
+                        if (!context.mounted) return;
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/login',
+                          (route) => false,
+                        );
+                      },
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(color: AppTheme.credError),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           },
-          child: SpringAnimation(
-            startOffset: const Offset(0, 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppTheme.credError,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.credError.withOpacity(0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              child: const Center(
-                child: Text(
-                  'Logout',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.credWhite,
-                    letterSpacing: 0.5,
+          child: CredButtonPress(
+            onTap: () async {
+              await HapticService.heavyImpact();
+              await UserService.logout();
+              if (!context.mounted) return;
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
+            },
+            child: SpringAnimation(
+              startOffset: const Offset(0, 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.credError,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.credError.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: const Center(
+                  child: Text(
+                    'Logout',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.credWhite,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
@@ -532,7 +544,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-    ),
     );
   }
 

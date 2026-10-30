@@ -21,7 +21,6 @@ class TransactionLoading extends TransactionState {
 
 /// State when transactions are successfully loaded
 class TransactionLoaded extends TransactionState {
-
   const TransactionLoaded(this.transactions);
   final List<Transaction> transactions;
 
@@ -45,7 +44,6 @@ class TransactionLoaded extends TransactionState {
 
 /// State when an error occurs
 class TransactionError extends TransactionState {
-
   const TransactionError(this.message);
   final String message;
 

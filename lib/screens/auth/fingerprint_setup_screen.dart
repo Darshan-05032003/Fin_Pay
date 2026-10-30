@@ -46,7 +46,8 @@ class FingerprintSetupScreen extends StatelessWidget {
                 delay: Duration(milliseconds: 200),
                 offset: Offset(0, 20),
                 child: Text(
-                  'Add your fingerprint to protect your account and keep your transactions safe.',
+                  'Add your fingerprint to protect your account and keep '
+                  'your transactions safe.',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppTheme.credTextSecondary,
@@ -72,7 +73,9 @@ class FingerprintSetupScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                              color: AppTheme.credOrangeSunshine.withValues(
+                                alpha: 0.4,
+                              ),
                               blurRadius: 24,
                               offset: const Offset(0, 12),
                             ),
@@ -93,7 +96,8 @@ class FingerprintSetupScreen extends StatelessWidget {
                 delay: Duration(milliseconds: 400),
                 offset: Offset(0, 20),
                 child: Text(
-                  'Place your finger on the fingerprint scanner to quickly and securely access your account.',
+                  'Place your finger on the fingerprint scanner to quickly '
+                  'and securely access your account.',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppTheme.credTextSecondary,
@@ -108,6 +112,7 @@ class FingerprintSetupScreen extends StatelessWidget {
                 child: CredButtonPress(
                   onTap: () async {
                     await HapticService.mediumImpact();
+                    if (!context.mounted) return;
                     Navigator.pushReplacementNamed(context, '/home');
                   },
                   child: SpringAnimation(
@@ -118,7 +123,9 @@ class FingerprintSetupScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -148,4 +155,3 @@ class FingerprintSetupScreen extends StatelessWidget {
     );
   }
 }
-

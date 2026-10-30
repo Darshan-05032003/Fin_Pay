@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/blocs/transaction/transaction_bloc.dart';
 import 'package:fin_pay/blocs/transaction/transaction_event.dart';
 import 'package:fin_pay/blocs/transaction/transaction_state.dart';
@@ -24,7 +25,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class _FloatingActionButtonWithDelay extends StatefulWidget {
-
   const _FloatingActionButtonWithDelay({
     required this.child,
     required this.delay,
@@ -166,12 +166,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: CredButtonPress(
                     onTap: () async {
                       await HapticService.mediumImpact();
-                      Navigator.pushNamed(context, '/transfer').then((_) {
-                        context.read<UserBloc>().add(const LoadUserEvent());
-                        context.read<TransactionBloc>().add(
-                          const LoadTransactionsEvent(),
-                        );
-                      });
+                      if (!context.mounted) return;
+                      unawaited(
+                        Navigator.pushNamed(context, '/transfer').then((_) {
+                          if (!context.mounted) return;
+                          context.read<UserBloc>().add(const LoadUserEvent());
+                          context.read<TransactionBloc>().add(
+                            const LoadTransactionsEvent(),
+                          );
+                        }),
+                      );
                     },
                     child: const FloatingActionButton(
                       onPressed: null,
@@ -277,6 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: 20,
                       onTap: () async {
                         await HapticService.lightImpact();
+                        if (!context.mounted) return;
                         Navigator.pushNamed(context, '/notifications');
                       },
                       child: const IconButton(
@@ -293,6 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: 20,
                       onTap: () async {
                         await HapticService.lightImpact();
+                        if (!context.mounted) return;
                         Navigator.pushNamed(context, '/profile');
                       },
                       child: const IconButton(
@@ -377,11 +383,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppTheme.credSurfaceCard,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppTheme.credMediumGray.withOpacity(0.3),
+                    color: AppTheme.credMediumGray.withValues(alpha: 0.3),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.credOrangeSunshine.withOpacity(0.1),
+                      color: AppTheme.credOrangeSunshine.withValues(alpha: 0.1),
                       blurRadius: 8,
                     ),
                   ],
@@ -432,43 +438,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showMoreOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.credSurfaceCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.credTextTertiary,
-                borderRadius: BorderRadius.circular(2),
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: AppTheme.credSurfaceCard,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.credTextTertiary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _buildMoreOption(Icons.qr_code, 'Scan QR Code', () {
-              Navigator.pop(context);
-              _showComingSoonSnackBar(context, 'QR Code scanner coming soon!');
-            }),
-            _buildMoreOption(Icons.request_quote, 'Request Money', () {
-              Navigator.pop(context);
-              _showComingSoonSnackBar(
-                context,
-                'Request money feature coming soon!',
-              );
-            }),
-            _buildMoreOption(Icons.account_balance_wallet, 'Top Up', () {
-              Navigator.pop(context);
-              _showComingSoonSnackBar(context, 'Top up feature coming soon!');
-            }),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 24),
+              _buildMoreOption(Icons.qr_code, 'Scan QR Code', () {
+                Navigator.pop(context);
+                _showComingSoonSnackBar(
+                  context,
+                  'QR Code scanner coming soon!',
+                );
+              }),
+              _buildMoreOption(Icons.request_quote, 'Request Money', () {
+                Navigator.pop(context);
+                _showComingSoonSnackBar(
+                  context,
+                  'Request money feature coming soon!',
+                );
+              }),
+              _buildMoreOption(Icons.account_balance_wallet, 'Top Up', () {
+                Navigator.pop(context);
+                _showComingSoonSnackBar(context, 'Top up feature coming soon!');
+              }),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -556,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildAnimatedPaymentItem(
                   Icons.tv,
                   'TV',
-                  AppTheme.credOrangeSunshine.withOpacity(0.7),
+                  AppTheme.credOrangeSunshine.withValues(alpha: 0.7),
                   5,
                 ),
                 _buildAnimatedPaymentItem(
@@ -612,11 +623,11 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppTheme.credSurfaceCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppTheme.credMediumGray.withOpacity(0.3),
+                color: AppTheme.credMediumGray.withValues(alpha: 0.3),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -669,53 +680,55 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showMorePaymentOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.credSurfaceCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.credTextTertiary,
-                borderRadius: BorderRadius.circular(2),
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: AppTheme.credSurfaceCard,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.credTextTertiary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'More Payment Options',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.credTextPrimary,
+              const SizedBox(height: 24),
+              const Text(
+                'More Payment Options',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.credTextPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _buildMoreOption(Icons.school, 'Education', () {
-              Navigator.pop(context);
-              _navigateToBillPayment(context, 'Education');
-            }),
-            _buildMoreOption(Icons.local_hospital, 'Healthcare', () {
-              Navigator.pop(context);
-              _navigateToBillPayment(context, 'Healthcare');
-            }),
-            _buildMoreOption(Icons.home, 'Rent', () {
-              Navigator.pop(context);
-              _navigateToBillPayment(context, 'Rent');
-            }),
-            _buildMoreOption(Icons.subscriptions, 'Subscriptions', () {
-              Navigator.pop(context);
-              _navigateToBillPayment(context, 'Subscriptions');
-            }),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 24),
+              _buildMoreOption(Icons.school, 'Education', () {
+                Navigator.pop(context);
+                _navigateToBillPayment(context, 'Education');
+              }),
+              _buildMoreOption(Icons.local_hospital, 'Healthcare', () {
+                Navigator.pop(context);
+                _navigateToBillPayment(context, 'Healthcare');
+              }),
+              _buildMoreOption(Icons.home, 'Rent', () {
+                Navigator.pop(context);
+                _navigateToBillPayment(context, 'Rent');
+              }),
+              _buildMoreOption(Icons.subscriptions, 'Subscriptions', () {
+                Navigator.pop(context);
+                _navigateToBillPayment(context, 'Subscriptions');
+              }),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -738,7 +751,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                  color: AppTheme.credOrangeSunshine.withValues(alpha: 0.4),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
@@ -818,12 +831,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   CredButtonPress(
                     onTap: () {
-                      Navigator.pushNamed(context, '/transactions').then((_) {
-                        context.read<UserBloc>().add(const LoadUserEvent());
-                        context.read<TransactionBloc>().add(
-                          const LoadTransactionsEvent(),
-                        );
-                      });
+                      unawaited(
+                        Navigator.pushNamed(context, '/transactions').then((_) {
+                          if (!context.mounted) return;
+                          context.read<UserBloc>().add(const LoadUserEvent());
+                          context.read<TransactionBloc>().add(
+                            const LoadTransactionsEvent(),
+                          );
+                        }),
+                      );
                     },
                     child: const TextButton(
                       onPressed: null,
@@ -878,7 +894,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: AppTheme.credSurfaceCard,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.credMediumGray.withOpacity(0.2),
+            color: AppTheme.credMediumGray.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -892,7 +908,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 transaction.amount > 0
                             ? AppTheme.credNeoPaccha
                             : AppTheme.credError)
-                        .withOpacity(0.15),
+                        .withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -960,7 +976,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         (transaction.amount < 0
                                 ? AppTheme.credError
                                 : AppTheme.credNeoPaccha)
-                            .withOpacity(0.15),
+                            .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -989,7 +1005,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (difference.inDays == 0) {
       return 'Today, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
-      return 'Yesterday, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+      final minute = date.minute.toString().padLeft(2, '0');
+      return 'Yesterday, ${date.hour}:$minute';
     } else {
       return '${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     }

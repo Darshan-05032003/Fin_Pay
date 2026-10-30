@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AnimatedButton extends StatefulWidget {
-
   const AnimatedButton({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.onPressed,
     this.backgroundColor,
     this.padding,
@@ -32,9 +32,10 @@ class _AnimatedButtonState extends State<AnimatedButton>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -77,7 +78,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
                 ? []
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -89,4 +90,3 @@ class _AnimatedButtonState extends State<AnimatedButton>
     );
   }
 }
-

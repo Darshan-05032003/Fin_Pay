@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/models/user.dart';
 import 'package:fin_pay/services/haptic_service.dart';
@@ -21,14 +22,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
     4,
     (index) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(
-    4,
-    (index) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(4, (index) => FocusNode());
 
   @override
   Widget build(BuildContext context) {
-    final userData = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final userData =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     return Scaffold(
       backgroundColor: AppTheme.credPureBackground,
@@ -45,11 +44,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 color: AppTheme.credSurfaceCard,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.credMediumGray.withOpacity(0.2),
+                  color: AppTheme.credMediumGray.withValues(alpha: 0.2),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.credOrangeSunshine.withOpacity(0.2),
+                    color: AppTheme.credOrangeSunshine.withValues(alpha: 0.2),
                     blurRadius: 24,
                     offset: const Offset(0, 12),
                   ),
@@ -93,9 +92,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       CredButtonPress(
                         onTap: () async {
                           await HapticService.lightImpact();
+                          if (!context.mounted) return;
                           Navigator.pop(context);
                         },
-                        child: const Icon(Icons.close, color: AppTheme.credTextPrimary),
+                        child: const Icon(
+                          Icons.close,
+                          color: AppTheme.credTextPrimary,
+                        ),
                       ),
                     ],
                   ),
@@ -119,7 +122,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     delay: Duration(milliseconds: 400),
                     offset: Offset(0, 10),
                     child: Text(
-                      'Enter the 4-digit verification code sent to your email address.',
+                      'Enter the 4-digit verification code sent to your '
+                      'email address.',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppTheme.credTextSecondary,
@@ -138,7 +142,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           delay: Duration(milliseconds: 600 + (index * 50)),
                           offset: const Offset(0, 20),
                           child: CredCardReveal(
-                            duration: Duration(milliseconds: 400 + (index * 50)),
+                            duration: Duration(
+                              milliseconds: 400 + (index * 50),
+                            ),
                             perspective: 0.0006,
                             child: SizedBox(
                               width: 60,
@@ -147,7 +153,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                   builder: (context) {
                                     final hasFocus = Focus.of(context).hasFocus;
                                     return AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
                                       curve: Curves.easeOutCubic,
                                       decoration: BoxDecoration(
                                         color: AppTheme.credPureBackground,
@@ -155,7 +163,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                         border: Border.all(
                                           color: hasFocus
                                               ? AppTheme.credOrangeSunshine
-                                              : AppTheme.credMediumGray.withOpacity(0.2),
+                                              : AppTheme.credMediumGray
+                                                    .withValues(alpha: 0.2),
                                           width: hasFocus ? 2 : 1,
                                         ),
                                       ),
@@ -177,11 +186,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                           contentPadding: EdgeInsets.all(16),
                                         ),
                                         onChanged: (value) {
-                                          HapticService.selection();
+                                          unawaited(HapticService.selection());
                                           if (value.isNotEmpty && index < 3) {
-                                            _focusNodes[index + 1].requestFocus();
-                                          } else if (value.isEmpty && index > 0) {
-                                            _focusNodes[index - 1].requestFocus();
+                                            _focusNodes[index + 1]
+                                                .requestFocus();
+                                          } else if (value.isEmpty &&
+                                              index > 0) {
+                                            _focusNodes[index - 1]
+                                                .requestFocus();
                                           }
                                         },
                                       ),
@@ -230,9 +242,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         final code = _controllers.map((c) => c.text).join();
                         if (code.length != 4) {
                           await HapticService.error();
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Please enter the complete verification code'),
+                              content: Text(
+                                'Please enter the complete verification code',
+                              ),
                               backgroundColor: AppTheme.credError,
                             ),
                           );
@@ -243,15 +258,23 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                         // Only allow creating account with default credentials
                         if (userData != null) {
-                          final email = userData['email']?.toString().trim().toLowerCase() ?? '';
-                          final password = userData['password']?.toString() ?? '';
-                          
+                          final email =
+                              userData['email']
+                                  ?.toString()
+                                  .trim()
+                                  .toLowerCase() ??
+                              '';
+                          final password =
+                              userData['password']?.toString() ?? '';
+
                           // Check if using default credentials
-                          if (email == UserService.defaultEmail.toLowerCase() && 
+                          if (email == UserService.defaultEmail.toLowerCase() &&
                               password == UserService.defaultPassword) {
                             final user = User(
                               id: 'default_user_001',
-                              fullName: userData['fullName'] ?? UserService.defaultName,
+                              fullName:
+                                  userData['fullName'] as String? ??
+                                  UserService.defaultName,
                               email: UserService.defaultEmail,
                               password: UserService.defaultPassword,
                               balance: 56246.90, // Initial balance
@@ -262,9 +285,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           } else {
                             // Show error - only default credentials allowed
                             await HapticService.error();
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Only default credentials allowed. Use: user@finpay.com / FinPay123'),
+                                content: Text(
+                                  'Only default credentials allowed. Use: user@finpay.com / FinPay123',
+                                ),
                                 backgroundColor: AppTheme.credError,
                                 duration: Duration(seconds: 3),
                               ),
@@ -273,7 +299,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           }
                         }
 
-                        Navigator.pushReplacementNamed(context, '/fingerprint-setup');
+                        if (!context.mounted) return;
+                        Navigator.pushReplacementNamed(
+                          context,
+                          '/fingerprint-setup',
+                        );
                       },
                       child: SpringAnimation(
                         startOffset: const Offset(0, 20),
@@ -283,7 +313,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                                color: AppTheme.credOrangeSunshine.withValues(
+                                  alpha: 0.4,
+                                ),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -325,4 +357,3 @@ class _VerificationScreenState extends State<VerificationScreen> {
     super.dispose();
   }
 }
-

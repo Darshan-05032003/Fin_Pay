@@ -3,9 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class AnimatedGradient extends StatefulWidget {
-
   const AnimatedGradient({
-    required this.child, required this.colors, super.key,
+    required this.child,
+    required this.colors,
+    super.key,
     this.duration = const Duration(seconds: 3),
   });
   final Widget child;
@@ -23,10 +24,8 @@ class _AnimatedGradientState extends State<AnimatedGradient>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    )..repeat(reverse: true);
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..repeat(reverse: true);
   }
 
   @override
@@ -43,14 +42,18 @@ class _AnimatedGradientState extends State<AnimatedGradient>
         return Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft + Alignment(
-                math.sin(_controller.value * 2 * math.pi) * 0.1,
-                math.cos(_controller.value * 2 * math.pi) * 0.1,
-              ),
-              end: Alignment.bottomRight + Alignment(
-                math.cos(_controller.value * 2 * math.pi) * 0.1,
-                math.sin(_controller.value * 2 * math.pi) * 0.1,
-              ),
+              begin:
+                  Alignment.topLeft +
+                  Alignment(
+                    math.sin(_controller.value * 2 * math.pi) * 0.1,
+                    math.cos(_controller.value * 2 * math.pi) * 0.1,
+                  ),
+              end:
+                  Alignment.bottomRight +
+                  Alignment(
+                    math.cos(_controller.value * 2 * math.pi) * 0.1,
+                    math.sin(_controller.value * 2 * math.pi) * 0.1,
+                  ),
               colors: widget.colors,
               stops: [
                 0.0 + _controller.value * 0.1,
@@ -66,4 +69,3 @@ class _AnimatedGradientState extends State<AnimatedGradient>
     );
   }
 }
-

@@ -4,7 +4,6 @@ import 'package:fin_pay/models/user.dart';
 
 /// Use case for user authentication
 class AuthenticateUserUseCase {
-
   AuthenticateUserUseCase(this._userRepository);
   final IUserRepository _userRepository;
 
@@ -16,7 +15,6 @@ class AuthenticateUserUseCase {
     }
 
     // Authenticate
-    return _userRepository.authenticate(email, password);
+    return await _userRepository.authenticate(email, password);
   }
 }
-

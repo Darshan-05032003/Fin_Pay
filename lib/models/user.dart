@@ -1,24 +1,25 @@
 class User {
-
   User({
     required this.id,
     required this.fullName,
     required this.email,
-    required this.password, required this.createdAt, this.phone,
+    required this.password,
+    required this.createdAt,
+    this.phone,
     this.balance = 0.0,
     this.profileImageUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
-      fullName: json['fullName'],
-      email: json['email'],
-      phone: json['phone'],
-      password: json['password'],
-      balance: (json['balance'] ?? 0.0).toDouble(),
-      profileImageUrl: json['profileImageUrl'],
-      createdAt: DateTime.parse(json['createdAt']),
+      id: json['id'] as String,
+      fullName: json['fullName'] as String,
+      email: json['email'] as String,
+      phone: json['phone'] as String?,
+      password: json['password'] as String,
+      balance: (json['balance'] as num? ?? 0.0).toDouble(),
+      profileImageUrl: json['profileImageUrl'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
   final String id;
@@ -65,4 +66,3 @@ class User {
     };
   }
 }
-

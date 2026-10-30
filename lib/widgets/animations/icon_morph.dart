@@ -3,9 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class IconMorph extends StatefulWidget {
-
   const IconMorph({
-    required this.startIcon, required this.endIcon, super.key,
+    required this.startIcon,
+    required this.endIcon,
+    super.key,
     this.duration = const Duration(milliseconds: 500),
     this.color,
     this.size = 24.0,
@@ -30,15 +31,9 @@ class _IconMorphState extends State<IconMorph>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
 
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
   }
 
   @override

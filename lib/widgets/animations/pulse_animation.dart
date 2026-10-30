@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class PulseAnimation extends StatefulWidget {
-
   const PulseAnimation({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.duration = const Duration(seconds: 2),
     this.minScale = 0.95,
     this.maxScale = 1.0,
@@ -25,18 +25,13 @@ class _PulseAnimationState extends State<PulseAnimation>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    )..repeat(reverse: true);
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..repeat(reverse: true);
 
-    _animation = Tween<double>(
-      begin: widget.minScale,
-      end: widget.maxScale,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOutCubic,
-    ));
+    _animation = Tween<double>(begin: widget.minScale, end: widget.maxScale)
+        .animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
+        );
   }
 
   @override
@@ -48,11 +43,7 @@ class _PulseAnimationState extends State<PulseAnimation>
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
-      child: ScaleTransition(
-        scale: _animation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _animation, child: widget.child),
     );
   }
 }
-

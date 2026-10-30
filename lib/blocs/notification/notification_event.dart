@@ -16,7 +16,6 @@ class LoadNotificationsEvent extends NotificationEvent {
 
 /// Event to add a new notification
 class AddNotificationEvent extends NotificationEvent {
-
   const AddNotificationEvent(this.notification);
   final NotificationItem notification;
 
@@ -26,7 +25,6 @@ class AddNotificationEvent extends NotificationEvent {
 
 /// Event to delete a notification
 class DeleteNotificationEvent extends NotificationEvent {
-
   const DeleteNotificationEvent(this.notificationId);
   final String notificationId;
 

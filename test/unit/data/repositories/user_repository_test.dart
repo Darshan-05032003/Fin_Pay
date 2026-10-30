@@ -23,13 +23,14 @@ void main() {
       email: 'test@example.com',
       password: 'password',
       createdAt: DateTime.now(),
-      balance: 100.0,
+      balance: 100,
     );
 
     test('getCurrentUser should return user from local data source', () async {
       // Arrange
-      when(() => mockLocalDataSource.getUser())
-          .thenAnswer((_) async => Success(tUser));
+      when(
+        () => mockLocalDataSource.getUser(),
+      ).thenAnswer((_) async => Success(tUser));
 
       // Act
       final result = await repository.getCurrentUser();
@@ -44,8 +45,9 @@ void main() {
 
     test('saveUser should call saveUser on local data source', () async {
       // Arrange
-      when(() => mockLocalDataSource.saveUser(tUser))
-          .thenAnswer((_) async => const Success(null));
+      when(
+        () => mockLocalDataSource.saveUser(tUser),
+      ).thenAnswer((_) async => const Success(null));
 
       // Act
       final result = await repository.saveUser(tUser);
@@ -57,8 +59,9 @@ void main() {
 
     test('updateUser should call updateUser on local data source', () async {
       // Arrange
-      when(() => mockLocalDataSource.updateUser(tUser))
-          .thenAnswer((_) async => const Success(null));
+      when(
+        () => mockLocalDataSource.updateUser(tUser),
+      ).thenAnswer((_) async => const Success(null));
 
       // Act
       final result = await repository.updateUser(tUser);

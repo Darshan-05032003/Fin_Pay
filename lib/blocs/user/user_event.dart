@@ -16,7 +16,6 @@ class LoadUserEvent extends UserEvent {
 
 /// Event to update user information
 class UpdateUserEvent extends UserEvent {
-
   const UpdateUserEvent(this.user);
   final User user;
 
@@ -26,7 +25,6 @@ class UpdateUserEvent extends UserEvent {
 
 /// Event to update user balance
 class UpdateBalanceEvent extends UserEvent {
-
   const UpdateBalanceEvent(this.newBalance);
   final double newBalance;
 
@@ -36,11 +34,7 @@ class UpdateBalanceEvent extends UserEvent {
 
 /// Event to authenticate user (login)
 class LoginEvent extends UserEvent {
-
-  const LoginEvent({
-    required this.email,
-    required this.password,
-  });
+  const LoginEvent({required this.email, required this.password});
   final String email;
   final String password;
 

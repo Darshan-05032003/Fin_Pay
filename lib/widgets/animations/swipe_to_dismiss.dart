@@ -2,9 +2,10 @@ import 'package:fin_pay/services/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class SwipeToDismiss extends StatefulWidget {
-
   const SwipeToDismiss({
-    required this.child, required this.uniqueKey, super.key,
+    required this.child,
+    required this.uniqueKey,
+    super.key,
     this.onDismiss,
     this.background,
     this.icon,
@@ -37,18 +38,12 @@ class _SwipeToDismissState extends State<SwipeToDismiss>
     _offsetAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: const Offset(1.5, 0),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _opacityAnimation = Tween<double>(
       begin: 1,
       end: 0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -103,4 +98,3 @@ class _SwipeToDismissState extends State<SwipeToDismiss>
     );
   }
 }
-

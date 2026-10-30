@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// CRED-style button press animation with scale and ripple
 class CredButtonPress extends StatefulWidget {
-
   const CredButtonPress({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.onTap,
     this.duration = const Duration(milliseconds: 150),
     this.scaleAmount = 0.96,
@@ -28,18 +28,12 @@ class _CredButtonPressState extends State<CredButtonPress>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
 
     _scaleAnimation = Tween<double>(
       begin: 1,
       end: widget.scaleAmount,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -82,4 +76,3 @@ class _CredButtonPressState extends State<CredButtonPress>
     );
   }
 }
-

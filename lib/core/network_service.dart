@@ -23,7 +23,10 @@ class NetworkService {
     }
   }
 
-  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> post(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('${AppConstants.baseUrl}$endpoint'),
@@ -38,10 +41,7 @@ class NetworkService {
   }
 
   Map<String, String> _getHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
+    return {'Content-Type': 'application/json', 'Accept': 'application/json'};
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
@@ -52,4 +52,3 @@ class NetworkService {
     }
   }
 }
-

@@ -2,9 +2,10 @@ import 'package:fin_pay/services/haptic_service.dart';
 import 'package:flutter/material.dart';
 
 class CustomPullToRefresh extends StatelessWidget {
-
   const CustomPullToRefresh({
-    required this.child, required this.onRefresh, super.key,
+    required this.child,
+    required this.onRefresh,
+    super.key,
     this.backgroundColor,
     this.color,
   });
@@ -20,11 +21,11 @@ class CustomPullToRefresh extends StatelessWidget {
         await HapticService.mediumImpact();
         await onRefresh();
       },
-      backgroundColor: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor:
+          backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
       color: color ?? Theme.of(context).primaryColor,
       strokeWidth: 3,
       child: child,
     );
   }
 }
-

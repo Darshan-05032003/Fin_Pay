@@ -11,8 +11,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGetUserUseCase extends Mock implements GetUserUseCase {}
+
 class MockUpdateUserUseCase extends Mock implements UpdateUserUseCase {}
-class MockAuthenticateUserUseCase extends Mock implements AuthenticateUserUseCase {}
+
+class MockAuthenticateUserUseCase extends Mock
+    implements AuthenticateUserUseCase {}
 
 void main() {
   late UserBloc userBloc;
@@ -32,8 +35,8 @@ void main() {
     );
   });
 
-  tearDown(() {
-    userBloc.close();
+  tearDown(() async {
+    await userBloc.close();
   });
 
   final tUser = User(
@@ -50,23 +53,24 @@ void main() {
     });
 
     blocTest<UserBloc, UserState>(
-      'emits [UserLoading, UserLoaded] when LoadUserEvent is added and user exists',
+      'emits [UserLoading, UserLoaded] when LoadUserEvent is added '
+      'and user exists',
       build: () {
-        when(() => mockGetUserUseCase()).thenAnswer((_) async => Success(tUser));
+        when(
+          () => mockGetUserUseCase(),
+        ).thenAnswer((_) async => Success(tUser));
         return userBloc;
       },
       act: (bloc) => bloc.add(const LoadUserEvent()),
-      expect: () => [
-        const UserLoading(),
-        UserLoaded(tUser),
-      ],
+      expect: () => [const UserLoading(), UserLoaded(tUser)],
     );
 
     blocTest<UserBloc, UserState>(
       'emits [UserLoading, UserError] when LoadUserEvent fails',
       build: () {
-        when(() => mockGetUserUseCase())
-            .thenAnswer((_) async => const Failure('Error loading user'));
+        when(
+          () => mockGetUserUseCase(),
+        ).thenAnswer((_) async => const Failure('Error loading user'));
         return userBloc;
       },
       act: (bloc) => bloc.add(const LoadUserEvent()),
@@ -80,9 +84,7 @@ void main() {
       'emits [UserLoaded] when LogoutEvent is added',
       build: () => userBloc,
       act: (bloc) => bloc.add(const LogoutEvent()),
-      expect: () => [
-        const UserLoaded(null),
-      ],
+      expect: () => [const UserLoaded(null)],
     );
   });
 }

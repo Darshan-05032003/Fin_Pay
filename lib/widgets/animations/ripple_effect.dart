@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 class RippleEffect extends StatefulWidget {
-
   const RippleEffect({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.rippleColor = const Color(0x40000000),
     this.onTap,
     this.borderRadius = 8.0,
@@ -31,10 +32,7 @@ class _RippleEffectState extends State<RippleEffect>
       vsync: this,
     );
 
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
   }
 
   @override
@@ -47,9 +45,11 @@ class _RippleEffectState extends State<RippleEffect>
     setState(() {
       _tapPosition = details.localPosition;
     });
-    _controller.forward().then((_) {
-      _controller.reverse();
-    });
+    unawaited(
+      _controller.forward().then((_) {
+        _controller.reverse();
+      }),
+    );
   }
 
   @override
@@ -75,7 +75,6 @@ class _RippleEffectState extends State<RippleEffect>
 }
 
 class _RipplePainter extends CustomPainter {
-
   _RipplePainter({
     required this.animation,
     required this.tapPosition,
@@ -90,7 +89,7 @@ class _RipplePainter extends CustomPainter {
     if (tapPosition == null) return;
 
     final paint = Paint()
-      ..color = color.withOpacity((1.0 - animation.value) * 0.3)
+      ..color = color.withValues(alpha: (1.0 - animation.value) * 0.3)
       ..style = PaintingStyle.fill;
 
     final radius = animation.value * size.longestSide * 1.5;
@@ -104,4 +103,3 @@ class _RipplePainter extends CustomPainter {
         oldDelegate.tapPosition != tapPosition;
   }
 }
-

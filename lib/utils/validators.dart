@@ -18,10 +18,12 @@ class Validators {
       return 'Password is required';
     }
     if (value.length < AppConstants.minPasswordLength) {
-      return 'Password must be at least ${AppConstants.minPasswordLength} characters';
+      return 'Password must be at least '
+          '${AppConstants.minPasswordLength} characters';
     }
     if (value.length > AppConstants.maxPasswordLength) {
-      return 'Password must be less than ${AppConstants.maxPasswordLength} characters';
+      return 'Password must be less than '
+          '${AppConstants.maxPasswordLength} characters';
     }
     return null;
   }
@@ -64,4 +66,3 @@ class Validators {
     return null;
   }
 }
-

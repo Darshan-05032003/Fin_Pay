@@ -16,7 +16,6 @@ class LoadCardsEvent extends CardEvent {
 
 /// Event to add a new card
 class AddCardEvent extends CardEvent {
-
   const AddCardEvent(this.card);
   final Card card;
 
@@ -26,7 +25,6 @@ class AddCardEvent extends CardEvent {
 
 /// Event to delete a card
 class DeleteCardEvent extends CardEvent {
-
   const DeleteCardEvent(this.cardId);
   final String cardId;
 

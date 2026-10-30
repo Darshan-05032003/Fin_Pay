@@ -3,20 +3,33 @@ import 'package:flutter/material.dart';
 class AppTheme {
   // CRED NeoPOP Color Palette - 100% Authentic (2026)
   // Based on official CRED design system
-  
+
   // Background Layers (Charcoal Dark)
-  static const Color credPureBackground = Color(0xFF0D0D0D); // Deepest base layer
-  static const Color credSurfaceCard = Color(0xFF0F0F0F); // Slightly lighter for floating elements
-  
+  static const Color credPureBackground = Color(
+    0xFF0D0D0D,
+  ); // Deepest base layer
+  static const Color credSurfaceCard = Color(
+    0xFF0F0F0F,
+  ); // Slightly lighter for floating elements
+
   // Text Colors
-  static const Color credPopWhite = Color(0xFFF8F8F8); // Primary text and bright buttons
-  
+  static const Color credPopWhite = Color(
+    0xFFF8F8F8,
+  ); // Primary text and bright buttons
+
   // Brand Accents
-  static const Color credOrangeSunshine = Color(0xFFFF8744); // Primary brand accent (Buttons/Highlights)
-  static const Color credNeonGreen = Color(0xFFE5FE40); // Success states and "Cash" highlights
-  static const Color credNeoPaccha = credNeonGreen; // Alias for backward compatibility
-  static const Color credPinkPong = Color(0xFFFF426F); // Rewards and "Exclusive" sections
-  
+  static const Color credOrangeSunshine = Color(
+    0xFFFF8744,
+  ); // Primary brand accent (Buttons/Highlights)
+  static const Color credNeonGreen = Color(
+    0xFFE5FE40,
+  ); // Success states and "Cash" highlights
+  static const Color credNeoPaccha =
+      credNeonGreen; // Alias for backward compatibility
+  static const Color credPinkPong = Color(
+    0xFFFF426F,
+  ); // Rewards and "Exclusive" sections
+
   // Supporting colors for depth
   static const Color credDarkGray = Color(0xFF1A1A1A);
   static const Color credMediumGray = Color(0xFF2A2A2A);
@@ -25,7 +38,7 @@ class AppTheme {
   static const Color credTextTertiary = Color(0xFF808080);
   static const Color credError = Color(0xFFFF3B5C);
   static const Color credRed = credError; // Alias for backward compatibility
-  
+
   // Legacy colors for backward compatibility
   static const Color credBlack = credPureBackground;
   static const Color credCharcoalBlack = credPureBackground;
@@ -48,61 +61,58 @@ class AppTheme {
   static const Color credPurpleDark = Color(0xFFE66A00);
   static const Color credBlue = Color(0xFF007AFF);
   static const Color darkGreen = credNeonGreen; // Legacy alias
-  
+
   // CRED NeoPOP Gradients
   static const LinearGradient credOrangeGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [credOrangeSunshine, Color(0xFFE66A00)],
   );
-  
+
   static const LinearGradient credNeonGreenGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [credNeonGreen, Color(0xFFB8D600)],
   );
-  
+
   static const LinearGradient credPinkGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [credPinkPong, Color(0xFFCC1A4F)],
   );
-  
+
   static const LinearGradient credCardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [credSurfaceCard, credPureBackground],
   );
-  
+
   static const LinearGradient credCharcoalGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [credPureBackground, credSurfaceCard],
   );
-  
+
   // Legacy gradient for backward compatibility
   static const LinearGradient credPurpleGradient = credOrangeGradient;
   static const LinearGradient credBlackGradient = credCharcoalGradient;
   static const LinearGradient credOrangeSunshineGradient = credOrangeGradient;
-  
+
   // NeoPOP Hard Shadow (45-degree, 8dp depth)
   static List<BoxShadow> neopopHardShadow({
     Color? shadowColor,
     double depth = 8.0,
     bool isPressed = false,
   }) {
-    final color = shadowColor ?? Colors.black.withOpacity(0.5);
+    final color = shadowColor ?? Colors.black.withValues(alpha: 0.5);
     if (isPressed) {
       // Inset shadow when pressed
       return [
         BoxShadow(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           offset: const Offset(2, 2),
         ),
-        BoxShadow(
-          color: color,
-          offset: const Offset(-2, -2),
-        ),
+        BoxShadow(color: color, offset: const Offset(-2, -2)),
       ];
     }
     // Extruded shadow (popping out)
@@ -112,15 +122,15 @@ class AppTheme {
         offset: Offset(depth, depth), // 45-degree hard shadow
       ),
       BoxShadow(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         offset: Offset(-depth * 0.5, -depth * 0.5),
       ),
     ];
   }
-  
+
   // 8px Grid System Helper
   static double grid(double multiplier) => multiplier * 8.0;
-  
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -356,7 +366,7 @@ class AppTheme {
       ),
     );
   }
-  
+
   // Legacy theme getter for backward compatibility
   static ThemeData get theme => lightTheme;
 }

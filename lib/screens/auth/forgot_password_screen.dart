@@ -72,7 +72,9 @@ class ForgotPasswordScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(30),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                              color: AppTheme.credOrangeSunshine.withValues(
+                                alpha: 0.4,
+                              ),
                               blurRadius: 24,
                               offset: const Offset(0, 12),
                             ),
@@ -95,7 +97,8 @@ class ForgotPasswordScreen extends StatelessWidget {
                   icon: Icons.fingerprint,
                   title: 'Biometric Scan',
                   description:
-                      'Use your fingerprint to quickly and securely reset your password.',
+                      'Use your fingerprint to quickly and securely reset '
+                      'your password.',
                   onTap: () async {
                     await HapticService.mediumImpact();
                   },
@@ -120,6 +123,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                 child: CredButtonPress(
                   onTap: () async {
                     await HapticService.lightImpact();
+                    if (!context.mounted) return;
                     Navigator.pop(context);
                   },
                   child: SpringAnimation(
@@ -130,7 +134,9 @@ class ForgotPasswordScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -175,7 +181,7 @@ class ForgotPasswordScreen extends StatelessWidget {
             color: AppTheme.credSurfaceCard,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.credMediumGray.withOpacity(0.2),
+              color: AppTheme.credMediumGray.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -191,7 +197,9 @@ class ForgotPasswordScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                        color: AppTheme.credOrangeSunshine.withValues(
+                          alpha: 0.3,
+                        ),
                         blurRadius: 8,
                       ),
                     ],

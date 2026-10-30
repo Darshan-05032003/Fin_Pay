@@ -44,17 +44,13 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddTransactionUseCase(sl(), sl()));
 
   // Repositories
-  sl.registerLazySingleton<IUserRepository>(
-    () => UserRepositoryImpl(sl()),
-  );
+  sl.registerLazySingleton<IUserRepository>(() => UserRepositoryImpl(sl()));
   sl.registerLazySingleton<ITransactionRepository>(
     () => TransactionRepositoryImpl(sl()),
   );
 
   // Data sources
-  sl.registerLazySingleton<LocalDataSource>(
-    () => LocalDataSourceImpl(sl()),
-  );
+  sl.registerLazySingleton<LocalDataSource>(() => LocalDataSourceImpl(sl()));
 
   // Services
   sl.registerLazySingleton(DatabaseService.new);

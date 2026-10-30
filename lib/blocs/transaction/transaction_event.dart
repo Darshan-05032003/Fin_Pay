@@ -11,7 +11,6 @@ abstract class TransactionEvent extends Equatable {
 
 /// Event to load transactions
 class LoadTransactionsEvent extends TransactionEvent {
-
   const LoadTransactionsEvent({this.limit});
   final int? limit;
 
@@ -21,7 +20,6 @@ class LoadTransactionsEvent extends TransactionEvent {
 
 /// Event to add a new transaction
 class AddTransactionEvent extends TransactionEvent {
-
   const AddTransactionEvent(this.transaction);
   final Transaction transaction;
 
@@ -31,7 +29,6 @@ class AddTransactionEvent extends TransactionEvent {
 
 /// Event to delete a transaction
 class DeleteTransactionEvent extends TransactionEvent {
-
   const DeleteTransactionEvent(this.transactionId);
   final String transactionId;
 

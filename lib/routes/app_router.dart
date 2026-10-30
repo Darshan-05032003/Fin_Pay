@@ -45,17 +45,18 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         return CredPageTransition(
           page: TransferReviewScreen(
-            recipientName: args?['recipientName'] ?? 'Kelvin Habit',
-            recipientAccount: args?['recipientAccount'] ?? '**** 5961',
-            amount: args?['amount'] ?? '420.90',
+            recipientName: args?['recipientName'] as String? ?? 'Kelvin Habit',
+            recipientAccount:
+                args?['recipientAccount'] as String? ?? '**** 5961',
+            amount: args?['amount'] as String? ?? '420.90',
           ),
         );
       case '/transfer-success':
         final args = settings.arguments as Map<String, dynamic>?;
         return CredPageTransition(
           page: TransferSuccessScreen(
-            recipientName: args?['recipientName'] ?? 'Kelvin Habit',
-            amount: args?['amount'] ?? '420.90',
+            recipientName: args?['recipientName'] as String? ?? 'Kelvin Habit',
+            amount: args?['amount'] as String? ?? '420.90',
           ),
         );
       case '/cards':

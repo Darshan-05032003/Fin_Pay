@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/services/haptic_service.dart';
 import 'package:fin_pay/services/user_service.dart';
@@ -33,6 +34,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           icon: const Icon(Icons.close, color: AppTheme.credTextPrimary),
           onPressed: () async {
             await HapticService.lightImpact();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
@@ -60,7 +62,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 delay: Duration(milliseconds: 200),
                 offset: Offset(0, 20),
                 child: Text(
-                  'Create an account to securely manage your money and access essential banking features.',
+                  'Create an account to securely manage your money and '
+                  'access essential banking features.',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppTheme.credTextSecondary,
@@ -86,17 +89,24 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             border: Border.all(
                               color: hasFocus
                                   ? AppTheme.credOrangeSunshine
-                                  : AppTheme.credMediumGray.withOpacity(0.2),
+                                  : AppTheme.credMediumGray.withValues(
+                                      alpha: 0.2,
+                                    ),
                               width: hasFocus ? 2 : 1,
                             ),
                           ),
                           child: TextField(
                             controller: _nameController,
-                            style: const TextStyle(color: AppTheme.credTextPrimary),
+                            style: const TextStyle(
+                              color: AppTheme.credTextPrimary,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Full Name',
                               hintText: 'Full name',
-                              prefixIcon: Icon(Icons.person_outline, color: AppTheme.credTextSecondary),
+                              prefixIcon: Icon(
+                                Icons.person_outline,
+                                color: AppTheme.credTextSecondary,
+                              ),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.all(20),
                             ),
@@ -129,17 +139,24 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 border: Border.all(
                                   color: hasFocus
                                       ? AppTheme.credOrangeSunshine
-                                      : AppTheme.credMediumGray.withOpacity(0.2),
+                                      : AppTheme.credMediumGray.withValues(
+                                          alpha: 0.2,
+                                        ),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
                               child: TextField(
                                 controller: _emailController,
-                                style: const TextStyle(color: AppTheme.credTextPrimary),
+                                style: const TextStyle(
+                                  color: AppTheme.credTextPrimary,
+                                ),
                                 decoration: const InputDecoration(
                                   labelText: 'Email or phone',
                                   hintText: 'user@finpay.com',
-                                  prefixIcon: Icon(Icons.email_outlined, color: AppTheme.credTextSecondary),
+                                  prefixIcon: Icon(
+                                    Icons.email_outlined,
+                                    color: AppTheme.credTextSecondary,
+                                  ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.all(20),
                                 ),
@@ -155,15 +172,23 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.credOrangeSunshine.withOpacity(0.15),
+                            color: AppTheme.credOrangeSunshine.withValues(
+                              alpha: 0.15,
+                            ),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                              color: AppTheme.credOrangeSunshine.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.info_outline, color: AppTheme.credOrangeSunshine, size: 18),
+                              Icon(
+                                Icons.info_outline,
+                                color: AppTheme.credOrangeSunshine,
+                                size: 18,
+                              ),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -202,28 +227,37 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             border: Border.all(
                               color: hasFocus
                                   ? AppTheme.credOrangeSunshine
-                                  : AppTheme.credMediumGray.withOpacity(0.2),
+                                  : AppTheme.credMediumGray.withValues(
+                                      alpha: 0.2,
+                                    ),
                               width: hasFocus ? 2 : 1,
                             ),
                           ),
                           child: TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            style: const TextStyle(color: AppTheme.credTextPrimary),
+                            style: const TextStyle(
+                              color: AppTheme.credTextPrimary,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Password',
                               hintText: 'Enter password',
-                              prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.credTextSecondary),
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: AppTheme.credTextSecondary,
+                              ),
                               suffixIcon: CredButtonPress(
                                 onTap: () {
                                   setState(() {
                                     _obscurePassword = !_obscurePassword;
                                   });
-                                  HapticService.selection();
+                                  unawaited(HapticService.selection());
                                 },
                                 child: IconButton(
                                   icon: Icon(
-                                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                    _obscurePassword
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
                                     color: AppTheme.credTextSecondary,
                                   ),
                                   onPressed: null,
@@ -243,7 +277,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const FadeInAnimation(
                 delay: Duration(milliseconds: 600),
                 child: Text(
-                  "By starting my application, I agree to FinPay's Terms of service and Privacy Policy.",
+                  "By starting my application, I agree to FinPay's Terms "
+                  'of service and Privacy Policy.',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.credTextTertiary,
@@ -260,6 +295,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         _emailController.text.trim().isEmpty ||
                         _passwordController.text.trim().isEmpty) {
                       await HapticService.error();
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Please fill all fields'),
@@ -277,6 +313,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       'password': _passwordController.text.trim(),
                     };
 
+                    if (!context.mounted) return;
                     Navigator.pushNamed(
                       context,
                       '/verification',
@@ -291,7 +328,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.credOrangeSunshine.withOpacity(0.4),
+                            color: AppTheme.credOrangeSunshine.withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -316,7 +355,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
+                  Expanded(
+                    child: Divider(
+                      color: AppTheme.credMediumGray.withValues(alpha: 0.3),
+                    ),
+                  ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
@@ -324,7 +367,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       style: TextStyle(color: AppTheme.credTextTertiary),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppTheme.credMediumGray.withOpacity(0.3))),
+                  Expanded(
+                    child: Divider(
+                      color: AppTheme.credMediumGray.withValues(alpha: 0.3),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -349,6 +396,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   TextButton(
                     onPressed: () async {
                       await HapticService.lightImpact();
+                      if (!context.mounted) return;
                       Navigator.pushReplacementNamed(context, '/login');
                     },
                     child: const Text(
@@ -383,7 +431,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 color: AppTheme.credSurfaceCard,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppTheme.credMediumGray.withOpacity(0.3),
+                  color: AppTheme.credMediumGray.withValues(alpha: 0.3),
                 ),
               ),
               child: Icon(icon, color: color, size: 28),
@@ -402,4 +450,3 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     super.dispose();
   }
 }
-

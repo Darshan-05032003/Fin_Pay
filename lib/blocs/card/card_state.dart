@@ -21,7 +21,6 @@ class CardLoading extends CardState {
 
 /// State when cards are successfully loaded
 class CardLoaded extends CardState {
-
   const CardLoaded(this.cards);
   final List<Card> cards;
 
@@ -31,7 +30,6 @@ class CardLoaded extends CardState {
 
 /// State when an error occurs
 class CardError extends CardState {
-
   const CardError(this.message);
   final String message;
 

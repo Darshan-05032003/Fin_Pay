@@ -21,7 +21,6 @@ class UserLoading extends UserState {
 
 /// State when user data is successfully loaded
 class UserLoaded extends UserState {
-
   const UserLoaded(this.user);
   final User? user;
 
@@ -35,7 +34,6 @@ class UserLoaded extends UserState {
 
 /// State when an error occurs
 class UserError extends UserState {
-
   const UserError(this.message);
   final String message;
 

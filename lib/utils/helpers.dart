@@ -29,15 +29,19 @@ class Helpers {
     final difference = now.difference(date);
 
     if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()} year${(difference.inDays / 365).floor() > 1 ? 's' : ''} ago';
+      final years = (difference.inDays / 365).floor();
+      return '$years year${years > 1 ? 's' : ''} ago';
     } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()} month${(difference.inDays / 30).floor() > 1 ? 's' : ''} ago';
+      final months = (difference.inDays / 30).floor();
+      return '$months month${months > 1 ? 's' : ''} ago';
     } else if (difference.inDays > 0) {
       return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+      final hours = difference.inHours;
+      return '$hours hour${hours > 1 ? 's' : ''} ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+      final minutes = difference.inMinutes;
+      return '$minutes minute${minutes > 1 ? 's' : ''} ago';
     } else {
       return 'Just now';
     }
@@ -64,7 +68,8 @@ class Helpers {
 
   /// Validate phone format
   static bool isValidPhone(String phone) {
-    return RegExp(r'^[0-9]{10}$').hasMatch(phone.replaceAll(RegExp(r'[\s\-\(\)]'), ''));
+    return RegExp(
+      r'^[0-9]{10}$',
+    ).hasMatch(phone.replaceAll(RegExp(r'[\s\-\(\)]'), ''));
   }
 }
-

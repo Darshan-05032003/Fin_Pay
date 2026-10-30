@@ -22,7 +22,7 @@ class DatabaseService {
     final dbPath = await sqflite.getDatabasesPath();
     final path = join(dbPath, 'finpay.db');
 
-    return sqflite.openDatabase(
+    return await sqflite.openDatabase(
       path,
       version: 1,
       onCreate: _onCreate,
@@ -87,11 +87,19 @@ class DatabaseService {
     ''');
 
     // Create indexes for better performance
-    await db.execute('CREATE INDEX idx_transactions_date ON transactions(date)');
-    await db.execute('CREATE INDEX idx_notifications_time ON notifications(time)');
+    await db.execute(
+      'CREATE INDEX idx_transactions_date ON transactions(date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_notifications_time ON notifications(time)',
+    );
   }
 
-  Future<void> _onUpgrade(sqflite.Database db, int oldVersion, int newVersion) async {
+  Future<void> _onUpgrade(
+    sqflite.Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     // Handle database migrations here if needed
   }
 
@@ -130,21 +138,17 @@ class DatabaseService {
   // Card operations
   Future<void> insertCard(card_models.Card card) async {
     final db = await database;
-    await db.insert(
-      'cards',
-      {
-        'id': card.id,
-        'cardNumber': card.cardNumber,
-        'maskedNumber': card.maskedNumber,
-        'cardHolderName': card.cardHolderName,
-        'expireDate': card.expireDate,
-        'cvv': card.cvv,
-        'cardType': card.cardType.toString(),
-        'balance': card.balance,
-        'createdAt': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
-    );
+    await db.insert('cards', {
+      'id': card.id,
+      'cardNumber': card.cardNumber,
+      'maskedNumber': card.maskedNumber,
+      'cardHolderName': card.cardHolderName,
+      'expireDate': card.expireDate,
+      'cvv': card.cvv,
+      'cardType': card.cardType.toString(),
+      'balance': card.balance,
+      'createdAt': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: sqflite.ConflictAlgorithm.replace);
   }
 
   Future<List<card_models.Card>> getCards() async {
@@ -155,16 +159,16 @@ class DatabaseService {
     );
     return maps.map((map) {
       return card_models.Card(
-        id: map['id'],
-        cardNumber: map['cardNumber'],
-        cardHolderName: map['cardHolderName'],
-        expireDate: map['expireDate'],
-        cvv: map['cvv'],
+        id: map['id'] as String,
+        cardNumber: map['cardNumber'] as String,
+        cardHolderName: map['cardHolderName'] as String,
+        expireDate: map['expireDate'] as String,
+        cvv: map['cvv'] as String,
         cardType: card_models.CardType.values.firstWhere(
           (e) => e.toString() == map['cardType'],
           orElse: () => card_models.CardType.visa,
         ),
-        balance: (map['balance'] ?? 0.0).toDouble(),
+        balance: (map['balance'] as num? ?? 0.0).toDouble(),
       );
     }).toList();
   }
@@ -177,23 +181,22 @@ class DatabaseService {
   // Transaction operations
   Future<void> insertTransaction(models.Transaction transaction) async {
     final db = await database;
-    await db.insert(
-      'transactions',
-      {
-        'id': transaction.id,
-        'title': transaction.title,
-        'amount': transaction.amount,
-        'date': transaction.date.toIso8601String(),
-        'type': transaction.type.toString(),
-        'icon': transaction.icon,
-        'recipient': transaction.recipient,
-        'createdAt': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
-    );
+    await db.insert('transactions', {
+      'id': transaction.id,
+      'title': transaction.title,
+      'amount': transaction.amount,
+      'date': transaction.date.toIso8601String(),
+      'type': transaction.type.toString(),
+      'icon': transaction.icon,
+      'recipient': transaction.recipient,
+      'createdAt': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: sqflite.ConflictAlgorithm.replace);
   }
 
-  Future<List<models.Transaction>> getTransactions({int? limit, String? orderBy}) async {
+  Future<List<models.Transaction>> getTransactions({
+    int? limit,
+    String? orderBy,
+  }) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
@@ -202,40 +205,40 @@ class DatabaseService {
     );
     return maps.map((map) {
       return models.Transaction(
-        id: map['id'],
-        title: map['title'],
-        amount: (map['amount'] ?? 0.0).toDouble(),
-        date: DateTime.parse(map['date']),
+        id: map['id'] as String,
+        title: map['title'] as String,
+        amount: (map['amount'] as num? ?? 0.0).toDouble(),
+        date: DateTime.parse(map['date'] as String),
         type: models.TransactionType.values.firstWhere(
           (e) => e.toString() == map['type'],
           orElse: () => models.TransactionType.payment,
         ),
-        icon: map['icon'],
-        recipient: map['recipient'],
+        icon: map['icon'] as String,
+        recipient: map['recipient'] as String?,
       );
     }).toList();
   }
 
   Future<void> deleteTransaction(String transactionId) async {
     final db = await database;
-    await db.delete('transactions', where: 'id = ?', whereArgs: [transactionId]);
+    await db.delete(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [transactionId],
+    );
   }
 
   // Notification operations
   Future<void> insertNotification(NotificationItem notification) async {
     final db = await database;
-    await db.insert(
-      'notifications',
-      {
-        'id': notification.id,
-        'title': notification.title,
-        'message': notification.message,
-        'time': notification.time.toIso8601String(),
-        'type': notification.type.toString(),
-        'createdAt': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
-    );
+    await db.insert('notifications', {
+      'id': notification.id,
+      'title': notification.title,
+      'message': notification.message,
+      'time': notification.time.toIso8601String(),
+      'type': notification.type.toString(),
+      'createdAt': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: sqflite.ConflictAlgorithm.replace);
   }
 
   Future<List<NotificationItem>> getNotifications({int? limit}) async {
@@ -247,10 +250,10 @@ class DatabaseService {
     );
     return maps.map((map) {
       return NotificationItem(
-        id: map['id'],
-        title: map['title'],
-        message: map['message'],
-        time: DateTime.parse(map['time']),
+        id: map['id'] as String,
+        title: map['title'] as String,
+        message: map['message'] as String,
+        time: DateTime.parse(map['time'] as String),
         type: NotificationType.values.firstWhere(
           (e) => e.toString() == map['type'],
           orElse: () => NotificationType.cashback,
@@ -261,7 +264,11 @@ class DatabaseService {
 
   Future<void> deleteNotification(String notificationId) async {
     final db = await database;
-    await db.delete('notifications', where: 'id = ?', whereArgs: [notificationId]);
+    await db.delete(
+      'notifications',
+      where: 'id = ?',
+      whereArgs: [notificationId],
+    );
   }
 
   Future<void> clearAllData() async {
@@ -277,4 +284,3 @@ class DatabaseService {
     await db.close();
   }
 }
-

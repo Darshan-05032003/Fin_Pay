@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/models/transaction.dart';
 import 'package:fin_pay/services/haptic_service.dart';
@@ -26,7 +27,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTransactions();
+    unawaited(_loadTransactions());
   }
 
   Future<void> _loadTransactions() async {
@@ -42,8 +43,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return _transactions;
     }
     return _transactions.where((transaction) {
-      return transaction.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (transaction.recipient?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      return transaction.title.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
+          (transaction.recipient?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ??
+              false);
     }).toList();
   }
 
@@ -57,6 +63,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
             await HapticService.lightImpact();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
@@ -87,7 +94,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 border: Border.all(
                                   color: hasFocus
                                       ? AppTheme.credOrangeSunshine
-                                      : AppTheme.credMediumGray.withOpacity(0.2),
+                                      : AppTheme.credMediumGray.withValues(
+                                          alpha: 0.2,
+                                        ),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
@@ -96,15 +105,25 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   setState(() {
                                     _searchQuery = value;
                                   });
-                                  HapticService.selection();
+                                  unawaited(HapticService.selection());
                                 },
-                                style: const TextStyle(color: AppTheme.credTextPrimary),
+                                style: const TextStyle(
+                                  color: AppTheme.credTextPrimary,
+                                ),
                                 decoration: const InputDecoration(
                                   hintText: 'Search transaction...',
-                                  hintStyle: TextStyle(color: AppTheme.credTextSecondary),
-                                  prefixIcon: Icon(Icons.search, color: AppTheme.credTextSecondary),
+                                  hintStyle: TextStyle(
+                                    color: AppTheme.credTextSecondary,
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.search,
+                                    color: AppTheme.credTextSecondary,
+                                  ),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
                                 ),
                               ),
                             );
@@ -130,10 +149,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             color: AppTheme.credSurfaceCard,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: AppTheme.credMediumGray.withOpacity(0.2),
+                              color: AppTheme.credMediumGray.withValues(
+                                alpha: 0.2,
+                              ),
                             ),
                           ),
-                          child: const Icon(Icons.filter_list, color: AppTheme.credOrangeSunshine, size: 24),
+                          child: const Icon(
+                            Icons.filter_list,
+                            color: AppTheme.credOrangeSunshine,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ),
@@ -155,12 +180,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                                color: AppTheme.credOrangeSunshine.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 8,
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.arrow_drop_down, color: AppTheme.credWhite, size: 24),
+                          child: const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppTheme.credWhite,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ),
@@ -173,64 +204,72 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: _isLoading
                 ? const SkeletonList()
                 : _filteredTransactions.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.receipt_long,
-                              size: 64,
-                              color: AppTheme.credTextSecondary.withOpacity(0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _searchQuery.isEmpty
-                                  ? 'No transactions yet'
-                                  : 'No transactions found',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: AppTheme.credTextSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : CustomPullToRefresh(
-                        onRefresh: _loadTransactions,
-                        child: AnimationLimiter(
-                          child: ListView.builder(
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _filteredTransactions.length,
-                            itemBuilder: (context, index) {
-                              final transaction = _filteredTransactions[index];
-                              return CredSlideIn(
-                                delay: Duration(milliseconds: 300 + (index * 50)),
-                                child: CredCardReveal(
-                                  duration: Duration(milliseconds: 400 + (index * 30)),
-                                  perspective: 0.0006,
-                                  child: SwipeToDismiss(
-                                    uniqueKey: transaction.id,
-                                    onDismiss: () async {
-                                      await HapticService.mediumImpact();
-                                      setState(() {
-                                        _transactions.removeWhere((t) => t.id == transaction.id);
-                                      });
-                                      await UserService.saveTransactions(_transactions);
-                                    },
-                                    child: CredButtonPress(
-                                      onTap: () async {
-                                        await HapticService.lightImpact();
-                                      },
-                                      child: _buildTransactionItem(transaction),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.receipt_long,
+                          size: 64,
+                          color: AppTheme.credTextSecondary.withValues(
+                            alpha: 0.5,
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchQuery.isEmpty
+                              ? 'No transactions yet'
+                              : 'No transactions found',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: AppTheme.credTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : CustomPullToRefresh(
+                    onRefresh: _loadTransactions,
+                    child: AnimationLimiter(
+                      child: ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _filteredTransactions.length,
+                        itemBuilder: (context, index) {
+                          final transaction = _filteredTransactions[index];
+                          return CredSlideIn(
+                            delay: Duration(milliseconds: 300 + (index * 50)),
+                            child: CredCardReveal(
+                              duration: Duration(
+                                milliseconds: 400 + (index * 30),
+                              ),
+                              perspective: 0.0006,
+                              child: SwipeToDismiss(
+                                uniqueKey: transaction.id,
+                                onDismiss: () async {
+                                  await HapticService.mediumImpact();
+                                  setState(() {
+                                    _transactions.removeWhere(
+                                      (t) => t.id == transaction.id,
+                                    );
+                                  });
+                                  await UserService.saveTransactions(
+                                    _transactions,
+                                  );
+                                },
+                                child: CredButtonPress(
+                                  onTap: () async {
+                                    await HapticService.lightImpact();
+                                  },
+                                  child: _buildTransactionItem(transaction),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -250,7 +289,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         color: AppTheme.credSurfaceCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.credMediumGray.withOpacity(0.2),
+          color: AppTheme.credMediumGray.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -259,7 +298,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -308,22 +347,21 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: isPayment ? AppTheme.credError : AppTheme.credNeoPaccha,
+                  color: isPayment
+                      ? AppTheme.credError
+                      : AppTheme.credNeoPaccha,
                 ),
               ),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: tagColor.withOpacity(0.1),
+                  color: tagColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   tagText,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: tagColor,
-                  ),
+                  style: TextStyle(fontSize: 10, color: tagColor),
                 ),
               ),
             ],
@@ -340,7 +378,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     if (difference.inDays == 0) {
       return 'Today, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
-      return 'Yesterday, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+      final minute = date.minute.toString().padLeft(2, '0');
+      return 'Yesterday, ${date.hour}:$minute';
     } else {
       return '${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     }

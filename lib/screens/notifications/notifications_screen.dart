@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/models/notification_item.dart';
 import 'package:fin_pay/services/haptic_service.dart';
@@ -29,17 +30,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    unawaited(_loadNotifications());
   }
 
   Future<void> _loadNotifications() async {
     final notifications = await UserService.getNotifications();
-    
+
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final yesterdayStart = todayStart.subtract(const Duration(days: 1));
 
-    final today = notifications.where((n) => n.time.isAfter(todayStart)).toList();
+    final today = notifications
+        .where((n) => n.time.isAfter(todayStart))
+        .toList();
     final yesterday = notifications.where((n) {
       return n.time.isAfter(yesterdayStart) && n.time.isBefore(todayStart);
     }).toList();
@@ -54,18 +57,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   List<NotificationItem> get _filteredToday {
     if (_searchQuery.isEmpty) return _todayNotifications;
-    return _todayNotifications.where((n) => 
-      n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      n.message.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    return _todayNotifications
+        .where(
+          (n) =>
+              n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              n.message.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
   }
 
   List<NotificationItem> get _filteredYesterday {
     if (_searchQuery.isEmpty) return _yesterdayNotifications;
-    return _yesterdayNotifications.where((n) => 
-      n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      n.message.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    return _yesterdayNotifications
+        .where(
+          (n) =>
+              n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              n.message.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
   }
 
   @override
@@ -78,6 +87,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
             await HapticService.lightImpact();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
@@ -108,7 +118,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 border: Border.all(
                                   color: hasFocus
                                       ? AppTheme.credOrangeSunshine
-                                      : AppTheme.credMediumGray.withOpacity(0.2),
+                                      : AppTheme.credMediumGray.withValues(
+                                          alpha: 0.2,
+                                        ),
                                   width: hasFocus ? 2 : 1,
                                 ),
                               ),
@@ -117,15 +129,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   setState(() {
                                     _searchQuery = value;
                                   });
-                                  HapticService.selection();
+                                  unawaited(HapticService.selection());
                                 },
-                                style: const TextStyle(color: AppTheme.credTextPrimary),
+                                style: const TextStyle(
+                                  color: AppTheme.credTextPrimary,
+                                ),
                                 decoration: const InputDecoration(
                                   hintText: 'Search notifications',
-                                  hintStyle: TextStyle(color: AppTheme.credTextSecondary),
-                                  prefixIcon: Icon(Icons.search, color: AppTheme.credTextSecondary),
+                                  hintStyle: TextStyle(
+                                    color: AppTheme.credTextSecondary,
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.search,
+                                    color: AppTheme.credTextSecondary,
+                                  ),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
                                 ),
                               ),
                             );
@@ -151,12 +173,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withOpacity(0.3),
+                                color: AppTheme.credOrangeSunshine.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 8,
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.filter_list, color: AppTheme.credWhite, size: 24),
+                          child: const Icon(
+                            Icons.filter_list,
+                            color: AppTheme.credWhite,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ),
@@ -169,105 +197,130 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: _isLoading
                 ? const SkeletonList()
                 : _allNotifications.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.notifications_none,
-                              size: 64,
-                              color: AppTheme.credTextSecondary.withOpacity(0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No notifications yet',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppTheme.credTextSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : CustomPullToRefresh(
-                        onRefresh: _loadNotifications,
-                        child: AnimationLimiter(
-                          child: ListView(
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            children: [
-                              if (_filteredToday.isNotEmpty) ...[
-                                CredSlideIn(
-                                  delay: const Duration(milliseconds: 250),
-                                  offset: const Offset(0, 20),
-                                  child: _buildSectionHeader('Today'),
-                                ),
-                                ..._filteredToday.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final notification = entry.value;
-                                  return CredSlideIn(
-                                    delay: Duration(milliseconds: 300 + (index * 50)),
-                                    child: CredCardReveal(
-                                      duration: Duration(milliseconds: 400 + (index * 30)),
-                                      perspective: 0.0006,
-                                      child: SwipeToDismiss(
-                                        uniqueKey: notification.id,
-                                        onDismiss: () async {
-                                          await HapticService.mediumImpact();
-                                          setState(() {
-                                            _allNotifications.removeWhere((n) => n.id == notification.id);
-                                            _todayNotifications.removeWhere((n) => n.id == notification.id);
-                                          });
-                                          await UserService.saveNotifications(_allNotifications);
-                                        },
-                                        child: CredButtonPress(
-                                          onTap: () async {
-                                            await HapticService.lightImpact();
-                                          },
-                                          child: _buildNotificationItem(notification),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                                const SizedBox(height: 24),
-                              ],
-                              if (_filteredYesterday.isNotEmpty) ...[
-                                CredSlideIn(
-                                  delay: Duration(milliseconds: 250 + (_filteredToday.length * 50)),
-                                  offset: const Offset(0, 20),
-                                  child: _buildSectionHeader('Yesterday'),
-                                ),
-                                ..._filteredYesterday.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final notification = entry.value;
-                                  return AnimationConfiguration.staggeredList(
-                                    position: index + _filteredToday.length,
-                                    duration: const Duration(milliseconds: 375),
-                                    child: SlideAnimation(
-                                      verticalOffset: 50,
-                                      child: custom.FadeInAnimation(
-                                        child: SwipeToDismiss(
-                                          uniqueKey: notification.id,
-                                          onDismiss: () async {
-                                            await HapticService.mediumImpact();
-                                            setState(() {
-                                              _allNotifications.removeWhere((n) => n.id == notification.id);
-                                              _yesterdayNotifications.removeWhere((n) => n.id == notification.id);
-                                            });
-                                            await UserService.saveNotifications(_allNotifications);
-                                          },
-                                          child: _buildNotificationItem(notification),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                              ],
-                            ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_none,
+                          size: 64,
+                          color: AppTheme.credTextSecondary.withValues(
+                            alpha: 0.5,
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No notifications yet',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: AppTheme.credTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : CustomPullToRefresh(
+                    onRefresh: _loadNotifications,
+                    child: AnimationLimiter(
+                      child: ListView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        children: [
+                          if (_filteredToday.isNotEmpty) ...[
+                            CredSlideIn(
+                              delay: const Duration(milliseconds: 250),
+                              offset: const Offset(0, 20),
+                              child: _buildSectionHeader('Today'),
+                            ),
+                            ..._filteredToday.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final notification = entry.value;
+                              return CredSlideIn(
+                                delay: Duration(
+                                  milliseconds: 300 + (index * 50),
+                                ),
+                                child: CredCardReveal(
+                                  duration: Duration(
+                                    milliseconds: 400 + (index * 30),
+                                  ),
+                                  perspective: 0.0006,
+                                  child: SwipeToDismiss(
+                                    uniqueKey: notification.id,
+                                    onDismiss: () async {
+                                      await HapticService.mediumImpact();
+                                      setState(() {
+                                        _allNotifications.removeWhere(
+                                          (n) => n.id == notification.id,
+                                        );
+                                        _todayNotifications.removeWhere(
+                                          (n) => n.id == notification.id,
+                                        );
+                                      });
+                                      await UserService.saveNotifications(
+                                        _allNotifications,
+                                      );
+                                    },
+                                    child: CredButtonPress(
+                                      onTap: () async {
+                                        await HapticService.lightImpact();
+                                      },
+                                      child: _buildNotificationItem(
+                                        notification,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                            const SizedBox(height: 24),
+                          ],
+                          if (_filteredYesterday.isNotEmpty) ...[
+                            CredSlideIn(
+                              delay: Duration(
+                                milliseconds:
+                                    250 + (_filteredToday.length * 50),
+                              ),
+                              offset: const Offset(0, 20),
+                              child: _buildSectionHeader('Yesterday'),
+                            ),
+                            ..._filteredYesterday.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final notification = entry.value;
+                              return AnimationConfiguration.staggeredList(
+                                position: index + _filteredToday.length,
+                                duration: const Duration(milliseconds: 375),
+                                child: SlideAnimation(
+                                  verticalOffset: 50,
+                                  child: custom.FadeInAnimation(
+                                    child: SwipeToDismiss(
+                                      uniqueKey: notification.id,
+                                      onDismiss: () async {
+                                        await HapticService.mediumImpact();
+                                        setState(() {
+                                          _allNotifications.removeWhere(
+                                            (n) => n.id == notification.id,
+                                          );
+                                          _yesterdayNotifications.removeWhere(
+                                            (n) => n.id == notification.id,
+                                          );
+                                        });
+                                        await UserService.saveNotifications(
+                                          _allNotifications,
+                                        );
+                                      },
+                                      child: _buildNotificationItem(
+                                        notification,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ],
                       ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -320,7 +373,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: iconColor, size: 24),

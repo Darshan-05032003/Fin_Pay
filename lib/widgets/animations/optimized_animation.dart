@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// Optimized animation widget that uses RepaintBoundary for better performance
 class OptimizedAnimation extends StatelessWidget {
-
   const OptimizedAnimation({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.duration = const Duration(milliseconds: 300),
     this.curve = Curves.easeOutCubic,
     this.useRepaintBoundary = true,
@@ -23,10 +23,7 @@ class OptimizedAnimation extends StatelessWidget {
       builder: (context, value, child) {
         return Opacity(
           opacity: value,
-          child: Transform.scale(
-            scale: 0.95 + (0.05 * value),
-            child: child,
-          ),
+          child: Transform.scale(scale: 0.95 + (0.05 * value), child: child),
         );
       },
       child: child,
@@ -42,9 +39,10 @@ class OptimizedAnimation extends StatelessWidget {
 
 /// Optimized list animation with lazy loading
 class OptimizedListAnimation extends StatelessWidget {
-
   const OptimizedListAnimation({
-    required this.child, required this.index, super.key,
+    required this.child,
+    required this.index,
+    super.key,
     this.duration = const Duration(milliseconds: 300),
     this.curve = Curves.easeOutCubic,
   });
@@ -75,9 +73,9 @@ class OptimizedListAnimation extends StatelessWidget {
 
 /// Performance-optimized fade animation
 class OptimizedFadeIn extends StatelessWidget {
-
   const OptimizedFadeIn({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.delay = Duration.zero,
     this.duration = const Duration(milliseconds: 300),
   });
@@ -88,7 +86,7 @@ class OptimizedFadeIn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: Future.delayed(delay),
+      future: Future<void>.delayed(delay),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Opacity(opacity: 0, child: child);
@@ -98,10 +96,7 @@ class OptimizedFadeIn extends StatelessWidget {
           duration: duration,
           curve: Curves.easeOut,
           builder: (context, value, child) {
-            return Opacity(
-              opacity: value,
-              child: child,
-            );
+            return Opacity(opacity: value, child: child);
           },
           child: RepaintBoundary(child: child),
         );
@@ -109,4 +104,3 @@ class OptimizedFadeIn extends StatelessWidget {
     );
   }
 }
-

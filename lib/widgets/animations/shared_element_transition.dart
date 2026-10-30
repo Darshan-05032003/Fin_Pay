@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class SharedElementTransition extends StatelessWidget {
-
   const SharedElementTransition({
-    required this.child, required this.tag, super.key,
+    required this.child,
+    required this.tag,
+    super.key,
     this.duration = const Duration(milliseconds: 400),
   });
   final Widget child;
@@ -15,21 +16,18 @@ class SharedElementTransition extends StatelessWidget {
     return Hero(
       tag: tag,
       transitionOnUserGestures: true,
-      flightShuttleBuilder: (
-        BuildContext flightContext,
-        Animation<double> animation,
-        HeroFlightDirection flightDirection,
-        BuildContext fromHeroContext,
-        BuildContext toHeroContext,
-      ) {
-        final toHero = toHeroContext.widget as Hero;
-        return RotationTransition(
-          turns: animation,
-          child: toHero.child,
-        );
-      },
+      flightShuttleBuilder:
+          (
+            flightContext,
+            animation,
+            flightDirection,
+            fromHeroContext,
+            toHeroContext,
+          ) {
+            final toHero = toHeroContext.widget as Hero;
+            return RotationTransition(turns: animation, child: toHero.child);
+          },
       child: child,
     );
   }
 }
-

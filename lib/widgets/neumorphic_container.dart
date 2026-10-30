@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 /// Neumorphic container widget that creates 3D shadow effects
 /// Supports both extruded (popping out) and inset (pressed in) styles
 class NeumorphicContainer extends StatelessWidget {
-
   const NeumorphicContainer({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.isExtruded = true,
     this.borderRadius = 20.0,
     this.color,
@@ -28,11 +28,11 @@ class NeumorphicContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final baseColor = color ?? AppTheme.credSurfaceCard;
     final lightShadow = isExtruded
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.3);
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.black.withValues(alpha: 0.3);
     final darkShadow = isExtruded
-        ? Colors.black.withOpacity(0.5)
-        : Colors.white.withOpacity(0.02);
+        ? Colors.black.withValues(alpha: 0.5)
+        : Colors.white.withValues(alpha: 0.02);
 
     return Container(
       margin: margin,
@@ -64,9 +64,9 @@ class NeumorphicContainer extends StatelessWidget {
 
 /// Neumorphic button with press animation
 class NeumorphicButton extends StatefulWidget {
-
   const NeumorphicButton({
-    required this.child, super.key,
+    required this.child,
+    super.key,
     this.onPressed,
     this.borderRadius = 16.0,
     this.color,
@@ -97,9 +97,10 @@ class _NeumorphicButtonState extends State<NeumorphicButton>
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -144,4 +145,3 @@ class _NeumorphicButtonState extends State<NeumorphicButton>
     );
   }
 }
-

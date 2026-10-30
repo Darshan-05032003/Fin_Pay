@@ -1,5 +1,4 @@
 class Transaction {
-
   Transaction({
     required this.id,
     required this.title,
@@ -18,10 +17,4 @@ class Transaction {
   final String? recipient;
 }
 
-enum TransactionType {
-  payment,
-  sendMoney,
-  receiveMoney,
-  topUp,
-}
-
+enum TransactionType { payment, sendMoney, receiveMoney, topUp }

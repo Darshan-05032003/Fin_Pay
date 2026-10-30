@@ -12,4 +12,3 @@ class RouteGuard {
     return isAuth ? '/home' : '/';
   }
 }
-

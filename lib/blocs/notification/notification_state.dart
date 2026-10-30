@@ -21,7 +21,6 @@ class NotificationLoading extends NotificationState {
 
 /// State when notifications are successfully loaded
 class NotificationLoaded extends NotificationState {
-
   const NotificationLoaded(this.notifications);
   final List<NotificationItem> notifications;
 
@@ -33,7 +32,6 @@ class NotificationLoaded extends NotificationState {
 
 /// State when an error occurs
 class NotificationError extends NotificationState {
-
   const NotificationError(this.message);
   final String message;
 
