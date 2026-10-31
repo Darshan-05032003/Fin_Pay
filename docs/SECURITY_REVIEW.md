@@ -295,5 +295,5 @@ One entry per feature, appended after the feature's quality loop (spec §7a).
 - Fixed now: all of the above.
 - Scope for improvement:
   - SQLCipher for data at rest and a keystore-backed biometric sign-in remain open from F1/F3.
-  - Run the integration flows on a device with `adb shell dumpsys window` to confirm `FLAG_SECURE` on the shell tabs under the new window themes (not run: no device).
+  - `FLAG_SECURE` was confirmed on a moto g64 5G (Android 15) after the merge, by the strongest test available: an `adb shell screenrecord` of the integration flows shows the welcome and onboarding screens and turns black the moment the app is signed in — home, cards, transfer, review, success, statistics, transactions and profile all record as black frames under the new window themes. (The README recordings therefore boot the app with a faked `ScreenProtector` through `DiOverrides`, test-side only.)
   - A release-build smoke test (`flutter build apk --release --obfuscate --split-debug-info`) by the orchestrator confirms the gallery redirect and the silent logger in release.

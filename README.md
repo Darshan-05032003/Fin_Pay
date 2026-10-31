@@ -79,23 +79,21 @@ system at 1.0× text scale.
 
 ![Design-system gallery](docs/images/gallery_1_0.png)
 
-Motion does not survive a screenshot. The table lists the recordings to
-capture on a phone (names and instructions in
-[`docs/images/README.md`](docs/images/README.md)); each cell becomes a GIF
-once recorded.
+Motion does not survive a screenshot, so the flows below were recorded on a
+moto g64 5G (profile build, `adb shell screenrecord`, driven by
+`integration_test/recording_test.dart`; see
+[`docs/images/README.md`](docs/images/README.md)). Each GIF is 360 px wide
+and loops.
 
-| Recording | Flow |
-|---|---|
-| `onboarding.gif` | Welcome wordmark, spring CTAs, parallax onboarding |
-| `login.gif` | Validation shake, spinner morph, fade-through to home |
-| `home_header.gif` | Balance odometer, collapsing header, hide balance |
-| `card_stack.gif` | Fan-out, carousel, tilt + sheen, flip, CVV reveal |
-| `add_card.gif` | Live preview with the BIN cross-fade, validation |
-| `swipe_to_pay.gif` | Keypad, review sheet, swipe-to-pay, success |
-| `payment_failure.gif` | Decline, shake, retry, "already paid" on timeout |
-| `statistics.gif` | Growing bars, drawing line, sweeping donut, switcher |
-| `transactions.gif` | Sticky headers, search, filters, swipe + undo |
-| `profile.gif` | Parallax header, toggles, logout sheet |
+| Welcome → onboarding | Login | Home header |
+|:---:|:---:|:---:|
+| ![Welcome wordmark, spring CTAs, parallax onboarding](docs/images/onboarding.gif) | ![Validation shake, spinner morph, fade-through to home](docs/images/login.gif) | ![Balance odometer, collapsing header, hide balance](docs/images/home_header.gif) |
+| **Add card** | **Card stack** | **Swipe to pay** |
+| ![Live preview with the BIN cross-fade, validation](docs/images/add_card.gif) | ![Fan-out, carousel, flip, CVV reveal](docs/images/card_stack.gif) | ![Keypad, review sheet, snap-back, swipe-to-pay, success](docs/images/swipe_to_pay.gif) |
+| **Payment failure** | **Statistics** | **Transactions** |
+| ![Timeout, drawn cross, shake, retry, already paid](docs/images/payment_failure.gif) | ![Growing bars, drawing line, sweeping donut, switcher](docs/images/statistics.gif) | ![Sticky headers, search, filters, swipe + undo](docs/images/transactions.gif) |
+| **Profile** | | |
+| ![Parallax header, NeoPOP toggles, logout sheet](docs/images/profile.gif) | | |
 
 ## Design system and motion
 

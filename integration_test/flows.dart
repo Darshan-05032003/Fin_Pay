@@ -31,7 +31,14 @@ const Duration stepTimeout = Duration(seconds: 20);
 /// Boots the app the way `main()` does, minus the native splash plugin and
 /// the orientation lock (both are platform calls that the test does not
 /// need), and pumps the first frame.
-Future<void> launchApp(WidgetTester tester) async {
+///
+/// [overrides] swaps platform services for fakes; the README recording run
+/// fakes the screen protector because `FLAG_SECURE` (correctly) blacks out
+/// `screenrecord` on every signed-in screen.
+Future<void> launchApp(
+  WidgetTester tester, {
+  di.DiOverrides overrides = const di.DiOverrides(),
+}) async {
   // The integration binding does not register the mock keyboard
   // (`registerTestTextInput` is false), so `enterText` sends client id -1,
   // which `TextInput` accepts only inside an `assert`: typing works in
@@ -40,7 +47,7 @@ Future<void> launchApp(WidgetTester tester) async {
   // keeps the real IME (and its layout shifts) out of the run.
   tester.binding.testTextInput.register();
   await di.reset();
-  await di.init();
+  await di.init(overrides: overrides);
   await di.sl<AuthRepository>().ensureDemoAccount();
   await di.sl<SettingsCubit>().load();
   await di.sl<SessionCubit>().restore();
@@ -256,9 +263,9 @@ Future<void> startTransfer(
 /// A Luhn-valid 16-digit Visa-range test number that differs per call (the
 /// app refuses a duplicate last-four + expiry, so re-running on the same
 /// install must not reuse a number), formatted 4-4-4-4.
-String freshTestPan() {
+String freshTestPan({String prefix = '4'}) {
   final stamp = DateTime.now().microsecondsSinceEpoch.toString();
-  final body = '4${stamp.padLeft(14, '0')}'.substring(0, 15);
+  final body = '$prefix${stamp.padLeft(14, '0')}'.substring(0, 15);
   var sum = 0;
   for (var i = 0; i < body.length; i++) {
     var d = int.parse(body[body.length - 1 - i]);
