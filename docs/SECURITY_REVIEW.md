@@ -252,3 +252,30 @@ One entry per feature, appended after the feature's quality loop (spec §7a).
   - The receipt is copied as text; a system share sheet (`share_plus`) would use the same `shareText()`.
   - The note is not persisted (D-058); when a column is added it must be sanitised again on read.
   - `filterTouchesWhenObscured` (F4) covers the slider on Android; it is still unverified on a device build.
+
+## Feature: F6 Insights + Activity
+- Attacks tried:
+  - Search injection and hostile strings through `searchTransactions`: `' OR 1=1 --`, `'; DROP TABLE transactions; --`, NUL, `\u202E` bidi override, Arabic, 1,000 emoji, 100,000 `x`, `%`, `_` and `\` (LIKE metacharacters) against the real ffi database with 120 rows (`sqflite_local_datasource_test.dart` "search is parameterised"), through the cubit (`transactions_cubit_test.dart` "hostile strings") and through the real screen (`transactions_screen_test.dart` "hostile search strings"); the row count is asserted unchanged afterwards.
+  - Negative, zero and huge `limit`/`offset` on `getTransactions` and `searchTransactions` (`limit: -1`, `0`, `offset: -50`, `1 << 40`).
+  - Deleted-row undo replay: undo tapped twice, undo after the toast expired, undo after the filter changed, delete of an unknown or already pending id, 1,000 dismiss + undo cycles on the notifications screen with the repository mocks counting writes (cubit, bloc, widget and stress tests).
+  - Settings tampering: a failing settings save (`InMemorySettingsRepository.failing`) during a toggle; persisted values reflected on open; the F1 `SharedPreferencesSettingsRepository.load` fallback to defaults on a corrupt store (existing tests).
+  - Logout: confirm → `SessionCubit.signOut` once (three rapid confirms, a throwing repository, a closed cubit), then `/profile` and `/transactions` requested directly while signed out (`profile_screen_test.dart` "protected routes stay closed").
+  - `FakeScreenProtector` asserted enabled on `/transactions` and on the Stats tab (totals), disabled on Profile.
+  - Log hygiene: a static scan of the four screen folders and `fp_swipe_action_row.dart` for `print`/`debugPrint`/`Logger`/`developer.log`/`Clipboard` (`insights_log_hygiene_test.dart`); `toString()` of `TransactionsState`, `StatsState` and `StatsSummary` asserted free of amounts, titles and queries.
+  - Hide-balance respected in the transactions rows and detail sheet, the statistics totals, tooltips, chart descriptions and merchants; the counterparty in the detail sheet is masked (`P••••••••••••n`).
+  - Int64 bounds: a spend of `Money.max − 1` plus another row through `StatsMath` (throws `MoneyOverflowException`) and through `StatsCubit` (error state, no crash).
+  - Semantics guidelines (`androidTapTargetGuideline`, `labeledTapTargetGuideline`, `textContrastGuideline`) at 1.3× on all four screens; custom semantics actions on the swipe row performed without a gesture.
+- What broke:
+  - **Medium** – a 100,000-character search reached SQLite as a `LIKE` pattern and failed with "pattern too complex" (SQLite's 50,000-byte limit), so a pasted blob turned the screen into a storage error. Fixed: the data source bounds the query to 200 characters before building the pattern and the cubit bounds it too (D-068). Regression: "search is parameterised" (100,000-character prefix still matches as data), cubit "bounded to 200 characters".
+  - **Medium** (legacy) – the old transactions and notifications screens persisted deletions with `UserService.saveTransactions/saveNotifications`, which deleted *every stored row not in the screen's in-memory list*; a stale or partially loaded list would have wiped rows. Gone with `UserService`: deletes are per id through the cubit/bloc (D-063, D-064).
+  - **Low** – a negative `limit` was handed to SQLite, which reads `LIMIT -1` as "unlimited" (a caller bug would dump the whole ledger); a negative `offset` was silently zero. Fixed: both normalised to zero rows / no skip, `limit: 0` returns nothing (D-068). Regression: "negative limit or offset never means everything".
+  - **Low** – `NotificationBloc._onAdd` prepended unconditionally, so an undo replayed twice (two toasts, a double tap) duplicated the row in the state while storage kept one. Fixed: de-duplicate by id and insert in storage order. Regression: "add keeps newest-first order and never duplicates an id".
+  - **Low** – the Stats tab was not under `FLAG_SECURE` (the F4 shell protected Home and Cards only) although it shows period totals. Fixed: `AppShell.protectedTabs` includes it; the shell test asserts it.
+  - Nothing Critical or High: every query is parameterised (`whereArgs`), the undo paths are idempotent at the storage level (`idempotencyKey` unique index; notification `REPLACE` by id), logout clears the session through the one repository and the redirect is driven by the session stream, and no amount, title, counterparty or query reaches a log or `toString`.
+- Fixed now: all of the above, each with the regression test named.
+- Scope for improvement:
+  - Keyset paging for ledgers past ~400k rows (D-061); `OFFSET 99,950` costs 30 ms today.
+  - A biometric-availability check before offering the "Biometric sign-in" toggle (today it stores the preference only, as in F3).
+  - SQLCipher for data at rest (F1 open item) would also cover the notification texts.
+  - Only one swipe row open at a time (D-065) would stop two open trays from stacking "Delete" buttons on screen.
+

@@ -37,10 +37,22 @@ abstract interface class LocalDataSource {
   Future<Result<void>> deleteCard(String cardId);
 
   // Transactions
-  Future<Result<List<Transaction>>> getTransactions({int? limit, int? offset});
+
+  /// Newest first; optionally paged and restricted to one [type]. A
+  /// negative [limit]/[offset] is treated as zero (never as "no limit").
+  Future<Result<List<Transaction>>> getTransactions({
+    int? limit,
+    int? offset,
+    TransactionType? type,
+  });
+
+  /// Case-insensitive `LIKE` over title and recipient (parameterised;
+  /// `%`, `_` and `\` in [query] are escaped), optionally restricted to
+  /// one [type]. Capped at [limit] rows.
   Future<Result<List<Transaction>>> searchTransactions(
     String query, {
     int limit = 50,
+    TransactionType? type,
   });
   Future<Result<List<Transaction>>> getTransactionsBetween(
     DateTime from,
@@ -64,6 +76,9 @@ abstract interface class LocalDataSource {
   Future<Result<List<NotificationItem>>> getNotifications({int? limit});
   Future<Result<void>> saveNotification(NotificationItem notification);
   Future<Result<void>> deleteNotification(String notificationId);
+
+  /// Flags the given notifications as read (unknown ids are ignored).
+  Future<Result<void>> markNotificationsRead(List<String> ids);
 
   /// Removes every row from every table (logout / reset).
   Future<Result<void>> clearAll();

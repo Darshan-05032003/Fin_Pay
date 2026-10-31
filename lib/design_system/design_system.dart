@@ -17,6 +17,7 @@ export 'components/fp_segmented_control.dart';
 export 'components/fp_skeleton.dart';
 export 'components/fp_state_views.dart';
 export 'components/fp_surface.dart';
+export 'components/fp_swipe_action_row.dart';
 export 'components/fp_swipe_to_pay.dart';
 export 'components/fp_text_field.dart';
 export 'components/fp_toast.dart';

@@ -17,6 +17,7 @@ import 'package:fin_pay/domain/payments/payment_gateway.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
 import 'package:fin_pay/domain/repositories/card_repository.dart';
 import 'package:fin_pay/domain/repositories/contact_repository.dart';
+import 'package:fin_pay/domain/repositories/notification_repository.dart';
 import 'package:fin_pay/domain/repositories/transaction_repository.dart';
 import 'package:fin_pay/domain/repositories/user_repository.dart';
 import 'package:fin_pay/models/user.dart';
@@ -74,6 +75,7 @@ class ScreenHarness {
     ITransactionRepository? transactionRepository,
     IUserRepository? userRepository,
     IContactRepository? contactRepository,
+    INotificationRepository? notificationRepository,
     PaymentGateway? paymentGateway,
     FakeMotionSensor? motionSensor,
   }) async {
@@ -125,6 +127,7 @@ class ScreenHarness {
         transactionRepository: transactionRepository,
         userRepository: userRepository,
         contactRepository: contactRepository,
+        notificationRepository: notificationRepository,
         paymentGateway: paymentGateway,
       ),
     );
@@ -174,7 +177,7 @@ class ScreenHarness {
         providers: [
           BlocProvider<SessionCubit>.value(value: session),
           BlocProvider<SettingsCubit>.value(value: settings),
-          // The legacy home screen (where several flows end) needs these.
+          // The app-wide blocs every tab and root route reads.
           BlocProvider(create: (_) => di.sl<UserBloc>()),
           BlocProvider(create: (_) => di.sl<TransactionBloc>()),
           BlocProvider(create: (_) => di.sl<CardBloc>()),
@@ -222,10 +225,10 @@ class ScreenHarness {
   Future<void> dispose(WidgetTester tester) async {
     if (_disposed) return;
     _disposed = true;
-    // Flush submit-guard timers, the legacy screens' delayed entrances and
-    // sqflite's 10 s lock-warning timer before unmounting, so no timer is
-    // pending when the test ends.
-    await tester.pump(const Duration(seconds: 11));
+    // Flush submit-guard timers, toasts and entrances before unmounting, so
+    // no timer is pending when the test ends (the F3 value; the 11 s the
+    // legacy stats/profile tabs needed went with them in F6).
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpWidget(const SizedBox());
     router?.dispose();
     router = null;

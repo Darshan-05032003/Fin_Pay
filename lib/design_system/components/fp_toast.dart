@@ -14,6 +14,10 @@ class FpToastHandle {
 
   final Completer<void> _closed = Completer<void>();
   VoidCallback? _dismiss;
+  bool _actionTaken = false;
+
+  /// True once the action button was tapped (before [closed] completes).
+  bool get actionTaken => _actionTaken;
 
   /// Completes when the toast has left the screen.
   Future<void> get closed => _closed.future;
@@ -38,6 +42,8 @@ class FpToast {
     required String message,
     FpToastKind kind = FpToastKind.info,
     Duration duration = defaultDuration,
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     _current?.dismiss();
     final overlay = Overlay.of(context, rootOverlay: true);
@@ -48,6 +54,8 @@ class FpToast {
         message: message,
         kind: kind,
         duration: duration,
+        actionLabel: actionLabel,
+        onAction: onAction,
         handle: handle,
         onClosed: () {
           if (entry.mounted) entry.remove();
@@ -72,6 +80,8 @@ class _FpToastView extends StatefulWidget {
     required this.duration,
     required this.handle,
     required this.onClosed,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String message;
@@ -79,6 +89,11 @@ class _FpToastView extends StatefulWidget {
   final Duration duration;
   final FpToastHandle handle;
   final VoidCallback onClosed;
+
+  /// Optional action (e.g. "Undo"); tapping it runs [onAction] once and
+  /// closes the toast.
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   State<_FpToastView> createState() => _FpToastViewState();
@@ -99,6 +114,18 @@ class _FpToastViewState extends State<_FpToastView>
   Timer? _timer;
   bool _closing = false;
   bool _started = false;
+  bool _actionFired = false;
+
+  /// True when the toast's action was used before it closed.
+  bool get actionFired => _actionFired;
+
+  void _runAction() {
+    if (_actionFired || _closing) return;
+    _actionFired = true;
+    widget.handle._actionTaken = true;
+    widget.onAction?.call();
+    _close();
+  }
 
   @override
   void initState() {
@@ -157,6 +184,7 @@ class _FpToastViewState extends State<_FpToastView>
       FpToastKind.info => (c.info, Icons.info_outline, 'Info'),
     };
     final curved = _curved;
+    final actionLabel = widget.actionLabel;
     Widget card = Material(
       type: MaterialType.transparency,
       child: Semantics(
@@ -164,7 +192,9 @@ class _FpToastViewState extends State<_FpToastView>
         label: '$role: ${widget.message}',
         button: true,
         onTap: _close,
+        explicitChildNodes: actionLabel != null,
         child: ExcludeSemantics(
+          excluding: actionLabel == null,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _close,
@@ -187,16 +217,22 @@ class _FpToastViewState extends State<_FpToastView>
               ),
               child: Row(
                 children: [
-                  Icon(icon, color: accent, size: 20),
+                  ExcludeSemantics(child: Icon(icon, color: accent, size: 20)),
                   const SizedBox(width: FpSpacing.md),
                   Expanded(
-                    child: Text(
-                      widget.message,
-                      style: fp.text.body,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                    child: ExcludeSemantics(
+                      child: Text(
+                        widget.message,
+                        style: fp.text.body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
+                  if (actionLabel != null) ...[
+                    const SizedBox(width: FpSpacing.sm),
+                    _ToastAction(label: actionLabel, onPressed: _runAction),
+                  ],
                 ],
               ),
             ),
@@ -222,6 +258,47 @@ class _FpToastViewState extends State<_FpToastView>
         child: Padding(
           padding: const EdgeInsets.all(FpSpacing.lg),
           child: RepaintBoundary(child: card),
+        ),
+      ),
+    );
+  }
+}
+
+/// The toast's action button: pop-white label, ≥ 48 dp target.
+class _ToastAction extends StatelessWidget {
+  const _ToastAction({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    return Semantics(
+      button: true,
+      label: label,
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          key: const ValueKey('fp-toast-action'),
+          behavior: HitTestBehavior.opaque,
+          onTap: onPressed,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: FpSpacing.minTapTarget,
+              minHeight: FpSpacing.minTapTarget,
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: FpSpacing.sm),
+                child: Text(
+                  label.toUpperCase(),
+                  style: fp.text.label.copyWith(color: c.success),
+                  maxLines: 1,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

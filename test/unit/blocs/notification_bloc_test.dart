@@ -105,6 +105,109 @@ void main() {
   );
 
   blocTest<NotificationBloc, NotificationState>(
+    'add keeps newest-first order and never duplicates an id (undo replay)',
+    build: () {
+      when(
+        () => repo.addNotification(any()),
+      ).thenAnswer((_) async => const Success(null));
+      return build();
+    },
+    seed: () => NotificationContent([
+      n1.copyWith(id: 'new', time: DateTime.utc(2026, 3)),
+      n1.copyWith(id: 'old'),
+    ]),
+    act: (b) {
+      final mid = n1.copyWith(id: 'mid', time: DateTime.utc(2026, 2));
+      b
+        ..add(AddNotificationEvent(mid))
+        ..add(AddNotificationEvent(mid));
+    },
+    // The replay produces an identical state, which the bloc de-duplicates.
+    expect: () => [
+      isA<NotificationContent>().having(
+        (s) => s.notifications.map((n) => n.id).toList(),
+        'ids',
+        ['new', 'mid', 'old'],
+      ),
+    ],
+    verify: (_) => verify(() => repo.addNotification(any())).called(2),
+  );
+
+  blocTest<NotificationBloc, NotificationState>(
+    'mark one read persists only unread ids and flips the item',
+    build: () {
+      when(
+        () => repo.markRead(any()),
+      ).thenAnswer((_) async => const Success(null));
+      return build();
+    },
+    seed: () => NotificationContent([n1, n2]),
+    act: (b) => b
+      ..add(const MarkNotificationReadEvent('n1'))
+      ..add(const MarkNotificationReadEvent('n1'))
+      ..add(const MarkNotificationReadEvent('n2'))
+      ..add(const MarkNotificationReadEvent('ghost')),
+    expect: () => [
+      NotificationContent([n1.copyWith(isRead: true), n2]),
+    ],
+    verify: (b) {
+      verify(() => repo.markRead(['n1'])).called(1);
+      verifyNoMoreInteractions(repo);
+      expect((b.state as NotificationContent).unreadCount, 0);
+    },
+  );
+
+  blocTest<NotificationBloc, NotificationState>(
+    'mark all read marks every unread item in one write; nothing to do '
+    'when all are read',
+    build: () {
+      when(
+        () => repo.markRead(any()),
+      ).thenAnswer((_) async => const Success(null));
+      return build();
+    },
+    seed: () => NotificationContent([n1, n2, n1.copyWith(id: 'n3')]),
+    act: (b) => b
+      ..add(const MarkAllNotificationsReadEvent())
+      ..add(const MarkAllNotificationsReadEvent()),
+    expect: () => [
+      NotificationContent([
+        n1.copyWith(isRead: true),
+        n2,
+        n1.copyWith(id: 'n3', isRead: true),
+      ]),
+    ],
+    verify: (_) {
+      verify(() => repo.markRead(['n1', 'n3'])).called(1);
+      verifyNoMoreInteractions(repo);
+    },
+  );
+
+  blocTest<NotificationBloc, NotificationState>(
+    'mark read failure keeps the state and reports an effect',
+    build: () {
+      when(
+        () => repo.markRead(any()),
+      ).thenAnswer((_) async => const Failure('db'));
+      return build();
+    },
+    seed: () => NotificationContent([n1]),
+    act: (b) => b.add(const MarkNotificationReadEvent('n1')),
+    expect: () => <NotificationState>[],
+    verify: (_) => expect(effects, [const NotificationFailed('db')]),
+  );
+
+  blocTest<NotificationBloc, NotificationState>(
+    'mark read outside content is ignored',
+    build: build,
+    act: (b) => b
+      ..add(const MarkNotificationReadEvent('n1'))
+      ..add(const MarkAllNotificationsReadEvent()),
+    expect: () => <NotificationState>[],
+    verify: (_) => verifyNever(() => repo.markRead(any())),
+  );
+
+  blocTest<NotificationBloc, NotificationState>(
     'add failure is an effect',
     build: () {
       when(

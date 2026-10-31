@@ -89,16 +89,30 @@ class SqfliteLocalDataSource implements LocalDataSource {
 
   // --------------------------------------------------------- transactions
 
+  /// Longest search query (in UTF-16 code units) passed to `LIKE`.
+  static const int maxSearchLength = 200;
+
+  /// SQLite reads a negative LIMIT as "unlimited" and a negative OFFSET as
+  /// zero; a caller passing either is a bug or an attack, so both become
+  /// zero rows / no skip instead.
+  static int? _nonNegative(int? value) =>
+      value == null ? null : (value < 0 ? 0 : value);
+
   @override
   Future<Result<List<Transaction>>> getTransactions({
     int? limit,
     int? offset,
+    TransactionType? type,
   }) => _guard('get transactions', (db) async {
+    final safeLimit = _nonNegative(limit);
+    if (safeLimit == 0) return const [];
     final rows = await db.query(
       'transactions',
+      where: type == null ? null : 'type = ?',
+      whereArgs: type == null ? null : [type.name],
       orderBy: 'date DESC, id DESC',
-      limit: limit,
-      offset: offset,
+      limit: safeLimit,
+      offset: _nonNegative(offset),
     );
     return rows.map(Transaction.fromJson).toList();
   });
@@ -107,16 +121,25 @@ class SqfliteLocalDataSource implements LocalDataSource {
   Future<Result<List<Transaction>>> searchTransactions(
     String query, {
     int limit = 50,
+    TransactionType? type,
   }) => _guard('search transactions', (db) async {
-    final escaped = query
+    if (limit <= 0) return const [];
+    // SQLite refuses LIKE patterns longer than 50,000 bytes ("pattern too
+    // complex"); nothing a person types needs more than this.
+    final bounded = query.length > maxSearchLength
+        ? query.substring(0, maxSearchLength)
+        : query;
+    final escaped = bounded
         .replaceAll(r'\', r'\\')
         .replaceAll('%', r'\%')
         .replaceAll('_', r'\_');
     final pattern = '%$escaped%';
     final rows = await db.query(
       'transactions',
-      where: r"title LIKE ? ESCAPE '\' OR recipient LIKE ? ESCAPE '\'",
-      whereArgs: [pattern, pattern],
+      where:
+          r"(title LIKE ? ESCAPE '\' OR recipient LIKE ? ESCAPE '\')"
+          "${type == null ? '' : ' AND type = ?'}",
+      whereArgs: [pattern, pattern, if (type != null) type.name],
       orderBy: 'date DESC, id DESC',
       limit: limit,
     );
@@ -270,6 +293,31 @@ class SqfliteLocalDataSource implements LocalDataSource {
       whereArgs: [notificationId],
     ),
   );
+
+  /// SQLite allows 999 bound variables per statement; ids are updated in
+  /// chunks inside one transaction.
+  static const int _maxVariables = 500;
+
+  @override
+  Future<Result<void>> markNotificationsRead(List<String> ids) =>
+      _guard('mark notifications read', (db) async {
+        if (ids.isEmpty) return;
+        await db.transaction((txn) async {
+          for (var i = 0; i < ids.length; i += _maxVariables) {
+            final chunk = ids.sublist(
+              i,
+              i + _maxVariables > ids.length ? ids.length : i + _maxVariables,
+            );
+            final marks = List.filled(chunk.length, '?').join(', ');
+            await txn.update(
+              'notifications',
+              {'isRead': 1},
+              where: 'id IN ($marks)',
+              whereArgs: chunk,
+            );
+          }
+        });
+      });
 
   @override
   Future<Result<void>> clearAll() => _guard('clear data', (db) async {

@@ -313,7 +313,140 @@ void main() {
     });
   });
 
+  group('transactions paging and filters (F6)', () {
+    setUp(() async {
+      unwrap(await ds.saveUser(user));
+      unwrap(
+        await ds.saveTransactions([
+          for (var i = 0; i < 120; i++)
+            Transaction(
+              id: 'p$i',
+              title: i % 10 == 0 ? 'Coffee $i' : 'Row $i',
+              amount: Money.paise(i.isEven ? -100 * (i + 1) : 100 * (i + 1)),
+              date: fixedNow.subtract(Duration(minutes: i)),
+              type: TransactionType.values[i % 4],
+              icon: 'x',
+              recipient: i % 7 == 0 ? 'Priya_$i%' : null,
+            ),
+        ]),
+      );
+    });
+
+    test('limit/offset page newest first without gaps or overlap', () async {
+      final page1 = unwrap(await ds.getTransactions(limit: 50, offset: 0));
+      final page2 = unwrap(await ds.getTransactions(limit: 50, offset: 50));
+      final page3 = unwrap(await ds.getTransactions(limit: 50, offset: 100));
+      final page4 = unwrap(await ds.getTransactions(limit: 50, offset: 150));
+      expect(page1.length, 50);
+      expect(page2.length, 50);
+      expect(page3.length, 20);
+      expect(page4, isEmpty);
+      final ids = [...page1, ...page2, ...page3].map((t) => t.id).toList();
+      expect(ids.toSet().length, 120);
+      expect(ids.first, 'p0');
+      expect(ids.last, 'p119');
+    });
+
+    test('negative limit or offset never means "everything"', () async {
+      expect(unwrap(await ds.getTransactions(limit: -1)), isEmpty);
+      expect(unwrap(await ds.getTransactions(limit: 0)), isEmpty);
+      expect(unwrap(await ds.getTransactions(limit: 5, offset: -50)).length, 5);
+      expect(
+        unwrap(await ds.getTransactions(limit: 5, offset: 1 << 40)),
+        isEmpty,
+      );
+      expect(unwrap(await ds.searchTransactions('Row', limit: -5)), isEmpty);
+      expect(unwrap(await ds.searchTransactions('Row', limit: 0)), isEmpty);
+    });
+
+    test('type filter restricts the page', () async {
+      final sent = unwrap(
+        await ds.getTransactions(limit: 100, type: TransactionType.sendMoney),
+      );
+      expect(sent.length, 30);
+      expect(sent.every((t) => t.type == TransactionType.sendMoney), isTrue);
+      final second = unwrap(
+        await ds.getTransactions(
+          limit: 20,
+          offset: 20,
+          type: TransactionType.sendMoney,
+        ),
+      );
+      expect(second.length, 10);
+    });
+
+    test('search is parameterised: SQL and LIKE metacharacters match '
+        'literally', () async {
+      expect(unwrap(await ds.searchTransactions('Coffee')).length, 12);
+      expect(unwrap(await ds.searchTransactions('Coffee', limit: 5)).length, 5);
+      expect(
+        unwrap(
+          await ds.searchTransactions('Coffee', type: TransactionType.payment),
+        ).every((t) => t.type == TransactionType.payment),
+        isTrue,
+      );
+      // 18 recipients look like `Priya_7%`: `%` and `_` match literally
+      // (a raw wildcard would match all 120 rows).
+      expect(unwrap(await ds.searchTransactions('Priya_0%')).length, 1);
+      expect(unwrap(await ds.searchTransactions('%')).length, 18);
+      expect(unwrap(await ds.searchTransactions('_')).length, 18);
+      expect(unwrap(await ds.searchTransactions('a_0%')).length, 1);
+      expect(unwrap(await ds.searchTransactions(r'\')), isEmpty);
+      for (final hostile in [
+        "' OR 1=1 --",
+        "'; DROP TABLE transactions; --",
+        'Row\u0000',
+        '\u202EwoR',
+        '🙂' * 1000,
+        'x' * 100000,
+      ]) {
+        final result = await ds.searchTransactions(hostile);
+        expect(result.isSuccess, isTrue, reason: hostile.length.toString());
+        expect(unwrap(result), isEmpty, reason: hostile.length.toString());
+      }
+      // A huge query is bounded before it reaches LIKE, so a long real
+      // prefix still matches.
+      expect(
+        unwrap(await ds.searchTransactions('Coffee 7${'0' * 100000}')),
+        isEmpty,
+      );
+      expect(
+        unwrap(await ds.searchTransactions('Coffee ${'x' * 300}')),
+        isEmpty,
+      );
+      expect(unwrap(await ds.countTransactions()), 120);
+    });
+  });
+
   group('notifications', () {
+    test('markNotificationsRead flags only the given ids and survives '
+        'empty, unknown and 1,200-id lists', () async {
+      final base = NotificationItem(
+        id: 'n0',
+        title: 'A',
+        message: 'a',
+        time: fixedNow,
+        type: NotificationType.cashback,
+      );
+      for (var i = 0; i < 1200; i++) {
+        unwrap(await ds.saveNotification(base.copyWith(id: 'n$i')));
+      }
+      unwrap(await ds.markNotificationsRead([]));
+      unwrap(await ds.markNotificationsRead(['nope']));
+      unwrap(await ds.markNotificationsRead(['n1', 'n2']));
+      var items = unwrap(await ds.getNotifications());
+      expect(items.where((n) => n.isRead).map((n) => n.id).toSet(), {
+        'n1',
+        'n2',
+      });
+      unwrap(
+        await ds.markNotificationsRead([for (var i = 0; i < 1200; i++) 'n$i']),
+      );
+      items = unwrap(await ds.getNotifications());
+      expect(items.every((n) => n.isRead), isTrue);
+      expect(items.length, 1200);
+    });
+
     test('save, list newest first, delete', () async {
       final n1 = NotificationItem(
         id: 'n1',

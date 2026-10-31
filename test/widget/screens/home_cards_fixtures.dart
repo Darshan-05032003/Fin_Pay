@@ -119,6 +119,7 @@ class HomeCardsRepos {
     registerFallbackValue(fixtureCards.first);
     registerFallbackValue(transactions.first);
     registerFallbackValue(harnessUser);
+    registerFallbackValue(at);
     when(cards.getCards).thenAnswer((_) async => const Success(fixtureCards));
     when(
       () => cards.addCard(any()),
@@ -140,6 +141,10 @@ class HomeCardsRepos {
     when(
       () => txns.getRecentTransactions(limit: any(named: 'limit')),
     ).thenAnswer((_) async => Success(transactions.take(5).toList()));
+    // The Stats tab (mounted with the shell) reads a date range (F6).
+    when(
+      () => txns.getTransactionsBetween(any(), any()),
+    ).thenAnswer((_) async => Success(transactions));
     when(
       () => txns.addTransaction(any()),
     ).thenAnswer((_) async => const Success(TransactionOutcome.recorded));

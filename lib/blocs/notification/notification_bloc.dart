@@ -5,6 +5,7 @@ import 'package:fin_pay/blocs/notification/notification_state.dart';
 import 'package:fin_pay/core/logger.dart';
 import 'package:fin_pay/core/result/result.dart';
 import 'package:fin_pay/domain/repositories/notification_repository.dart';
+import 'package:fin_pay/models/notification_item.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Lists, adds and deletes in-app notifications.
@@ -15,6 +16,20 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<LoadNotificationsEvent>(_onLoad);
     on<AddNotificationEvent>(_onAdd);
     on<DeleteNotificationEvent>(_onDelete);
+    on<MarkNotificationReadEvent>(_onMarkRead);
+    on<MarkAllNotificationsReadEvent>(_onMarkAllRead);
+  }
+
+  /// Inserts [item] where storage order (newest first) puts it; on a tie
+  /// the new item goes first.
+  static List<NotificationItem> _insertNewestFirst(
+    List<NotificationItem> items,
+    NotificationItem item,
+  ) {
+    final rest = items.where((n) => n.id != item.id).toList();
+    final at = rest.indexWhere((n) => !n.time.isAfter(item.time));
+    return at < 0 ? [...rest, item] : [...rest]
+      ..insert(at, item);
   }
 
   final INotificationRepository _repository;
@@ -51,8 +66,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         _emitEffect(NotificationAdded(event.notification));
         final current = state;
         if (current is NotificationContent) {
+          // Storage replaces by id, so an undo replayed twice (or a
+          // duplicate add) keeps one row; the list keeps storage order.
           emit(
-            NotificationContent([event.notification, ...current.notifications]),
+            NotificationContent(
+              _insertNewestFirst(current.notifications, event.notification),
+            ),
           );
         } else {
           emit(NotificationContent([event.notification]));
@@ -90,6 +109,52 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       case Failure(:final message):
         _emitEffect(NotificationFailed(message));
         Logger.error('Failed to delete notification: $message');
+    }
+  }
+
+  Future<void> _onMarkRead(
+    MarkNotificationReadEvent event,
+    Emitter<NotificationState> emit,
+  ) => _markRead([event.notificationId], emit);
+
+  Future<void> _onMarkAllRead(
+    MarkAllNotificationsReadEvent event,
+    Emitter<NotificationState> emit,
+  ) {
+    final current = state;
+    if (current is! NotificationContent) return Future.value();
+    return _markRead([
+      for (final n in current.notifications)
+        if (!n.isRead) n.id,
+    ], emit);
+  }
+
+  Future<void> _markRead(
+    List<String> ids,
+    Emitter<NotificationState> emit,
+  ) async {
+    final current = state;
+    if (current is! NotificationContent) return;
+    final unread = ids
+        .where(
+          (id) => current.notifications.any((n) => n.id == id && !n.isRead),
+        )
+        .toSet();
+    if (unread.isEmpty) return;
+    final result = await _repository.markRead(unread.toList());
+    switch (result) {
+      case Success():
+        final latest = state;
+        if (latest is! NotificationContent) return;
+        emit(
+          NotificationContent([
+            for (final n in latest.notifications)
+              if (unread.contains(n.id)) n.copyWith(isRead: true) else n,
+          ]),
+        );
+      case Failure(:final message):
+        _emitEffect(NotificationFailed(message));
+        Logger.error('Failed to mark notifications read: $message');
     }
   }
 

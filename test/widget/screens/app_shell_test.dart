@@ -17,8 +17,10 @@ void main() {
     await h.init(tester, signedIn: true);
     await h.pump(tester, at);
     await h.settle(tester);
-    // These tests run on the real in-memory database; let its reads finish.
-    await h.flush(tester, rounds: 3);
+    // These tests run on the real in-memory database; every tab in the
+    // IndexedStack reads it on mount (home ×3, stats, cards), so let those
+    // reads finish before the test body continues.
+    await h.flush(tester, rounds: 6);
   }
 
   Future<void> tapTab(WidgetTester tester, String label) async {
@@ -27,8 +29,8 @@ void main() {
     );
     await tester.pump();
     await h.settle(tester);
-    // The legacy statistics / profile tabs read the database on first show
-    // and call setState when it answers; let that finish while mounted.
+    // The shell's tabs read the real in-memory database on first show; let
+    // those reads answer while the tree is still mounted.
     await h.flush(tester, rounds: 3);
   }
 
@@ -78,13 +80,12 @@ void main() {
     expect(h.location, AppRoutes.home);
   });
 
-  testWidgets('FLAG_SECURE is on for home and cards, off for the others', (
-    tester,
-  ) async {
+  testWidgets('FLAG_SECURE is on for home, stats and cards, off for '
+      'profile', (tester) async {
     await open(tester);
     expect(h.protector.enabled, isTrue);
     await tapTab(tester, 'Stats');
-    expect(h.protector.enabled, isFalse);
+    expect(h.protector.enabled, isTrue, reason: 'totals on screen (F6)');
     await tapTab(tester, 'Cards');
     expect(h.protector.enabled, isTrue);
     await tapTab(tester, 'Profile');

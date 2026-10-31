@@ -395,6 +395,69 @@ void main() {
         );
       });
 
+      testWidgets('swipe action row closed and open', (tester) async {
+        Widget row(String key, String title) => FpSwipeActionRow(
+          key: ValueKey(key),
+          semanticLabel: title,
+          actions: [
+            FpSwipeAction(
+              label: 'Details',
+              icon: Icons.info_outline,
+              onPressed: () {},
+            ),
+            FpSwipeAction(
+              label: 'Delete',
+              icon: Icons.delete_outline,
+              tone: FpSwipeActionTone.danger,
+              onPressed: () {},
+            ),
+          ],
+          child: FpSurface(
+            variant: FpSurfaceVariant.flat,
+            child: Row(
+              children: [
+                Expanded(child: Text(title)),
+                const Text('−₹320.00'),
+              ],
+            ),
+          ),
+        );
+        await tester.binding.setSurfaceSize(const Size(400, 220));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: FpTheme.dark(),
+            debugShowCheckedModeBanner: false,
+            builder: (context, app) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
+              child: app!,
+            ),
+            home: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(FpSpacing.lg),
+                child: Column(
+                  spacing: FpSpacing.md,
+                  children: [row('closed', 'Coffee'), row('open', 'Groceries')],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.dragFrom(
+          tester.getCenter(find.byKey(const ValueKey('open'))),
+          const Offset(-120, 0),
+        );
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pump();
+        final s = scale.toStringAsFixed(1).replaceAll('.', '_');
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('goldens/swipe_action_row_$s.png'),
+        );
+      });
+
       testWidgets('gallery', (tester) async {
         await tester.binding.setSurfaceSize(const Size(430, 7200));
         addTearDown(() => tester.binding.setSurfaceSize(null));

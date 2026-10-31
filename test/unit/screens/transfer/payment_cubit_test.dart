@@ -80,11 +80,20 @@ class FakeLedger implements ITransactionRepository {
   Future<Result<List<Transaction>>> getTransactions({
     int? limit,
     int? offset,
+    TransactionType? type,
   }) async => Success(rows.reversed.toList());
 
   @override
-  Future<Result<List<Transaction>>> searchTransactions(String query) async =>
-      Success(rows);
+  Future<Result<List<Transaction>>> searchTransactions(
+    String query, {
+    TransactionType? type,
+  }) async => Success(rows);
+
+  @override
+  Future<Result<List<Transaction>>> getTransactionsBetween(
+    DateTime from,
+    DateTime to,
+  ) async => Success(rows.reversed.toList());
 }
 
 const TransferDraft draft = TransferDraft(

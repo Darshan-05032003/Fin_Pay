@@ -29,3 +29,18 @@ final class DeleteNotificationEvent extends NotificationEvent {
   @override
   List<Object?> get props => [notificationId];
 }
+
+/// Flags one notification as read (F6; a no-op when it already is).
+final class MarkNotificationReadEvent extends NotificationEvent {
+  const MarkNotificationReadEvent(this.notificationId);
+
+  final String notificationId;
+
+  @override
+  List<Object?> get props => [notificationId];
+}
+
+/// Flags every loaded notification as read (F6).
+final class MarkAllNotificationsReadEvent extends NotificationEvent {
+  const MarkAllNotificationsReadEvent();
+}

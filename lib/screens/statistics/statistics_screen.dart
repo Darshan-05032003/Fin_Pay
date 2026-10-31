@@ -1,532 +1,446 @@
 import 'dart:async';
 
-import 'package:clock/clock.dart';
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
-import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/core/di/injection_container.dart' as di;
 import 'package:fin_pay/core/money/money.dart';
-import 'package:fin_pay/models/transaction.dart';
-import 'package:fin_pay/services/user_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_number_counter.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/fade_in_animation.dart' as custom;
-import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
-import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
+import 'package:fin_pay/core/settings/settings_cubit.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/screens/shell/app_shell.dart';
+import 'package:fin_pay/screens/statistics/stats_cubit.dart';
+import 'package:fin_pay/screens/statistics/stats_math.dart';
+import 'package:fin_pay/screens/statistics/widgets/stats_charts.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class StatisticsScreen extends StatefulWidget {
+/// The Stats tab: spend / income summary for the selected period, bars
+/// that grow in, a trend line that draws on, a category donut that sweeps,
+/// tap-to-inspect tooltips and the top merchants. Screenshot protection is
+/// handled by the shell (the tab shows totals).
+class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
 
+  /// Branch index of this tab in the shell.
+  static const int tabIndex = 1;
+
   @override
-  State<StatisticsScreen> createState() => _StatisticsScreenState();
+  Widget build(BuildContext context) {
+    // The tab loads when it is first shown (see `_StatsViewState`), not
+    // when the shell mounts every branch at start-up.
+    return BlocProvider(
+      create: (_) => StatsCubit(repository: di.sl(), clock: di.sl()),
+      child: const _StatsView(),
+    );
+  }
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen> {
-  double _totalSpending = 0;
-  double _income = 0;
-  double _expenses = 0;
-  List<Transaction> _recentTransactions = [];
-  bool _isLoading = true;
+class _StatsView extends StatefulWidget {
+  const _StatsView();
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_loadStatistics());
+  State<_StatsView> createState() => _StatsViewState();
+}
+
+class _StatsViewState extends State<_StatsView>
+    with SingleTickerProviderStateMixin {
+  final ScrollController _scroll = ScrollController();
+  late final AnimationController _reveal = AnimationController(
+    vsync: this,
+    duration: FpMotion.emphasized,
+  );
+  late final CurvedAnimation _curved = CurvedAnimation(
+    parent: _reveal,
+    curve: FpMotion.emphasizedDecelerate,
+  );
+  TabReselect? _reselect;
+  int _seenReselects = 0;
+  int _shownRevision = 0;
+  bool _loadRequested = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loadRequested &&
+        AppShell.isVisibleTab(context, StatisticsScreen.tabIndex)) {
+      _loadRequested = true;
+      unawaited(context.read<StatsCubit>().load());
+    }
+    final reselect = AppShell.reselectOf(context);
+    if (reselect != _reselect) {
+      _reselect?.removeListener(_onReselect);
+      _reselect = reselect;
+      _seenReselects = reselect?.count ?? 0;
+      reselect?.addListener(_onReselect);
+    }
   }
 
-  Future<void> _loadStatistics() async {
-    final transactions = await UserService.getTransactions();
-
-    var totalSpending = Money.zero;
-    var income = Money.zero;
-    var expenses = Money.zero;
-
-    for (final transaction in transactions) {
-      if (transaction.amount.isNegative) {
-        expenses = expenses + transaction.amount.abs();
-        totalSpending = totalSpending + transaction.amount.abs();
-      } else {
-        income = income + transaction.amount;
-      }
+  void _onReselect() {
+    final r = _reselect;
+    if (r == null || r.count == _seenReselects) return;
+    _seenReselects = r.count;
+    if (r.index != StatisticsScreen.tabIndex || !_scroll.hasClients) return;
+    if (FpMotion.of(context).reduce) {
+      _scroll.jumpTo(0);
+    } else {
+      _scroll.animateTo(
+        0,
+        duration: FpMotion.emphasized,
+        curve: FpMotion.standardCurve,
+      );
     }
+  }
 
-    setState(() {
-      _totalSpending = totalSpending.rupees;
-      _income = income.rupees;
-      _expenses = expenses.rupees;
-      _recentTransactions = transactions.take(1).toList();
-      _isLoading = false;
-    });
+  @override
+  void dispose() {
+    _reselect?.removeListener(_onReselect);
+    _curved.dispose();
+    _reveal.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Runs the chart entrance for a new revision (bars grow, line draws,
+  /// donut sweeps); with reduce motion the charts appear complete.
+  void _revealFor(int revision) {
+    if (revision == _shownRevision) return;
+    _shownRevision = revision;
+    if (FpMotion.of(context).reduce) {
+      _reveal.value = 1;
+    } else {
+      _reveal.forward(from: 0);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      appBar: AppBar(
-        title: const Text('Statistics'),
-        automaticallyImplyLeading: false,
-      ),
-      body: _isLoading
-          ? const SkeletonList()
-          : CustomPullToRefresh(
-              onRefresh: _loadStatistics,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                child: AnimationLimiter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      CredSlideIn(
-                        delay: const Duration(milliseconds: 100),
-                        offset: const Offset(0, 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Flexible(
-                              child: Text(
-                                'Total Spending',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppTheme.credTextPrimary,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                            ),
-                            CredButtonPress(
-                              onTap: () async {
-                                await sl<HapticService>().medium();
-                              },
-                              child: CredCardReveal(
-                                duration: const Duration(milliseconds: 400),
-                                perspective: 0.0006,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.credSurfaceCard,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppTheme.credMediumGray.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Monthly',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.credTextPrimary,
-                                        ),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Icon(
-                                        Icons.arrow_drop_down,
-                                        size: 20,
-                                        color: AppTheme.credTextPrimary,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      CredSlideIn(
-                        delay: const Duration(milliseconds: 200),
-                        child: CredNumberCounter(
-                          value: _totalSpending,
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.credOrangeSunshine,
-                            letterSpacing: -1,
-                          ),
-                          prefix: r'$',
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      CredSlideIn(
-                        delay: const Duration(milliseconds: 300),
-                        offset: const Offset(0, 40),
-                        child: CredCardReveal(
-                          duration: const Duration(milliseconds: 600),
-                          perspective: 0.0008,
-                          child: _buildChart(),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      CredSlideIn(
-                        delay: const Duration(milliseconds: 400),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: CredSlideIn(
-                                delay: const Duration(milliseconds: 450),
-                                offset: const Offset(-20, 0),
-                                child: _buildStatCard(
-                                  Icons.account_balance_wallet,
-                                  'Income',
-                                  _income,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: CredSlideIn(
-                                delay: const Duration(milliseconds: 500),
-                                offset: const Offset(20, 0),
-                                child: _buildStatCard(
-                                  Icons.shopping_cart,
-                                  'Expenses',
-                                  _expenses,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      const AnimationConfiguration.staggeredList(
-                        position: 3,
-                        duration: Duration(milliseconds: 375),
-                        child: SlideAnimation(
-                          verticalOffset: 50,
-                          child: custom.FadeInAnimation(
-                            child: Text(
-                              'Recent Transaction',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.credTextPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (_recentTransactions.isEmpty)
-                        const AnimationConfiguration.staggeredList(
-                          position: 4,
-                          duration: Duration(milliseconds: 375),
-                          child: SlideAnimation(
-                            verticalOffset: 50,
-                            child: custom.FadeInAnimation(
-                              child: Padding(
-                                padding: EdgeInsets.all(24),
-                                child: Center(
-                                  child: Text(
-                                    'No recent transactions',
-                                    style: TextStyle(
-                                      color: AppTheme.credTextSecondary,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        AnimationConfiguration.staggeredList(
-                          position: 4,
-                          duration: const Duration(milliseconds: 375),
-                          child: SlideAnimation(
-                            verticalOffset: 50,
-                            child: custom.FadeInAnimation(
-                              child: _buildRecentTransaction(
-                                _recentTransactions.first,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+    final fp = context.fp;
+    final c = fp.colors;
+    final hidden = context.select<SettingsCubit, bool>(
+      (s) => s.state.hideBalance,
     );
-  }
-
-  Widget _buildChart() {
-    return Container(
-      height: 220,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.credSurfaceCard,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '10K',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.credTextSecondary,
-                ),
-              ),
-              Text(
-                '20K',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.credTextSecondary,
-                ),
-              ),
-              Text(
-                '30K',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.credTextSecondary,
-                ),
-              ),
-              Text(
-                '40K',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.credTextSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final maxHeight =
-                    constraints.maxHeight -
-                    25; // Reserve space for label and spacing
-                const maxBarHeight = 160.0;
-                final scaleFactor = maxHeight / maxBarHeight;
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildBar((80 * scaleFactor).clamp(0.0, maxHeight), 'Sep'),
-                    _buildBar((120 * scaleFactor).clamp(0.0, maxHeight), 'Oct'),
-                    _buildBar((140 * scaleFactor).clamp(0.0, maxHeight), 'Nov'),
-                    _buildBar((160 * scaleFactor).clamp(0.0, maxHeight), 'Dec'),
-                  ],
+    final cubit = context.read<StatsCubit>();
+    return BlocListener<StatsCubit, StatsState>(
+      listenWhen: (p, n) => p.revision != n.revision,
+      listener: (context, state) => _revealFor(state.revision),
+      child: Scaffold(
+        backgroundColor: c.background,
+        body: SafeArea(
+          child: BlocBuilder<StatsCubit, StatsState>(
+            builder: (context, state) {
+              // A content state that arrived before the listener was attached
+              // (first build) still needs its entrance.
+              if (state.status == StatsStatus.content &&
+                  state.revision != _shownRevision) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => mounted ? _revealFor(state.revision) : null,
                 );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBar(double height, String label) {
-    return Flexible(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 50,
-            height: height.clamp(0.0, double.infinity),
-            decoration: const BoxDecoration(
-              color: AppTheme.credOrangeSunshine,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(4),
-                topRight: Radius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppTheme.credTextSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(IconData icon, String title, double value) {
-    return CredCardReveal(
-      perspective: 0.0006,
-      child: CredButtonPress(
-        onTap: () async {
-          await sl<HapticService>().light();
-        },
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppTheme.credSurfaceCard,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppTheme.credMediumGray.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PulseAnimation(
-                minScale: 0.98,
-                maxScale: 1.02,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.credOrangeGradient,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.credOrangeSunshine.withValues(
-                          alpha: 0.3,
-                        ),
-                        blurRadius: 8,
-                      ),
-                    ],
+              }
+              return FpRefreshIndicator(
+                onRefresh: cubit.refresh,
+                child: ListView(
+                  key: const ValueKey('stats-scroll'),
+                  controller: _scroll,
+                  padding: const EdgeInsets.fromLTRB(
+                    FpSpacing.lg,
+                    FpSpacing.sm,
+                    FpSpacing.lg,
+                    FpSpacing.xxl,
                   ),
-                  child: Icon(icon, color: AppTheme.credWhite, size: 24),
+                  children: [
+                    Text('Insights', style: fp.text.headline),
+                    const SizedBox(height: FpSpacing.md),
+                    FpSegmentedControl(
+                      key: const ValueKey('stats-period'),
+                      segments: [for (final p in StatsPeriod.values) p.label],
+                      selectedIndex: state.period.index,
+                      onChanged: (i) =>
+                          unawaited(cubit.setPeriod(StatsPeriod.values[i])),
+                    ),
+                    const SizedBox(height: FpSpacing.lg),
+                    switch (state.status) {
+                      StatsStatus.loading => const _StatsSkeleton(),
+                      StatsStatus.error => FpErrorState(
+                        key: const ValueKey('stats-error'),
+                        title: 'Could not load insights',
+                        message: state.message,
+                        onRetry: () => unawaited(cubit.retry()),
+                      ),
+                      StatsStatus.empty => const _NoSpends(),
+                      StatsStatus.content => _StatsContent(
+                        key: ValueKey('stats-content-${state.revision}'),
+                        summary: state.summary!,
+                        reveal: _curved,
+                        hidden: hidden,
+                      ),
+                    },
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.credTextSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              CredNumberCounter(
-                value: value,
-                duration: const Duration(milliseconds: 1200),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.credOrangeSunshine,
-                  letterSpacing: -0.5,
-                ),
-                prefix: r'$',
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildRecentTransaction(Transaction transaction) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.credSurfaceCard,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
+class _StatsContent extends StatelessWidget {
+  const _StatsContent({
+    required this.summary,
+    required this.reveal,
+    required this.hidden,
+    super.key,
+  });
+
+  final StatsSummary summary;
+  final Animation<double> reveal;
+  final bool hidden;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    return FpStaggeredEntrance(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _TotalCard(
+                key: const ValueKey('stats-spent'),
+                label: 'Spent',
+                money: summary.spend,
+                color: c.textPrimary,
+                hidden: hidden,
+              ),
+            ),
+            const SizedBox(width: FpSpacing.md),
+            Expanded(
+              child: _TotalCard(
+                key: const ValueKey('stats-received'),
+                label: 'Received',
+                money: summary.income,
+                color: c.success,
+                hidden: hidden,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: FpSpacing.md),
+        _ChartCard(
+          title: 'Spend vs received',
+          child: StatsBarChart(
+            key: const ValueKey('stats-bars'),
+            buckets: summary.buckets,
+            reveal: reveal,
+            hidden: hidden,
+          ),
+        ),
+        const SizedBox(height: FpSpacing.md),
+        _ChartCard(
+          title: 'Daily spend',
+          child: StatsLineChart(
+            key: const ValueKey('stats-line'),
+            series: summary.series,
+            reveal: reveal,
+            hidden: hidden,
+          ),
+        ),
+        const SizedBox(height: FpSpacing.md),
+        _ChartCard(
+          title: 'Where it went',
+          child: StatsDonutChart(
+            key: const ValueKey('stats-donut'),
+            categories: summary.categories,
+            reveal: reveal,
+            hidden: hidden,
+          ),
+        ),
+        const SizedBox(height: FpSpacing.md),
+        _ChartCard(
+          title: 'Top merchants',
+          child: _Merchants(merchants: summary.merchants, hidden: hidden),
+        ),
+      ],
+    );
+  }
+}
+
+class _TotalCard extends StatelessWidget {
+  const _TotalCard({
+    required this.label,
+    required this.money,
+    required this.color,
+    required this.hidden,
+    super.key,
+  });
+
+  final String label;
+  final Money money;
+  final Color color;
+  final bool hidden;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    return FpSurface(
+      variant: FpSurfaceVariant.raised,
+      padding: const EdgeInsets.all(FpSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.credError.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                transaction.icon,
-                style: const TextStyle(
-                  color: AppTheme.credError,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.credTextPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDate(transaction.localDate),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.credTextSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                transaction.amount.abs().format(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.credError,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.credError.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'Payment',
-                  style: TextStyle(fontSize: 10, color: AppTheme.credError),
-                ),
-              ),
-            ],
+          Text(label.toUpperCase(), style: fp.text.overline),
+          const SizedBox(height: FpSpacing.xs),
+          FpAmountText(
+            paise: money.paise,
+            style: fp.text.displaySmall.copyWith(color: color, fontSize: 26),
+            hide: hidden ? FpAmountHide.mask : FpAmountHide.none,
+            animateFirstBuild: true,
+            semanticLabel: hidden
+                ? '$label hidden'
+                : '$label ${money.format()}',
           ),
         ],
       ),
     );
   }
+}
 
-  String _formatDate(DateTime date) {
-    final now = sl<Clock>().now();
-    final difference = now.difference(date);
+class _ChartCard extends StatelessWidget {
+  const _ChartCard({required this.title, required this.child});
 
-    if (difference.inDays == 0) {
-      return 'Today, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays == 1) {
-      final minute = date.minute.toString().padLeft(2, '0');
-      return 'Yesterday, ${date.hour}:$minute';
-    } else {
-      return '${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    return FpSurface(
+      variant: FpSurfaceVariant.flat,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title.toUpperCase(), style: fp.text.overline),
+          const SizedBox(height: FpSpacing.md),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _Merchants extends StatelessWidget {
+  const _Merchants({required this.merchants, required this.hidden});
+
+  final List<StatsMerchant> merchants;
+  final bool hidden;
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    if (merchants.isEmpty) {
+      return Text('No spends in this period.', style: fp.text.bodySmall);
     }
+    return Column(
+      key: const ValueKey('stats-merchants'),
+      children: [
+        for (final (i, m) in merchants.indexed)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: i == merchants.length - 1 ? 0 : FpSpacing.md,
+            ),
+            child: Semantics(
+              label: hidden
+                  ? '${m.title}, ${m.count} payments, amount hidden'
+                  : '${m.title}, ${m.count} payments, ${m.total.format()}',
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: c.surfaceRaised,
+                        border: Border.all(color: c.border),
+                      ),
+                      child: Text('${i + 1}', style: fp.text.caption),
+                    ),
+                    const SizedBox(width: FpSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            m.title,
+                            style: fp.text.body,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            m.count == 1 ? '1 payment' : '${m.count} payments',
+                            style: fp.text.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: FpSpacing.md),
+                    Text(
+                      hidden ? FpAmountText.masked : m.total.format(),
+                      style: fp.text.numeric,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _StatsSkeleton extends StatelessWidget {
+  const _StatsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return FpSkeletonGroup(
+      child: Column(
+        key: const ValueKey('stats-skeleton'),
+        children: [
+          const Row(
+            children: [
+              Expanded(child: FpSkeleton(height: 72)),
+              SizedBox(width: FpSpacing.md),
+              Expanded(child: FpSkeleton(height: 72)),
+            ],
+          ),
+          const SizedBox(height: FpSpacing.md),
+          const FpSkeleton(height: 200),
+          const SizedBox(height: FpSpacing.md),
+          const FpSkeleton(height: 160),
+          const SizedBox(height: FpSpacing.md),
+          for (var i = 0; i < 3; i++) ...[
+            const FpSkeletonRow(),
+            const SizedBox(height: FpSpacing.sm),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _NoSpends extends StatelessWidget {
+  const _NoSpends();
+
+  @override
+  Widget build(BuildContext context) {
+    return const FpPulse(
+      key: ValueKey('stats-empty'),
+      maxScale: 1.03,
+      child: FpEmptyState(
+        icon: Icons.insights_outlined,
+        title: 'No spends yet',
+        message: 'Your charts fill in as you pay and receive money.',
+      ),
+    );
   }
 }

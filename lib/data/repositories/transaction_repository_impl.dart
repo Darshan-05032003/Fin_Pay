@@ -13,14 +13,32 @@ class TransactionRepositoryImpl implements ITransactionRepository {
   Future<Result<List<Transaction>>> getTransactions({
     int? limit,
     int? offset,
-  }) => _localDataSource.getTransactions(limit: limit, offset: offset);
+    TransactionType? type,
+  }) => type == null
+      ? _localDataSource.getTransactions(limit: limit, offset: offset)
+      : _localDataSource.getTransactions(
+          limit: limit,
+          offset: offset,
+          type: type,
+        );
 
   @override
-  Future<Result<List<Transaction>>> searchTransactions(String query) {
+  Future<Result<List<Transaction>>> searchTransactions(
+    String query, {
+    TransactionType? type,
+  }) {
     final trimmed = query.trim();
-    if (trimmed.isEmpty) return getTransactions();
-    return _localDataSource.searchTransactions(trimmed);
+    if (trimmed.isEmpty) return getTransactions(type: type);
+    return type == null
+        ? _localDataSource.searchTransactions(trimmed)
+        : _localDataSource.searchTransactions(trimmed, type: type);
   }
+
+  @override
+  Future<Result<List<Transaction>>> getTransactionsBetween(
+    DateTime from,
+    DateTime to,
+  ) => _localDataSource.getTransactionsBetween(from, to);
 
   @override
   Future<Result<List<Transaction>>> getRecentTransactions({int limit = 5}) =>

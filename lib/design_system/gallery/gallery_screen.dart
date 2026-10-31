@@ -14,6 +14,7 @@ import 'package:fin_pay/design_system/components/fp_segmented_control.dart';
 import 'package:fin_pay/design_system/components/fp_skeleton.dart';
 import 'package:fin_pay/design_system/components/fp_state_views.dart';
 import 'package:fin_pay/design_system/components/fp_surface.dart';
+import 'package:fin_pay/design_system/components/fp_swipe_action_row.dart';
 import 'package:fin_pay/design_system/components/fp_swipe_to_pay.dart';
 import 'package:fin_pay/design_system/components/fp_text_field.dart';
 import 'package:fin_pay/design_system/components/fp_toast.dart';
@@ -434,6 +435,42 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
               const SizedBox(width: FpSpacing.md),
               Text('Processing ring', style: fp.text.bodySmall),
             ]),
+            const _Section('Swipe actions'),
+            _Item(
+              FpSwipeActionRow(
+                semanticLabel: 'Coffee, ₹320.00, swipe left for actions',
+                haptics: h,
+                onDismissed: () {},
+                actions: [
+                  FpSwipeAction(
+                    label: 'Details',
+                    icon: Icons.info_outline,
+                    onPressed: () {},
+                  ),
+                  FpSwipeAction(
+                    label: 'Delete',
+                    icon: Icons.delete_outline,
+                    tone: FpSwipeActionTone.danger,
+                    onPressed: () {},
+                  ),
+                ],
+                child: FpSurface(
+                  variant: FpSurfaceVariant.flat,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: FpSpacing.md,
+                    vertical: FpSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text('Coffee · swipe left', style: fp.text.body),
+                      ),
+                      Text('−₹320.00', style: fp.text.numeric),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             const _Section('Bottom navigation'),
             FpBottomNav(
               items: const [

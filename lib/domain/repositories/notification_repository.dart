@@ -6,4 +6,7 @@ abstract interface class INotificationRepository {
   Future<Result<List<NotificationItem>>> getNotifications({int? limit});
   Future<Result<void>> addNotification(NotificationItem notification);
   Future<Result<void>> deleteNotification(String notificationId);
+
+  /// Flags the given notifications as read.
+  Future<Result<void>> markRead(List<String> ids);
 }
