@@ -48,7 +48,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     final result = await _repository.addNotification(event.notification);
     switch (result) {
       case Success():
-        _effects.add(NotificationAdded(event.notification));
+        _emitEffect(NotificationAdded(event.notification));
         final current = state;
         if (current is NotificationContent) {
           emit(
@@ -58,7 +58,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           emit(NotificationContent([event.notification]));
         }
       case Failure(:final message):
-        _effects.add(NotificationFailed(message));
+        _emitEffect(NotificationFailed(message));
         Logger.error('Failed to add notification: $message');
     }
   }
@@ -76,7 +76,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     final result = await _repository.deleteNotification(event.notificationId);
     switch (result) {
       case Success():
-        if (removed != null) _effects.add(NotificationDeleted(removed));
+        if (removed != null) _emitEffect(NotificationDeleted(removed));
         if (current is NotificationContent) {
           final remaining = current.notifications
               .where((n) => n.id != event.notificationId)
@@ -88,9 +88,15 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           );
         }
       case Failure(:final message):
-        _effects.add(NotificationFailed(message));
+        _emitEffect(NotificationFailed(message));
         Logger.error('Failed to delete notification: $message');
     }
+  }
+
+  /// A handler that was awaiting storage when the bloc closed must not
+  /// throw into a closed controller.
+  void _emitEffect(NotificationEffect effect) {
+    if (!_effects.isClosed) _effects.add(effect);
   }
 
   @override

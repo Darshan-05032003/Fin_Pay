@@ -18,11 +18,14 @@ import 'package:fin_pay/data/datasources/local_datasource.dart';
 import 'package:fin_pay/data/datasources/sqflite_local_datasource.dart';
 import 'package:fin_pay/data/repositories/auth_repository_impl.dart';
 import 'package:fin_pay/data/repositories/card_repository_impl.dart';
+import 'package:fin_pay/data/repositories/demo_contact_repository.dart';
 import 'package:fin_pay/data/repositories/notification_repository_impl.dart';
 import 'package:fin_pay/data/repositories/transaction_repository_impl.dart';
 import 'package:fin_pay/data/repositories/user_repository_impl.dart';
+import 'package:fin_pay/domain/payments/payment_gateway.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
 import 'package:fin_pay/domain/repositories/card_repository.dart';
+import 'package:fin_pay/domain/repositories/contact_repository.dart';
 import 'package:fin_pay/domain/repositories/notification_repository.dart';
 import 'package:fin_pay/domain/repositories/transaction_repository.dart';
 import 'package:fin_pay/domain/repositories/user_repository.dart';
@@ -54,6 +57,8 @@ class DiOverrides {
     this.userRepository,
     this.transactionRepository,
     this.cardRepository,
+    this.contactRepository,
+    this.paymentGateway,
   });
 
   final HapticService? haptics;
@@ -74,6 +79,10 @@ class DiOverrides {
   final IUserRepository? userRepository;
   final ITransactionRepository? transactionRepository;
   final ICardRepository? cardRepository;
+  final IContactRepository? contactRepository;
+
+  /// Replaces the simulated bank (payment tests).
+  final PaymentGateway? paymentGateway;
 }
 
 /// Registers every dependency. Call once at start-up (or per test with
@@ -134,6 +143,12 @@ Future<void> init({DiOverrides overrides = const DiOverrides()}) async {
     )
     ..registerLazySingleton<INotificationRepository>(
       () => NotificationRepositoryImpl(sl()),
+    )
+    ..registerLazySingleton<IContactRepository>(
+      () => overrides.contactRepository ?? const DemoContactRepository(),
+    )
+    ..registerLazySingleton<PaymentGateway>(
+      () => overrides.paymentGateway ?? SimulatedPaymentGateway(),
     )
     ..registerLazySingleton<AuthRepository>(
       () =>

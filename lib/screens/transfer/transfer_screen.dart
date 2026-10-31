@@ -1,604 +1,355 @@
 import 'dart:async';
 
-import 'package:clock/clock.dart';
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/core/di/injection_container.dart' as di;
 import 'package:fin_pay/core/haptics/haptic_service.dart';
-import 'package:fin_pay/core/money/money.dart';
-import 'package:fin_pay/routes/transfer_draft.dart';
-import 'package:fin_pay/services/user_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_number_counter.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/pulse_animation.dart';
-import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
-import 'package:fin_pay/widgets/animations/spring_animation.dart';
+import 'package:fin_pay/design_system/design_system.dart';
+import 'package:fin_pay/routes/app_routes.dart';
+import 'package:fin_pay/screens/transfer/transfer/contact_search.dart';
+import 'package:fin_pay/screens/transfer/transfer/transfer_cubit.dart';
+import 'package:fin_pay/screens/transfer/transfer/transfer_rules.dart';
+import 'package:fin_pay/screens/transfer/widgets/contact_avatar.dart';
+import 'package:fin_pay/screens/transfer/widgets/transfer_keypad.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class TransferScreen extends StatefulWidget {
+/// Send money: pick a payee (search, recently paid first, staggered
+/// avatars), type the amount on the big keypad (per-digit roll), quick
+/// chips, an optional note, and continue to the review with a fresh
+/// idempotency key.
+class TransferScreen extends StatelessWidget {
   const TransferScreen({super.key});
 
   @override
-  State<TransferScreen> createState() => _TransferScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) {
+        final cubit = TransferCubit(
+          contacts: di.sl(),
+          users: di.sl(),
+          transactions: di.sl(),
+          clock: di.sl(),
+        );
+        unawaited(cubit.load());
+        return cubit;
+      },
+      child: const _TransferView(),
+    );
+  }
 }
 
-class _TransferScreenState extends State<TransferScreen> {
-  final TextEditingController _amountController = TextEditingController();
-  String? selectedRecipient;
-  Money _balance = Money.zero;
-  bool _isLoading = true;
-
-  final List<Map<String, String>> recipients = [
-    {'name': 'Kelvin Habit', 'account': '**** 5961', 'avatar': 'K'},
-    {'name': 'John Doe', 'account': '**** 1234', 'avatar': 'J'},
-    {'name': 'Jane Smith', 'account': '**** 5678', 'avatar': 'J'},
-    {'name': 'Mike Johnson', 'account': '**** 9012', 'avatar': 'M'},
-  ];
+class _TransferView extends StatefulWidget {
+  const _TransferView();
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_loadBalance());
+  State<_TransferView> createState() => _TransferViewState();
+}
+
+class _TransferViewState extends State<_TransferView> {
+  final FpShakeController _shake = FpShakeController();
+  final TextEditingController _search = TextEditingController();
+  final TextEditingController _note = TextEditingController();
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _shake.dispose();
+    _search.dispose();
+    _note.dispose();
+    _scroll.dispose();
+    super.dispose();
   }
 
-  Future<void> _loadBalance() async {
-    final balance = await UserService.getBalance();
-    setState(() {
-      _balance = balance;
-      _isLoading = false;
-    });
+  void _leave(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.home);
+    }
+  }
+
+  Future<void> _paste(TransferCubit cubit) async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+    final text = data?.text ?? '';
+    // Never hand the parser an unbounded paste; the parser rejects it
+    // anyway, but there is no reason to copy a megabyte around first.
+    cubit.pasteAmount(text.length > 64 ? text.substring(0, 64) : text);
+  }
+
+  void _continue(BuildContext context, TransferCubit cubit) {
+    final draft = cubit.createDraft();
+    if (draft == null) return;
+    unawaited(context.push(AppRoutes.transferReview, extra: draft));
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppTheme.credPureBackground,
+    final fp = context.fp;
+    final c = fp.colors;
+    final cubit = context.read<TransferCubit>();
+    return BlocListener<TransferCubit, TransferState>(
+      listenWhen: (p, n) => p.shakes != n.shakes,
+      listener: (context, state) {
+        _shake.shake();
+        playHaptic(null, HapticType.error);
+      },
+      child: Scaffold(
+        backgroundColor: c.background,
         appBar: AppBar(
-          title: const Text('Transfer'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+          backgroundColor: c.background,
+          leading: FpPressable(
+            semanticLabel: 'Back',
+            onPressed: () => _leave(context),
+            child: Icon(Icons.arrow_back, color: c.textPrimary),
           ),
+          title: Text('Send money', style: fp.text.title),
         ),
-        body: const SkeletonList(itemCount: 3),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
-      appBar: AppBar(
-        title: const Text('Transfer'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            await sl<HapticService>().light();
-            if (!context.mounted) return;
-            Navigator.pop(context);
+        body: BlocBuilder<TransferCubit, TransferState>(
+          builder: (context, state) => switch (state.status) {
+            TransferStatus.loading => const _TransferSkeleton(),
+            TransferStatus.error => FpErrorState(
+              title: 'Could not load',
+              message: state.message,
+              onRetry: () => unawaited(cubit.load()),
+            ),
+            TransferStatus.content => _content(context, state, cubit),
           },
         ),
+        bottomNavigationBar: BlocBuilder<TransferCubit, TransferState>(
+          buildWhen: (p, n) => p.canContinue != n.canContinue,
+          builder: (context, state) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                FpSpacing.lg,
+                FpSpacing.sm,
+                FpSpacing.lg,
+                FpSpacing.lg,
+              ),
+              child: FpButton(
+                key: const ValueKey('transfer-continue'),
+                label: 'Continue',
+                enabled: state.canContinue,
+                onPressed: () => _continue(context, cubit),
+              ),
+            ),
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CredSlideIn(
-              delay: const Duration(milliseconds: 100),
-              offset: const Offset(0, 20),
-              child: Row(
-                children: [
-                  CredButtonPress(
-                    onTap: () async {
-                      await sl<HapticService>().medium();
-                      // Add recipient functionality
-                    },
-                    child: CredCardReveal(
-                      duration: const Duration(milliseconds: 400),
-                      perspective: 0.0008,
-                      child: _buildAddRecipientButton(),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: SizedBox(
-                      height: 60,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: recipients.length,
-                        itemBuilder: (context, index) {
-                          final recipient = recipients[index];
-                          final isSelected =
-                              selectedRecipient == recipient['name'];
-                          return CredSlideIn(
-                            delay: Duration(milliseconds: 150 + (index * 50)),
-                            offset: const Offset(20, 0),
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: CredButtonPress(
-                                onTap: () async {
-                                  await sl<HapticService>().selection();
-                                  setState(() {
-                                    selectedRecipient = recipient['name'];
-                                  });
-                                },
-                                child: SpringAnimation(
-                                  startOffset: const Offset(0, 10),
-                                  child: PulseAnimation(
-                                    minScale: isSelected ? 0.98 : 1.0,
-                                    maxScale: isSelected ? 1.02 : 1.0,
-                                    child: Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? AppTheme.credOrangeSunshine
-                                            : AppTheme.credSurfaceCard,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? AppTheme.credOrangeSunshine
-                                              : AppTheme.credMediumGray
-                                                    .withValues(alpha: 0.3),
-                                          width: isSelected ? 3 : 2,
-                                        ),
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: AppTheme
-                                                      .credOrangeSunshine
-                                                      .withValues(alpha: 0.4),
-                                                  blurRadius: 12,
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          recipient['avatar']!,
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? AppTheme.credWhite
-                                                : AppTheme.credTextPrimary,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 20,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (selectedRecipient != null) ...[
-              const SizedBox(height: 24),
-              CredSlideIn(
-                delay: const Duration(milliseconds: 300),
-                offset: const Offset(0, 20),
-                child: CredCardReveal(
-                  perspective: 0.0008,
-                  child: _buildSelectedRecipient(),
-                ),
-              ),
-            ],
-            const SizedBox(height: 32),
-            CredSlideIn(
-              delay: const Duration(milliseconds: 200),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Focus(
-                      child: Builder(
-                        builder: (context) {
-                          final hasFocus = Focus.of(context).hasFocus;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutCubic,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.credSurfaceCard,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: hasFocus
-                                    ? AppTheme.credOrangeSunshine
-                                    : AppTheme.credMediumGray.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                width: hasFocus ? 2 : 1,
-                              ),
-                            ),
-                            child: TextField(
-                              controller: _amountController,
-                              style: const TextStyle(
-                                fontSize: 42,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.credOrangeSunshine,
-                                letterSpacing: -1,
-                              ),
-                              textAlign: TextAlign.center,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: InputDecoration(
-                                prefixText: r'$',
-                                prefixStyle: const TextStyle(
-                                  fontSize: 42,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppTheme.credOrangeSunshine,
-                                  letterSpacing: -1,
-                                ),
-                                border: InputBorder.none,
-                                hintText: '0.00',
-                                hintStyle: TextStyle(
-                                  fontSize: 42,
-                                  color: AppTheme.credOrangeSunshine.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    CredSlideIn(
-                      delay: const Duration(milliseconds: 400),
-                      offset: const Offset(0, 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Your Balance: ',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppTheme.credTextSecondary,
-                            ),
-                          ),
-                          CredNumberCounter(
-                            value: _balance.rupees,
-                            duration: const Duration(milliseconds: 1000),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.credOrangeSunshine,
-                            ),
-                            prefix: r'$',
-                            suffix: ' (Available)',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            CredSlideIn(
-              delay: const Duration(milliseconds: 500),
-              child: CredButtonPress(
-                onTap:
-                    selectedRecipient != null &&
-                        _amountController.text.isNotEmpty
-                    ? () async {
-                        final amount = Money.tryParse(_amountController.text);
-                        if (amount == null || !amount.isPositive) {
-                          await sl<HapticService>().error();
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter a valid amount'),
-                              backgroundColor: AppTheme.credError,
-                            ),
-                          );
-                          return;
-                        }
-                        if (amount > _balance) {
-                          await sl<HapticService>().error();
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Insufficient balance'),
-                              backgroundColor: AppTheme.credError,
-                            ),
-                          );
-                          return;
-                        }
+    );
+  }
 
-                        await sl<HapticService>().medium();
-                        final recipient = recipients.firstWhere(
-                          (r) => r['name'] == selectedRecipient,
-                        );
-                        if (!context.mounted) return;
-                        final stamp = sl<Clock>().now().toUtc();
-                        unawaited(
-                          context.push(
-                            '/transfer-review',
-                            extra: TransferDraft(
-                              recipientName: selectedRecipient!,
-                              recipientAccount: recipient['account']!,
-                              amount: amount,
-                              idempotencyKey:
-                                  'transfer-${stamp.microsecondsSinceEpoch}',
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
-                child: SpringAnimation(
-                  startOffset: const Offset(0, 20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient:
-                          (selectedRecipient != null &&
-                              _amountController.text.isNotEmpty)
-                          ? AppTheme.credOrangeGradient
-                          : null,
-                      color:
-                          (selectedRecipient != null &&
-                              _amountController.text.isNotEmpty)
-                          ? null
-                          : AppTheme.credSurfaceCard,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow:
-                          (selectedRecipient != null &&
-                              _amountController.text.isNotEmpty)
-                          ? [
-                              BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withValues(
-                                  alpha: 0.4,
-                                ),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
-                              ),
-                            ]
-                          : null,
+  Widget _content(
+    BuildContext context,
+    TransferState state,
+    TransferCubit cubit,
+  ) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final visible = state.visibleContacts;
+    final amountLabel = FpAmountText.format(state.amount.paise);
+    return ListView(
+      key: const ValueKey('transfer-scroll'),
+      controller: _scroll,
+      padding: const EdgeInsets.only(bottom: FpSpacing.lg),
+      children: [
+        Padding(
+          padding: FpSpacing.page,
+          child: FpTextField(
+            key: const ValueKey('transfer-search'),
+            controller: _search,
+            hint: 'Search name or UPI ID',
+            prefix: Icon(Icons.search, color: c.textTertiary),
+            textInputAction: TextInputAction.search,
+            autocorrect: false,
+            enableSuggestions: false,
+            maxLength: 64,
+            onChanged: cubit.queryChanged,
+            semanticLabel: 'Search contacts',
+          ),
+        ),
+        const SizedBox(height: FpSpacing.md),
+        if (visible.isEmpty)
+          Padding(
+            padding: FpSpacing.page,
+            child: Semantics(
+              liveRegion: true,
+              child: Text(
+                'No contacts match "${state.query.trim()}"',
+                key: const ValueKey('transfer-no-contacts'),
+                style: fp.text.bodySmall,
+              ),
+            ),
+          )
+        else
+          FpStaggeredEntrance(
+            key: ValueKey('transfer-contacts-${state.query}'),
+            offset: const Offset(24, 0),
+            builder: (context, children) => SizedBox(
+              height: 104,
+              child: ListView(
+                key: const ValueKey('transfer-contacts'),
+                scrollDirection: Axis.horizontal,
+                padding: FpSpacing.page,
+                children: children,
+              ),
+            ),
+            children: [
+              for (final contact in visible)
+                Padding(
+                  padding: const EdgeInsets.only(right: FpSpacing.sm),
+                  child: ContactAvatar(
+                    key: ValueKey('contact-${contact.id}'),
+                    contact: contact,
+                    selected: contact.id == state.selectedId,
+                    recent: ContactSearch.isRecent(
+                      contact,
+                      state.recentRecipients,
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    child: Center(
-                      child: Text(
-                        'Continue',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color:
-                              (selectedRecipient != null &&
-                                  _amountController.text.isNotEmpty)
-                              ? AppTheme.credWhite
-                              : AppTheme.credTextSecondary,
-                          letterSpacing: 0.5,
+                    onSelected: () => cubit.selectContact(contact.id),
+                  ),
+                ),
+            ],
+          ),
+        const SizedBox(height: FpSpacing.lg),
+        FpShake(
+          controller: _shake,
+          child: Padding(
+            padding: FpSpacing.page,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AMOUNT',
+                  style: fp.text.overline.copyWith(color: c.textTertiary),
+                ),
+                const SizedBox(height: FpSpacing.xs),
+                Semantics(
+                  label: 'Amount $amountLabel, long press to paste',
+                  button: true,
+                  onLongPress: () => unawaited(_paste(cubit)),
+                  child: ExcludeSemantics(
+                    child: GestureDetector(
+                      key: const ValueKey('transfer-amount'),
+                      behavior: HitTestBehavior.opaque,
+                      onLongPress: () => unawaited(_paste(cubit)),
+                      child: FpAmountText(
+                        paise: state.amount.paise,
+                        style: fp.text.displayLarge.copyWith(
+                          color: state.amountError == null
+                              ? c.textPrimary
+                              : c.alert,
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            _buildNumericKeypad(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddRecipientButton() {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        gradient: AppTheme.credOrangeGradient,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.credOrangeSunshine.withValues(alpha: 0.4),
-            blurRadius: 12,
-          ),
-        ],
-      ),
-      child: const Icon(Icons.add, color: AppTheme.credWhite, size: 28),
-    );
-  }
-
-  Widget _buildSelectedRecipient() {
-    final recipient = recipients.firstWhere(
-      (r) => r['name'] == selectedRecipient,
-    );
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.credSurfaceCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppTheme.credOrangeSunshine.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          PulseAnimation(
-            minScale: 0.98,
-            maxScale: 1.02,
-            child: Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: AppTheme.credOrangeGradient,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.credOrangeSunshine.withValues(alpha: 0.4),
-                    blurRadius: 12,
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  recipient['avatar']!,
-                  style: const TextStyle(
-                    color: AppTheme.credWhite,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  recipient['name']!,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.credTextPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  recipient['account']!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.credTextSecondary,
+                const SizedBox(height: FpSpacing.xs),
+                Semantics(
+                  liveRegion: true,
+                  // One text whose style animates: a keyed switcher would
+                  // collide with itself when the error flips faster than
+                  // its transition (found by the 10k-key stress test).
+                  child: AnimatedDefaultTextStyle(
+                    duration: fp.motion.fast,
+                    style: fp.text.caption.copyWith(
+                      color: state.amountMessage == null
+                          ? c.textTertiary
+                          : c.alert,
+                    ),
+                    child: Text(
+                      state.amountMessage ??
+                          'Available ${state.balance.format()}',
+                      key: const ValueKey('transfer-amount-message'),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          CredButtonPress(
-            onTap: () async {
-              await sl<HapticService>().light();
-              setState(() {
-                selectedRecipient = null;
-                _amountController.clear();
-              });
-            },
-            child: const TextButton(
-              onPressed: null,
-              child: Text(
-                'Change',
-                style: TextStyle(
-                  color: AppTheme.credOrangeSunshine,
-                  fontWeight: FontWeight.w600,
+        ),
+        const SizedBox(height: FpSpacing.md),
+        SizedBox(
+          height: 44,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: FpSpacing.page,
+            children: [
+              for (final quick in AmountRules.quickAmounts)
+                Padding(
+                  padding: const EdgeInsets.only(right: FpSpacing.sm),
+                  child: FpChip(
+                    key: ValueKey('chip-${quick.paise}'),
+                    label: _wholeRupees(quick.format()),
+                    selected: state.amount.paise == quick.paise,
+                    onSelected: (_) => cubit.quickAmount(quick),
+                  ),
                 ),
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: FpSpacing.md),
+        Padding(
+          padding: FpSpacing.page,
+          child: FpTextField(
+            key: const ValueKey('transfer-note'),
+            controller: _note,
+            hint: 'Add a note (optional)',
+            maxLength: TransferNote.maxLength,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: cubit.noteChanged,
+            semanticLabel: 'Note',
+          ),
+        ),
+        const SizedBox(height: FpSpacing.md),
+        Padding(
+          padding: FpSpacing.page,
+          child: TransferKeypad(
+            onDigit: cubit.digit,
+            onDecimal: cubit.decimal,
+            onBackspace: cubit.backspace,
+            onClear: cubit.clearAmount,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildNumericKeypad() {
-    return CredSlideIn(
-      delay: const Duration(milliseconds: 600),
-      offset: const Offset(0, 40),
-      child: GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2,
-        children: [
-          _buildKeypadButton('1', 0),
-          _buildKeypadButton('2', 1),
-          _buildKeypadButton('3', 2),
-          _buildKeypadButton('4', 3),
-          _buildKeypadButton('5', 4),
-          _buildKeypadButton('6', 5),
-          _buildKeypadButton('7', 6),
-          _buildKeypadButton('8', 7),
-          _buildKeypadButton('9', 8),
-          _buildKeypadButton('.', 9),
-          _buildKeypadButton('0', 10),
-          _buildKeypadButton('⌫', 11, isBackspace: true),
-        ],
-      ),
-    );
-  }
+  static String _wholeRupees(String formatted) => formatted.endsWith('.00')
+      ? formatted.substring(0, formatted.length - 3)
+      : formatted;
+}
 
-  Widget _buildKeypadButton(
-    String text,
-    int index, {
-    bool isBackspace = false,
-  }) {
-    return CredSlideIn(
-      delay: Duration(milliseconds: 700 + (index * 30)),
-      offset: const Offset(0, 20),
-      child: CredButtonPress(
-        onTap: () async {
-          await sl<HapticService>().selection();
-          if (isBackspace) {
-            if (_amountController.text.isNotEmpty) {
-              setState(() {
-                _amountController.text = _amountController.text.substring(
-                  0,
-                  _amountController.text.length - 1,
-                );
-              });
-            }
-          } else {
-            setState(() {
-              final currentText = _amountController.text;
-              if (text == '.' && currentText.contains('.')) {
-                return;
-              }
-              _amountController.text = currentText + text;
-            });
-          }
-        },
-        child: CredCardReveal(
-          duration: const Duration(milliseconds: 300),
-          perspective: 0.0006,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppTheme.credSurfaceCard,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppTheme.credMediumGray.withValues(alpha: 0.2),
-              ),
+class _TransferSkeleton extends StatelessWidget {
+  const _TransferSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return FpSkeletonGroup(
+      child: Padding(
+        padding: FpSpacing.page,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: FpSpacing.sm),
+            const FpSkeleton(height: 48),
+            const SizedBox(height: FpSpacing.lg),
+            Row(
+              children: [
+                for (var i = 0; i < 4; i++) ...[
+                  const FpSkeleton.circle(size: ContactAvatar.size),
+                  const SizedBox(width: FpSpacing.lg),
+                ],
+              ],
             ),
-            child: Center(
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: isBackspace
-                      ? AppTheme.credError
-                      : AppTheme.credTextPrimary,
-                ),
-              ),
-            ),
-          ),
+            const SizedBox(height: FpSpacing.xl),
+            const FpSkeleton(width: 220, height: 56),
+            const SizedBox(height: FpSpacing.lg),
+            const FpSkeleton(height: 36),
+          ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    super.dispose();
   }
 }

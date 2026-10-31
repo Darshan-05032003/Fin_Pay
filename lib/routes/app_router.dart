@@ -23,6 +23,7 @@ import 'package:fin_pay/screens/profile/profile_screen.dart';
 import 'package:fin_pay/screens/shell/app_shell.dart';
 import 'package:fin_pay/screens/statistics/statistics_screen.dart';
 import 'package:fin_pay/screens/transactions/transactions_screen.dart';
+import 'package:fin_pay/screens/transfer/payment/payment_receipt.dart';
 import 'package:fin_pay/screens/transfer/transfer_review_screen.dart';
 import 'package:fin_pay/screens/transfer/transfer_screen.dart';
 import 'package:fin_pay/screens/transfer/transfer_success_screen.dart';
@@ -48,6 +49,7 @@ abstract final class AppRouter {
     WidgetBuilder? gallery,
     bool? isDebug,
     String initialLocation = AppRoutes.welcome,
+    Object? initialExtra,
     CreateAccountCubitFactory? createAccount,
   }) {
     final debug = isDebug ?? kDebugMode;
@@ -67,6 +69,7 @@ abstract final class AppRouter {
     return GoRouter(
       navigatorKey: rootKey,
       initialLocation: initialLocation,
+      initialExtra: initialExtra,
       refreshListenable: settingsRefresh == null
           ? refresh
           : Listenable.merge([refresh, settingsRefresh]),
@@ -151,8 +154,12 @@ abstract final class AppRouter {
           path: AppRoutes.transferSuccess,
           pageBuilder: (context, state) => AppPageTransitions.page(
             state: state,
+            // Only a receipt minted by PaymentCubit renders the success
+            // screen; a bare draft (deep link, tampered extra) does not.
             child: switch (state.extra) {
-              final TransferDraft draft => TransferSuccessScreen(draft: draft),
+              final PaymentReceipt receipt => TransferSuccessScreen(
+                receipt: receipt,
+              ),
               _ => const _MissingDraftScreen(),
             },
           ),

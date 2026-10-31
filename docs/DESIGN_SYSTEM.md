@@ -19,7 +19,8 @@ lib/design_system/
                           fp_bottom_sheet, fp_toast, fp_skeleton, fp_state_views,
                           fp_amount_text (+ FpOdometer), fp_segmented_control, fp_page_indicator,
                           fp_otp_field, fp_countdown_ring (F3),
-                          fp_bottom_nav, fp_refresh_indicator, fp_collapsing_header (F4)
+                          fp_bottom_nav, fp_refresh_indicator, fp_collapsing_header (F4),
+                          fp_swipe_to_pay (+ FpSwipeMath), fp_processing_ring (F5)
   motion/                 fp_pressable, fp_submit_guard, fp_staggered_entrance (FpEntrance,
                           FpStaggeredEntrance, FpStagger), fp_parallax, fp_page_transitions,
                           fp_hero, fp_shake, fp_pulse, fp_confetti, fp_drawn_check (F3),
@@ -133,6 +134,8 @@ haptics through `HapticService` (constructor parameter, else GetIt, else none).
 | `FpBottomNav` (F4) | `items` (≥ 2), `currentIndex`, `onSelected`, `onReselected`; every tab a ≥ 48 dp button with `selected` semantics | Accent indicator slides 250 ms (standard curve), icon cross-fades; jumps with reduce-motion | `selection` |
 | `FpRefreshIndicator` (F4) | Wraps any vertical scrollable; `onRefresh` future; works with clamping and bouncing physics; `FpRefreshGlyph` for galleries | Drawn plunk tile slides down with a resisted curve (`FpRefreshMath`), arc sweeps with drag, spins while refreshing, retracts 400 ms; no spin with reduce-motion; errors reported, never thrown | `medium` on arm |
 | `FpCollapsingHeader` (F4) | Pinned sliver with `expandedHeight`, `collapsedHeight`, `rebuildKey`; builder receives the collapse fraction `t` (`FpCollapseMath`: fraction, lerp, fadeOut, fadeIn) | Scroll-linked only | – |
+| `FpSwipeToPay` (F5) | `label`, `onConfirmed` (one call per swipe through `FpSubmitGuard`), `processing` (locks the thumb at the end, shows a ring, springs back when cleared), `enabled`; one button semantics node ("double tap to pay") for screen readers. Pure `FpSwipeMath`: travel, progress, 85 % threshold, fling ≥ 1,200 px/s from 50 %, ticks at 25/50/75 %, label fade | Thumb follows the finger; release springs to 0 or 1 on `FpSprings.slider`; label fades over the first 40 %; with reduce-motion the whole slider is a large `FpButton` | `selection` per forward tick crossing, `heavy` on confirm |
+| `FpProcessingRing` (F5) | Indeterminate three-quarter arc on `FpCountdownRingPainter`; `size`, `strokeWidth`, colours, `period` (1.2 s), `semanticLabel` | One rotation per period; static arc with reduce-motion | – |
 
 ## 4. Motion primitives
 
@@ -221,31 +224,35 @@ importer); `FpPageIndicator` replaces it.
 `FpStaggeredEntrance`) and `cred_bottom_navigation_bar.dart` (→ `FpBottomNav`
 in the `StatefulShellRoute` shell; statistics and profile lost their own bar).
 
+### Deleted in F5 (zero usages in `lib/` after the payments rewrite)
+
+`animations/draggable_card.dart` (→ `FpSwipeToPay`), `animations/confetti_effect.dart`
+(→ `FpConfetti`) and `animations/delayed_animation.dart` (→ `FpEntrance`). The
+`confetti` package left pubspec with its only importer.
+
 ### Pending removals (still imported by screens; Wave 1 switches them over)
 
-Counts are the screens still importing each file after F4 (home, my cards,
-add card, card details and the onboarding/auth screens import nothing from
-`lib/widgets/`).
+Counts are the screens still importing each file after F5 (home, cards,
+transfer, onboarding and auth screens import nothing from `lib/widgets/`;
+only statistics, transactions, notifications and profile remain for F6).
 
 | File | Used by | Replace with |
 |---|---|---|
-| `animations/cred_slide_in.dart` | 6 screens | `FpEntrance` / `FpStaggeredEntrance` |
-| `animations/cred_button_press.dart` | 6 screens | `FpPressable` (or `FpButton` for real buttons) |
-| `animations/cred_card_reveal.dart` | 6 screens | `FpEntrance` |
-| `animations/skeleton_loader_full.dart` | 5 screens | `FpSkeleton*` |
+| `animations/cred_slide_in.dart` | 4 screens | `FpEntrance` / `FpStaggeredEntrance` |
+| `animations/cred_button_press.dart` | 4 screens | `FpPressable` (or `FpButton` for real buttons) |
+| `animations/cred_card_reveal.dart` | 4 screens | `FpEntrance` |
+| `animations/skeleton_loader_full.dart` | 4 screens | `FpSkeleton*` |
 | `animations/pull_to_refresh_custom.dart` | 4 screens | `FpRefreshIndicator` (F4) |
-| `animations/pulse_animation.dart` | 4 screens | `FpPulse` (finite; drop decorative uses) |
-| `animations/fade_in_animation.dart` | 3 screens | `FpEntrance` |
-| `animations/spring_animation.dart` | 3 screens | `FpEntrance(scaleFrom: 0.85)` |
-| `animations/cred_number_counter.dart` | 2 screens | `FpAmountText` |
+| `animations/pulse_animation.dart` | 2 screens | `FpPulse` (finite; drop decorative uses) |
+| `animations/fade_in_animation.dart` | 2 screens | `FpEntrance` |
+| `animations/spring_animation.dart` | profile | `FpEntrance(scaleFrom: 0.85)` |
+| `animations/cred_number_counter.dart` | statistics | `FpAmountText` |
 | `animations/swipe_to_dismiss.dart` | 2 screens | F6: `components/fp_swipe_action_row.dart` (not in F2 scope) |
 | `animations/ripple_effect.dart` | profile | `FpPressable` |
-| `animations/confetti_effect.dart` | transfer_success | `FpConfetti` |
-| `animations/delayed_animation.dart` | transfer_success | `FpEntrance` |
-| `animations/draggable_card.dart` | transfer_review | F5 swipe-to-pay (DELETE then) |
 
-When the last screen stops importing a file, delete it; the `confetti`,
-`shimmer` and `flutter_staggered_animations` packages can go with their last user.
+When the last screen stops importing a file, delete it; the `shimmer` and
+`flutter_staggered_animations` packages can go with their last user
+(`confetti` left in F5).
 
 ## 7. Tests
 
@@ -261,3 +268,7 @@ When the last screen stops importing a file, delete it; the `confetti`,
   real router + DI with the platform fakes), `test/golden/screens/` (every
   onboarding/auth screen × state at 1.0× and 1.3×, 38 baselines),
   `test/stress/auth_stress_test.dart`.
+- F5 payments: `test/design_system/components/fp_swipe_to_pay_test.dart` (math
+  + widget, 23 cases), DS golden `swipe_to_pay_<scale>.png`, screen goldens
+  `transfer_<state>_<scale>.png` (18 baselines),
+  `test/stress/payments_stress_test.dart`.

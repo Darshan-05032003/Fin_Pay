@@ -166,3 +166,26 @@ per pumped frame, not GPU raster time; on-device profile traces are Wave 2.
   - The pile draws at most four cards; neighbours in the carousel are plain art (no tilt, no flip controllers) so tickers scale with 1, not with the card count.
   - Recommendation (F6/F7): page the ledger or give home a `limit`, so the 5-row list does not depend on the ledger size (F1 report already recommends keyset paging).
   - Wave 2: repeat scenario 1 on a mid-range device in profile mode for raster times; the card art is one `CustomPaint` per card under a `RepaintBoundary`, and the sheen is a gradient `DecoratedBox` (no `saveLayer`), so raster cost should be flat.
+
+## Feature: F5 Payments
+- Scenario and scale:
+  - `test/stress/payments_stress_test.dart`, 5 scenarios:
+    1. Review screen on the real router + DI harness with the bank gated: a two-finger drag past the threshold, then 1,000 alternating full swipes and taps on the slider (1,002 gestures); gateway and ledger calls counted after release.
+    2. 1,000 sequential `PaymentCubit` payments through the real `TransactionBloc` into an in-memory sqflite ledger (`SimulatedPaymentGateway` with zero latency); every tenth payee is `@flaky` (timeout, then Retry on the same key); rows, balance, "already paid" count, effect listeners and RSS checked.
+    3. 10,000 keypad inputs on the transfer screen (13-key cycle of digits, point and backspace), one 16 ms frame per input; frame build times.
+    4. Success screen: 100 frames of the confetti burst and the amount odometer; tickers after the burst.
+    5. 50 contacts in the picker: 60 frames of the staggered entrance, then a search filter.
+- Results (numbers, Linux test host, Dart JIT, software rendering):
+  1. Slider: 1,002 gestures dispatched in **454 ms** → **1** authorize call, **1** ledger write, the app landed on `/transfer-success`.
+  2. 1,000 payments (100 flaky retries) in **1,920 ms** (≈1.9 ms per payment including two bank phases and the exclusive ledger transaction): rows **1,000**, already paid **100**, balance exact (₹1,00,00,00,000 − ₹5,995.00), effect listeners after **0**, RSS **301 → 307 MB**.
+  3. Keypad: 10,000 inputs in **27.1 s** (test-harness tap + frame cost); 10,000 frames, **avg 1.94 ms, p90 4.89 ms, p99 8.29 ms**, frames > 16 ms: **12** (0.12 %, JIT/GC pauses on the host); the final amount is a valid odometer value.
+  4. Confetti + odometer: 100 frames, **avg 0.15 ms, p90 0.27 ms, p99 0.97 ms**, > 16 ms: 0; tickers after the burst: **0**.
+  5. 50-contact entrance: 60 frames, **avg 0.21 ms, p90 0.42 ms, p99 2.30 ms**, > 16 ms: 0; search filter (type + rebuild) **49 ms** for the first keystroke (includes `enterText`).
+- What broke:
+  - Scenario 3 crashed the first transfer-screen draft: the inline error's keyed `AnimatedSwitcher` collided with itself when the error flipped faster than its 150 ms transition ("Duplicate keys found"). Fixed with a single `Text` under `AnimatedDefaultTextStyle` (SECURITY_REVIEW F5, Low).
+  - Nothing else failed. The `@flaky` retries exercised the duplicate path 100 times with exactly one row each.
+- Failure flow (step by step): none reached in the product. The expensive path per payment is the ledger's exclusive transaction (user read, key lookup, insert, balance update); at ~1.9 ms per payment on the host the bank latency (2 × 900 ms simulated) dominates on a device, not the app.
+- Fix applied / recommendation:
+  - The slider, the cubit and the ledger each refuse a second confirmation (guard → in-flight flag → unique key), so the 1,000-gesture burst costs one bank round trip.
+  - `PaymentCubit` listens to the effects stream only between dispatch and answer and cancels synchronously, so 1,000 payments leave no listener.
+  - Recommendation: the keypad's >16 ms frames are host JIT noise; verify on the moto g64 in profile mode in Wave 2 (`FpAmountText` is one `RepaintBoundary`, the keypad another). If the ledger ever grows past the F1 breaking point (400k rows, OFFSET paging), the review is unaffected (one key lookup by index), but `TransferCubit.load` reads 20 recent rows and would inherit the F6 paging work.

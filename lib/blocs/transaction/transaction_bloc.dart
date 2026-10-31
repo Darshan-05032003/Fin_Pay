@@ -95,18 +95,18 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     final result = await _addTransactionUseCase(event.transaction);
     switch (result) {
       case Success(data: TransactionOutcome.recorded):
-        _effects.add(TransactionAdded(event.transaction));
+        _emitEffect(TransactionAdded(event.transaction));
         await _onLoad(LoadTransactionsEvent(limit: _lastLimit), emit);
       case Success(data: TransactionOutcome.duplicate):
-        _effects.add(TransactionDuplicate(event.transaction));
+        _emitEffect(TransactionDuplicate(event.transaction));
       case Success(data: TransactionOutcome.insufficientBalance):
-        _effects.add(
+        _emitEffect(
           TransactionRejected(event.transaction, 'Insufficient balance'),
         );
       case Success(data: TransactionOutcome.noUser):
-        _effects.add(TransactionRejected(event.transaction, 'No account'));
+        _emitEffect(TransactionRejected(event.transaction, 'No account'));
       case Failure(:final message):
-        _effects.add(TransactionFailed(message));
+        _emitEffect(TransactionFailed(message));
         Logger.error('Failed to add transaction: $message');
     }
   }
@@ -118,7 +118,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     final result = await _repository.deleteTransaction(event.transactionId);
     switch (result) {
       case Success():
-        _effects.add(TransactionDeleted(event.transactionId));
+        _emitEffect(TransactionDeleted(event.transactionId));
         final current = state;
         if (current is TransactionContent) {
           final remaining = current.transactions
@@ -131,9 +131,15 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           );
         }
       case Failure(:final message):
-        _effects.add(TransactionFailed(message));
+        _emitEffect(TransactionFailed(message));
         Logger.error('Failed to delete transaction: $message');
     }
+  }
+
+  /// A handler that was awaiting storage when the bloc closed must not
+  /// throw into a closed controller.
+  void _emitEffect(TransactionEffect effect) {
+    if (!_effects.isClosed) _effects.add(effect);
   }
 
   @override

@@ -13,6 +13,7 @@ import 'package:fin_pay/routes/app_page_transitions.dart';
 import 'package:fin_pay/routes/app_router.dart';
 import 'package:fin_pay/routes/app_routes.dart';
 import 'package:fin_pay/routes/transfer_draft.dart';
+import 'package:fin_pay/screens/transfer/payment/payment_receipt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -183,13 +184,23 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Start a transfer from the home screen.'), findsOneWidget);
+    const draft = TransferDraft(
+      recipientName: 'Kelvin Habit',
+      recipientAccount: 'kelvin@okaxis',
+      amount: Money.paise(42090),
+      idempotencyKey: 'k',
+    );
+    // A bare draft never renders a receipt (it could be a crafted extra).
+    router.go(AppRoutes.transferSuccess, extra: draft);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Start a transfer from the home screen.'), findsOneWidget);
     router.go(
       AppRoutes.transferSuccess,
-      extra: const TransferDraft(
-        recipientName: 'Kelvin Habit',
-        recipientAccount: '**** 5961',
-        amount: Money.paise(42090),
-        idempotencyKey: 'k',
+      extra: PaymentReceipt(
+        draft: draft,
+        reference: 'FPTEST000001',
+        paidAt: DateTime.utc(2026, 10, 31),
       ),
     );
     await tester.pump();

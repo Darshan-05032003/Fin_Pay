@@ -363,6 +363,38 @@ void main() {
         );
       });
 
+      testWidgets('swipe to pay and processing ring', (tester) async {
+        await _golden(
+          tester,
+          'swipe_to_pay',
+          Column(
+            spacing: FpSpacing.md,
+            children: [
+              FpSwipeToPay(label: 'Swipe to pay ₹1,200.00', onConfirmed: () {}),
+              FpSwipeToPay(
+                label: 'Processing',
+                processing: true,
+                onConfirmed: () {},
+              ),
+              FpSwipeToPay(
+                label: 'Disabled',
+                enabled: false,
+                onConfirmed: () {},
+              ),
+              const Row(
+                spacing: FpSpacing.md,
+                children: [
+                  FpProcessingRing(),
+                  FpProcessingRing(size: 32, strokeWidth: 3),
+                ],
+              ),
+            ],
+          ),
+          textScale: scale,
+          size: const Size(400, 360),
+        );
+      });
+
       testWidgets('gallery', (tester) async {
         await tester.binding.setSurfaceSize(const Size(430, 7200));
         addTearDown(() => tester.binding.setSurfaceSize(null));
