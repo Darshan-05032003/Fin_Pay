@@ -210,6 +210,9 @@ class TransferCubit extends Cubit<TransferState> {
 
   void backspace() => _setAmount(state.amount.backspace());
 
+  /// Long-press on backspace.
+  void clearAmount() => _setAmount(AmountInput.empty);
+
   /// Replaces the amount with a quick chip.
   void quickAmount(Money money) =>
       _setAmount(AmountInput.fromPaise(money.paise));

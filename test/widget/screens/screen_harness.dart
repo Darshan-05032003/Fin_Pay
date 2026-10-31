@@ -13,8 +13,10 @@ import 'package:fin_pay/core/settings/app_settings.dart';
 import 'package:fin_pay/core/settings/settings_cubit.dart';
 import 'package:fin_pay/design_system/design_system.dart';
 import 'package:fin_pay/domain/auth/auth_failure.dart';
+import 'package:fin_pay/domain/payments/payment_gateway.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
 import 'package:fin_pay/domain/repositories/card_repository.dart';
+import 'package:fin_pay/domain/repositories/contact_repository.dart';
 import 'package:fin_pay/domain/repositories/transaction_repository.dart';
 import 'package:fin_pay/domain/repositories/user_repository.dart';
 import 'package:fin_pay/models/user.dart';
@@ -71,6 +73,8 @@ class ScreenHarness {
     ICardRepository? cardRepository,
     ITransactionRepository? transactionRepository,
     IUserRepository? userRepository,
+    IContactRepository? contactRepository,
+    PaymentGateway? paymentGateway,
     FakeMotionSensor? motionSensor,
   }) async {
     sqfliteFfiInit();
@@ -120,6 +124,8 @@ class ScreenHarness {
         cardRepository: cardRepository,
         transactionRepository: transactionRepository,
         userRepository: userRepository,
+        contactRepository: contactRepository,
+        paymentGateway: paymentGateway,
       ),
     );
     await settings.load();
@@ -149,6 +155,7 @@ class ScreenHarness {
   Future<void> pump(
     WidgetTester tester,
     String location, {
+    Object? extra,
     double textScale = 1,
     bool reduceMotion = false,
     Size size = phoneSize,
@@ -159,6 +166,7 @@ class ScreenHarness {
       session: session,
       settings: settings,
       initialLocation: location,
+      initialExtra: extra,
       isDebug: true,
     );
     await tester.pumpWidget(
