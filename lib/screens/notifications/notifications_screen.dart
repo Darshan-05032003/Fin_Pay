@@ -1,436 +1,381 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:clock/clock.dart';
-import 'package:fin_pay/constants/theme.dart';
-import 'package:fin_pay/core/di/injection_container.dart';
+import 'package:fin_pay/blocs/notification/notification_bloc.dart';
+import 'package:fin_pay/blocs/notification/notification_event.dart';
+import 'package:fin_pay/blocs/notification/notification_state.dart';
 import 'package:fin_pay/core/haptics/haptic_service.dart';
+import 'package:fin_pay/design_system/design_system.dart';
 import 'package:fin_pay/models/notification_item.dart';
-import 'package:fin_pay/services/user_service.dart';
-import 'package:fin_pay/widgets/animations/cred_button_press.dart';
-import 'package:fin_pay/widgets/animations/cred_card_reveal.dart';
-import 'package:fin_pay/widgets/animations/cred_slide_in.dart';
-import 'package:fin_pay/widgets/animations/fade_in_animation.dart' as custom;
-import 'package:fin_pay/widgets/animations/pull_to_refresh_custom.dart';
-import 'package:fin_pay/widgets/animations/skeleton_loader_full.dart';
-import 'package:fin_pay/widgets/animations/swipe_to_dismiss.dart';
+import 'package:fin_pay/routes/app_routes.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
+/// `/notifications`: the app-wide [NotificationBloc]'s list with a staggered
+/// entrance, swipe to dismiss with Undo, a pulsing unread dot, mark-read on
+/// tap and "Mark all read".
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
+
+  /// How many rows take part in the staggered entrance (the rest appear
+  /// in place, so a long list never waits).
+  static const int staggeredRows = 12;
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<NotificationItem> _allNotifications = [];
-  List<NotificationItem> _todayNotifications = [];
-  List<NotificationItem> _yesterdayNotifications = [];
-  bool _isLoading = true;
-  String _searchQuery = '';
+  StreamSubscription<NotificationEffect>? _effects;
+
+  static DateTime _now() =>
+      GetIt.I.isRegistered<Clock>() ? GetIt.I<Clock>().now() : clock.now();
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadNotifications());
+    final bloc = context.read<NotificationBloc>();
+    if (bloc.state is NotificationInitial) {
+      bloc.add(const LoadNotificationsEvent());
+    }
+    _effects = bloc.effects.listen(_onEffect);
   }
 
-  Future<void> _loadNotifications() async {
-    final notifications = await UserService.getNotifications();
-
-    final now = sl<Clock>().now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final yesterdayStart = todayStart.subtract(const Duration(days: 1));
-
-    final today = notifications
-        .where((n) => n.localTime.isAfter(todayStart))
-        .toList();
-    final yesterday = notifications.where((n) {
-      return n.localTime.isAfter(yesterdayStart) &&
-          n.localTime.isBefore(todayStart);
-    }).toList();
-
-    setState(() {
-      _allNotifications = notifications;
-      _todayNotifications = today;
-      _yesterdayNotifications = yesterday;
-      _isLoading = false;
-    });
+  @override
+  void dispose() {
+    unawaited(_effects?.cancel());
+    super.dispose();
   }
 
-  List<NotificationItem> get _filteredToday {
-    if (_searchQuery.isEmpty) return _todayNotifications;
-    return _todayNotifications
-        .where(
-          (n) =>
-              n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              n.message.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
-        .toList();
+  void _onEffect(NotificationEffect effect) {
+    if (!mounted) return;
+    switch (effect) {
+      case NotificationDeleted(:final notification):
+        final bloc = context.read<NotificationBloc>();
+        FpToast.show(
+          context,
+          message: 'Notification dismissed',
+          actionLabel: 'Undo',
+          onAction: () {
+            playHaptic(null, HapticType.selection);
+            bloc.add(AddNotificationEvent(notification));
+          },
+        );
+      case NotificationFailed(:final message):
+        playHaptic(null, HapticType.error);
+        FpToast.show(context, message: message, kind: FpToastKind.error);
+      case NotificationAdded():
+        break;
+    }
   }
 
-  List<NotificationItem> get _filteredYesterday {
-    if (_searchQuery.isEmpty) return _yesterdayNotifications;
-    return _yesterdayNotifications
-        .where(
-          (n) =>
-              n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              n.message.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
-        .toList();
+  void _leave(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.home);
+    }
+  }
+
+  Future<void> _refresh() async {
+    final bloc = context.read<NotificationBloc>();
+    final settled = bloc.stream
+        .firstWhere((s) => s is! NotificationLoading)
+        .timeout(const Duration(seconds: 10), onTimeout: () => bloc.state);
+    bloc.add(const LoadNotificationsEvent());
+    await settled;
   }
 
   @override
   Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final bloc = context.read<NotificationBloc>();
     return Scaffold(
-      backgroundColor: AppTheme.credPureBackground,
+      backgroundColor: c.background,
       appBar: AppBar(
-        title: const Text('Notifications'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            await sl<HapticService>().light();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
+        backgroundColor: c.background,
+        leading: FpPressable(
+          semanticLabel: 'Back',
+          onPressed: () => _leave(context),
+          child: Icon(Icons.arrow_back, color: c.textPrimary),
         ),
-      ),
-      body: Column(
-        children: [
-          CredSlideIn(
-            delay: const Duration(milliseconds: 100),
-            offset: const Offset(0, 20),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CredCardReveal(
-                      duration: const Duration(milliseconds: 400),
-                      perspective: 0.0006,
-                      child: Focus(
-                        child: Builder(
-                          builder: (context) {
-                            final hasFocus = Focus.of(context).hasFocus;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOutCubic,
-                              decoration: BoxDecoration(
-                                color: AppTheme.credSurfaceCard,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: hasFocus
-                                      ? AppTheme.credOrangeSunshine
-                                      : AppTheme.credMediumGray.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                  width: hasFocus ? 2 : 1,
-                                ),
-                              ),
-                              child: TextField(
-                                onChanged: (value) {
-                                  setState(() {
-                                    _searchQuery = value;
-                                  });
-                                  unawaited(sl<HapticService>().selection());
-                                },
-                                style: const TextStyle(
-                                  color: AppTheme.credTextPrimary,
-                                ),
-                                decoration: const InputDecoration(
-                                  hintText: 'Search notifications',
-                                  hintStyle: TextStyle(
-                                    color: AppTheme.credTextSecondary,
-                                  ),
-                                  prefixIcon: Icon(
-                                    Icons.search,
-                                    color: AppTheme.credTextSecondary,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+        title: Text('Notifications', style: fp.text.title),
+        actions: [
+          BlocBuilder<NotificationBloc, NotificationState>(
+            builder: (context, state) {
+              final unread = state is NotificationContent
+                  ? state.unreadCount
+                  : 0;
+              if (unread == 0) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(right: FpSpacing.sm),
+                child: FpPressable(
+                  key: const ValueKey('notifications-mark-all'),
+                  semanticLabel: 'Mark all $unread read',
+                  onPressed: () {
+                    playHaptic(null, HapticType.success);
+                    bloc.add(const MarkAllNotificationsReadEvent());
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FpSpacing.sm,
+                    ),
+                    child: Text(
+                      'MARK ALL READ',
+                      style: fp.text.overline.copyWith(color: c.accent),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  CredSlideIn(
-                    delay: const Duration(milliseconds: 150),
-                    offset: const Offset(20, 0),
-                    child: CredButtonPress(
-                      onTap: () async {
-                        await sl<HapticService>().medium();
-                      },
-                      child: CredCardReveal(
-                        perspective: 0.0006,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.credOrangeGradient,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.credOrangeSunshine.withValues(
-                                  alpha: 0.3,
-                                ),
-                                blurRadius: 8,
-                              ),
-                            ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: BlocBuilder<NotificationBloc, NotificationState>(
+        builder: (context, state) => switch (state) {
+          NotificationInitial() || NotificationLoading() => const _Skeleton(),
+          NotificationError(:final message) => FpErrorState(
+            title: 'Could not load notifications',
+            message: message,
+            onRetry: () => bloc.add(const LoadNotificationsEvent()),
+          ),
+          NotificationEmpty() => const FpPulse(
+            key: ValueKey('notifications-empty'),
+            maxScale: 1.03,
+            child: FpEmptyState(
+              icon: Icons.notifications_none,
+              title: 'All caught up',
+              message: 'Payments, cashback and reminders show up here.',
+            ),
+          ),
+          NotificationContent(:final notifications) => FpRefreshIndicator(
+            onRefresh: _refresh,
+            child: _NotificationList(
+              items: notifications,
+              now: _now(),
+              onTap: (n) {
+                if (n.isRead) return;
+                playHaptic(null, HapticType.selection);
+                bloc.add(MarkNotificationReadEvent(n.id));
+              },
+              onDismiss: (n) => bloc.add(DeleteNotificationEvent(n.id)),
+              onMarkRead: (n) => bloc.add(MarkNotificationReadEvent(n.id)),
+            ),
+          ),
+        },
+      ),
+    );
+  }
+}
+
+class _NotificationList extends StatelessWidget {
+  const _NotificationList({
+    required this.items,
+    required this.now,
+    required this.onTap,
+    required this.onDismiss,
+    required this.onMarkRead,
+  });
+
+  final List<NotificationItem> items;
+  final DateTime now;
+  final ValueChanged<NotificationItem> onTap;
+  final ValueChanged<NotificationItem> onDismiss;
+  final ValueChanged<NotificationItem> onMarkRead;
+
+  @override
+  Widget build(BuildContext context) {
+    final staggered = math.min(items.length, NotificationsScreen.staggeredRows);
+    final delays = FpStagger.delays(staggered);
+    return ListView.separated(
+      key: const ValueKey('notifications-scroll'),
+      padding: const EdgeInsets.fromLTRB(
+        FpSpacing.lg,
+        FpSpacing.sm,
+        FpSpacing.lg,
+        FpSpacing.xxl,
+      ),
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(height: FpSpacing.sm),
+      itemBuilder: (context, i) {
+        final n = items[i];
+        final row = _NotificationRow(
+          key: ValueKey('notification-${n.id}'),
+          item: n,
+          now: now,
+          onTap: () => onTap(n),
+          onDismiss: () => onDismiss(n),
+          onMarkRead: () => onMarkRead(n),
+        );
+        if (i >= staggered) return row;
+        return FpEntrance(
+          key: ValueKey('notification-entrance-${n.id}'),
+          delay: delays[i],
+          child: row,
+        );
+      },
+    );
+  }
+}
+
+class _NotificationRow extends StatelessWidget {
+  const _NotificationRow({
+    required this.item,
+    required this.now,
+    required this.onTap,
+    required this.onDismiss,
+    required this.onMarkRead,
+    super.key,
+  });
+
+  final NotificationItem item;
+  final DateTime now;
+  final VoidCallback onTap;
+  final VoidCallback onDismiss;
+  final VoidCallback onMarkRead;
+
+  static IconData iconFor(NotificationType type) => switch (type) {
+    NotificationType.cashback => Icons.savings_outlined,
+    NotificationType.paymentReminder => Icons.alarm_outlined,
+    NotificationType.profileUpdate => Icons.person_outline,
+    NotificationType.paymentRequest => Icons.request_page_outlined,
+    NotificationType.cardLinked => Icons.credit_card_outlined,
+    NotificationType.billDue => Icons.receipt_long_outlined,
+  };
+
+  /// "Just now", "5 min ago", "3 h ago", "Yesterday" or `d MMM`.
+  static String relativeTime(DateTime local, DateTime now) {
+    final diff = now.difference(local);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} h ago';
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(local.year, local.month, local.day);
+    if (today.difference(day).inDays == 1) return 'Yesterday';
+    return DateFormat('d MMM').format(local);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fp = context.fp;
+    final c = fp.colors;
+    final n = item;
+    final when = relativeTime(n.localTime, now.toLocal());
+    final label =
+        '${n.title}, ${n.message}, $when'
+        '${n.isRead ? '' : ', unread'}';
+    return FpSwipeActionRow(
+      semanticLabel: '$label, swipe left for actions',
+      onTap: onTap,
+      onDismissed: onDismiss,
+      actions: [
+        if (!n.isRead)
+          FpSwipeAction(label: 'Read', icon: Icons.done, onPressed: onMarkRead),
+        FpSwipeAction(
+          label: 'Dismiss',
+          icon: Icons.close,
+          tone: FpSwipeActionTone.danger,
+          onPressed: onDismiss,
+        ),
+      ],
+      child: FpSurface(
+        variant: n.isRead ? FpSurfaceVariant.flat : FpSurfaceVariant.raised,
+        padding: const EdgeInsets.all(FpSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: c.surfaceHigh,
+                border: Border.all(color: c.border),
+              ),
+              child: Icon(
+                iconFor(n.type),
+                size: 20,
+                color: n.isRead ? c.textSecondary : c.accent,
+              ),
+            ),
+            const SizedBox(width: FpSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          n.title,
+                          style: fp.text.body.copyWith(
+                            fontWeight: n.isRead
+                                ? FontWeight.w500
+                                : FontWeight.w700,
                           ),
-                          child: const Icon(
-                            Icons.filter_list,
-                            color: AppTheme.credWhite,
-                            size: 24,
-                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: FpSpacing.sm),
+                      Text(when, style: fp.text.caption),
+                    ],
+                  ),
+                  const SizedBox(height: FpSpacing.xs),
+                  Text(
+                    n.message,
+                    style: fp.text.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const SkeletonList()
-                : _allNotifications.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_none,
-                          size: 64,
-                          color: AppTheme.credTextSecondary.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No notifications yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.credTextSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : CustomPullToRefresh(
-                    onRefresh: _loadNotifications,
-                    child: AnimationLimiter(
-                      child: ListView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        children: [
-                          if (_filteredToday.isNotEmpty) ...[
-                            CredSlideIn(
-                              delay: const Duration(milliseconds: 250),
-                              offset: const Offset(0, 20),
-                              child: _buildSectionHeader('Today'),
-                            ),
-                            ..._filteredToday.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final notification = entry.value;
-                              return CredSlideIn(
-                                delay: Duration(
-                                  milliseconds: 300 + (index * 50),
-                                ),
-                                child: CredCardReveal(
-                                  duration: Duration(
-                                    milliseconds: 400 + (index * 30),
-                                  ),
-                                  perspective: 0.0006,
-                                  child: SwipeToDismiss(
-                                    uniqueKey: notification.id,
-                                    onDismiss: () async {
-                                      await sl<HapticService>().medium();
-                                      setState(() {
-                                        _allNotifications.removeWhere(
-                                          (n) => n.id == notification.id,
-                                        );
-                                        _todayNotifications.removeWhere(
-                                          (n) => n.id == notification.id,
-                                        );
-                                      });
-                                      await UserService.saveNotifications(
-                                        _allNotifications,
-                                      );
-                                    },
-                                    child: CredButtonPress(
-                                      onTap: () async {
-                                        await sl<HapticService>().light();
-                                      },
-                                      child: _buildNotificationItem(
-                                        notification,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                            const SizedBox(height: 24),
-                          ],
-                          if (_filteredYesterday.isNotEmpty) ...[
-                            CredSlideIn(
-                              delay: Duration(
-                                milliseconds:
-                                    250 + (_filteredToday.length * 50),
-                              ),
-                              offset: const Offset(0, 20),
-                              child: _buildSectionHeader('Yesterday'),
-                            ),
-                            ..._filteredYesterday.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final notification = entry.value;
-                              return AnimationConfiguration.staggeredList(
-                                position: index + _filteredToday.length,
-                                duration: const Duration(milliseconds: 375),
-                                child: SlideAnimation(
-                                  verticalOffset: 50,
-                                  child: custom.FadeInAnimation(
-                                    child: SwipeToDismiss(
-                                      uniqueKey: notification.id,
-                                      onDismiss: () async {
-                                        await sl<HapticService>().medium();
-                                        setState(() {
-                                          _allNotifications.removeWhere(
-                                            (n) => n.id == notification.id,
-                                          );
-                                          _yesterdayNotifications.removeWhere(
-                                            (n) => n.id == notification.id,
-                                          );
-                                        });
-                                        await UserService.saveNotifications(
-                                          _allNotifications,
-                                        );
-                                      },
-                                      child: _buildNotificationItem(
-                                        notification,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ],
-                      ),
+            if (!n.isRead) ...[
+              const SizedBox(width: FpSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.only(top: FpSpacing.xs),
+                child: FpPulse(
+                  key: ValueKey('unread-dot-${n.id}'),
+                  maxScale: 1.6,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: c.accent,
+                      shape: BoxShape.circle,
                     ),
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: AppTheme.credTextPrimary,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildNotificationItem(NotificationItem notification) {
-    IconData icon;
-    const iconColor = AppTheme.primaryGreen;
+class _Skeleton extends StatelessWidget {
+  const _Skeleton();
 
-    switch (notification.type) {
-      case NotificationType.cashback:
-        icon = Icons.attach_money;
-      case NotificationType.paymentReminder:
-        icon = Icons.access_time;
-      case NotificationType.profileUpdate:
-        icon = Icons.person;
-      case NotificationType.paymentRequest:
-        icon = Icons.request_quote;
-      case NotificationType.cardLinked:
-        icon = Icons.credit_card;
-      case NotificationType.billDue:
-        icon = Icons.receipt;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.credSurfaceCard,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
+  @override
+  Widget build(BuildContext context) {
+    return FpSkeletonGroup(
+      child: ListView(
+        key: const ValueKey('notifications-skeleton'),
+        padding: const EdgeInsets.all(FpSpacing.lg),
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notification.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.credTextPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  notification.message,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.credTextSecondary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            _formatTime(notification.localTime),
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.credTextSecondary,
-            ),
-          ),
+          for (var i = 0; i < 6; i++) ...[
+            const FpSkeletonRow(),
+            const SizedBox(height: FpSpacing.sm),
+          ],
         ],
       ),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = sl<Clock>().now();
-    final difference = now.difference(time);
-
-    if (difference.inHours < 1) {
-      return '${difference.inMinutes}m';
-    } else if (difference.inHours < 24) {
-      return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    } else {
-      return '${time.day}/${time.month}';
-    }
   }
 }
