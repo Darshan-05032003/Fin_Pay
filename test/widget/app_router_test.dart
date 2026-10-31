@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:animations/animations.dart';
 import 'package:fin_pay/app.dart';
 import 'package:fin_pay/blocs/session/session_cubit.dart';
@@ -6,6 +8,7 @@ import 'package:fin_pay/core/di/injection_container.dart' as di;
 import 'package:fin_pay/core/money/money.dart';
 import 'package:fin_pay/core/platform/fakes/fakes.dart';
 import 'package:fin_pay/core/settings/settings_cubit.dart';
+import 'package:fin_pay/design_system/design_system.dart';
 import 'package:fin_pay/domain/auth/auth_failure.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
 import 'package:fin_pay/models/user.dart';
@@ -76,10 +79,23 @@ void main() {
     await tester.pump();
   }
 
-  /// Legacy screens schedule delayed entrance animations; flush them so the
-  /// test ends without pending timers.
+  /// Flushes entrances, toasts and submit-guard timers so the test ends
+  /// without pending timers.
   Future<void> settle(WidgetTester tester) =>
       tester.pump(const Duration(seconds: 5));
+
+  /// The app-wide blocs read the in-memory sqflite database on a real
+  /// worker thread; `tester.pump` only advances fake time. Let that I/O
+  /// finish before asserting (and before tear-down closes the blocs), so
+  /// the outcome never depends on host load (F7, D-074).
+  Future<void> flush(WidgetTester tester) async {
+    for (var i = 0; i < 5; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+  }
 
   String location() =>
       router.routerDelegate.currentConfiguration.uri.toString();
@@ -142,16 +158,15 @@ void main() {
     await settle(tester);
   });
 
-  testWidgets('/gallery is a placeholder in debug and redirected in release', (
-    tester,
-  ) async {
+  testWidgets('/gallery is the design-system gallery in debug and '
+      'redirected in release', (tester) async {
     await session.restore();
     await pump(tester);
     router.go(AppRoutes.gallery);
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(location(), AppRoutes.gallery);
-    expect(find.text('Widget gallery (F2)'), findsOneWidget);
+    expect(find.byType(FpGalleryScreen), findsOneWidget);
     await settle(tester);
     router.dispose();
     // A new FinPayApp State is needed for the new router.
@@ -180,6 +195,8 @@ void main() {
     when(() => auth.restoreSession()).thenAnswer((_) async => 'u1');
     await session.restore();
     await pump(tester);
+    // Home is the first route: let its database reads land before leaving.
+    await flush(tester);
     router.go(AppRoutes.transferReview, extra: {'amount': '420.90'});
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
@@ -207,6 +224,48 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     expect(find.textContaining('Kelvin Habit'), findsWidgets);
     await settle(tester);
+    await flush(tester);
+  });
+
+  testWidgets('each route kind renders its design-system transition', (
+    tester,
+  ) async {
+    AppPageTransitions.builder = AppPageTransitions.fp;
+    when(() => auth.restoreSession()).thenAnswer((_) async => 'u1');
+    await session.restore();
+    await pump(tester);
+    await flush(tester);
+
+    Finder sharedAxis(SharedAxisTransitionType type) => find.byWidgetPredicate(
+      (w) => w is SharedAxisTransition && w.transitionType == type,
+    );
+
+    unawaited(router.push(AppRoutes.transfer));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(sharedAxis(SharedAxisTransitionType.horizontal), findsWidgets);
+    await settle(tester);
+    await flush(tester);
+
+    unawaited(router.push(AppRoutes.addCard));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(sharedAxis(SharedAxisTransitionType.vertical), findsWidgets);
+    await settle(tester);
+
+    unawaited(router.push(AppRoutes.transactions));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(sharedAxis(SharedAxisTransitionType.scaled), findsWidgets);
+    await settle(tester);
+    await flush(tester);
+
+    router.go(AppRoutes.profile);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(FadeThroughTransition), findsWidgets);
+    await settle(tester);
+    await flush(tester);
   });
 
   testWidgets('the page transition hook is used for every route', (

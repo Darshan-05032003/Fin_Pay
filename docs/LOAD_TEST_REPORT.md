@@ -215,3 +215,131 @@ per pumped frame, not GPU raster time; on-device profile traces are Wave 2.
   - The Stats tab loads only when first shown (D-066), so the start-up path pays no chart query.
   - Verify the 10k-row scroll frames on the moto g64 in profile mode in Wave 2; if the 16 ms budget is missed, cap the day groups' separators or move the row glyph to a `const` widget.
 
+## Feature: F7 App-wide polish
+- Scenario and scale: the F7 changes are a theme swap at the root, an explicit transition map, the gallery route, the native splash and five deleted legacy files; no new data path. `test/stress/screen_frames_stress_test.dart` (below) is the F7/Wave 2 benchmark; the splash hand-off adds one `preserve`/`remove` channel call pair at start-up.
+- Results (numbers): start-up path unchanged in cost (DB open + settings + session restore run behind the splash as before); route transitions keep the F2 durations (450 ms forward, 400 ms reverse); the home collapse, cards fan-out, keypad, statistics and transactions scenarios are in the table below.
+- What broke: nothing in F7. The first run of the new benchmark asserted "no tickers" while the transactions screen was still mounted (rows keep entrance/swipe tickers alive by design); the assertion now runs after the harness unmounts the tree, as in the F4/F6 stress tests.
+- Failure flow (step by step): none reached.
+- Fix applied / recommendation: `FpTheme.dark()` at the root removes a second `ThemeData` from the start-up path; keep `AppPageTransitions.kinds` exhaustive (tested) so no route ever pays for a mismatched transition.
+
+## Wave 2: consolidated run
+
+Command (Linux build box, Dart JIT, software rendering, `sqflite_common_ffi`; one file at a time):
+
+```
+flutter test --tags stress --dart-define=FINPAY_STRESS=true --concurrency=1 test/stress
+```
+
+Result: **41 tests, all green** (40 on the first pass + the transactions scenario after the assertion was moved behind the harness dispose; the file re-run is the frame table below). Wall time 1 min 46 s.
+
+### Per-screen frame-time table (host)
+
+Build + layout + paint of one `tester.pump` per frame on the host (no raster thread, no GPU). The numbers rank screens and catch regressions; a phone renders differently (the NeoPOP edges raster on the GPU, the JIT warm-up disappears in AOT). Source: `test/stress/screen_frames_stress_test.dart`.
+
+| Screen / scenario | Frames | Avg | p90 | p99 | > 16 ms |
+|---|---:|---:|---:|---:|---:|
+| Home: header collapse + expand (10 cycles) | 300 | 2.56 ms | 4.57 ms | 7.56 ms | 0 |
+| Cards: 12-card fan-out + collapse (5 cycles) | 375 | 1.59 ms | 1.92 ms | 7.15 ms | 1 |
+| Transfer: 300 keypad inputs | 300 | 3.98 ms | 9.66 ms | 19.84 ms | 3 |
+| Statistics: year entrance (365 points) + 4 switches | 180 | 2.09 ms | 3.14 ms | 16.14 ms | 2 |
+| Transactions: 2,000 rows, 20 pages scrolled | 360 | 2.12 ms | 3.95 ms | 10.62 ms | 3 |
+
+Reading: every screen averages 1.6–4.0 ms per frame; the outliers over 16 ms are the first frame after a layout change (the first keypad frame after the odometer gains a column, the `fl_chart` rebuild on a period switch, the first row build of a new page) and are JIT/GC noise on the host, as in F5/F6.
+
+### Device raster numbers
+
+**Not run: no device** was attached during Wave 2 (`adb devices` empty). To record them:
+
+```
+flutter drive --driver=test_driver/integration_test.dart \
+    --target=integration_test/perf_test.dart --profile -d <device id>
+# → build/perf/{home_collapse,card_stack,transfer_keypad,swipe_to_pay,statistics,transactions_scroll}.timeline_summary.json
+flutter drive --driver=test_driver/integration_test.dart \
+    --target=integration_test/app_flows_test.dart -d <device id>
+# → build/perf/swipe_to_pay.timeline_summary.json, build/perf/card_stack.performance.json
+```
+
+Each summary carries `average_frame_build_time_millis`, `90th_percentile_frame_build_time_millis`, `99th_percentile_frame_build_time_millis`, the raster equivalents and `missed_frame_build_budget_count` / `missed_frame_rasterizer_budget_count` per screen; the driver also prints one line per section.
+
+### Full run output
+
+Every number the suite printed on this run, in file order (`[stress]` / `STRESS` lines; the frame table above comes from the file re-run):
+
+```
+[stress] 1000 taps dispatched in 292 ms, onPressed calls: 1
+[stress] 10k rows fling: 300 frames, avg 2.08 ms, p90 3.21 ms, p99 4.76 ms, frames > 16 ms: 0
+[stress] odometer 100 rolls in 631 ms, tickers after: 0
+[stress] 50 confetti bursts (500 frames) in 78 ms, tickers after: 0
+[stress] 200 skeleton blocks, 120 frames in 279 ms (2.33 ms/frame), active tickers: 1
+STRESS 100k-datasource insert_ms=1409 insert_rows_per_s=70972 page50_ms=2 page50_offset50k_ms=20 search_title_ms=11 search_recipient_ms=1 date_range_1day_ms=8 daily_totals_all_ms=30 daily_totals_30_ms=14 full_scan_100k_ms=336 duplicate_check_ms=2
+STRESS 100k-migration seed_v1_ms=958 migrate_v1_to_v2_ms=330
+STRESS 1000-bloc-adds total_ms=1751 per_event_ms=1.75 rows=500 rss_before_mb=323.8 rss_after_mb=382.1 rss_growth_mb=58.3
+STRESS breaking-point 10000_page50_ms=0 10000_page50_last_ms=3 10000_search_ms=1 10000_daily_totals_all_ms=1 10000_daily_totals_30_ms=2 50000_page50_ms=0 50000_page50_last_ms=22 50000_search_ms=11 50000_daily_totals_all_ms=10 50000_daily_totals_30_ms=16 100000_page50_ms=0 100000_page50_last_ms=40 100000_search_ms=22 100000_daily_totals_all_ms=24 100000_daily_totals_30_ms=14 200000_page50_ms=0 200000_page50_last_ms=82 200000_search_ms=45 200000_daily_totals_all_ms=48 200000_daily_totals_30_ms=15 400000_page50_ms=0 400000_page50_last_ms=182 400000_search_ms=96 400000_daily_totals_all_ms=104 400000_daily_totals_30_ms=16 first_page_over_100ms_at_rows=400000 search_over_100ms_at_rows=none up to 400k daily_totals_over_100ms_at_rows=400000
+STRESS money parse_200k_ms=549 format_200k_ms=136 parse_us_each=2.75 format_us_each=0.68
+STRESS pbkdf2 verify_10k_iterations_ms=27.2
+[stress] 1000 login taps dispatched in 464 ms, signIn calls: 1
+[stress] 10k OTP machine inputs in 30 ms, max digits 6
+[stress] 2000 FpOtpField pastes in 4150 ms, max digits 6
+[stress] 1000 login failures in 2709 ms: invalid 80, locked 920, lock windows expired 20, RSS 386 MB → 389 MB
+[stress] 1000 repository sign-ins in 14 ms, locked responses: 996 (hashing stops once locked)
+[stress] 500 onboarding swings in 6028 ms, 3000 frames: avg 0.61 ms, p90 0.80 ms, p99 1.66 ms
+[stress] tickers after dispose: 0
+[stress] seeded 10000 rows in 229 ms
+[stress] 10000 rows: first page in 3 ms
+[stress] 10000 rows: page at offset 9950 in 3 ms
+[stress] 10000 rows: 50 pages scrolled in 6951 ms, 1950 rows loaded (50 page waits): 300 frames, avg 13.29 ms, p90 23.90 ms, p99 40.92 ms, > 16 ms: 92; RSS 371 MB
+[stress] 10000 rows: search "Priya" → 50 rows in 1 ms
+[stress] 10000 rows: search "Coffee 9" → 0 rows in 1 ms
+[stress] 10000 rows: search "zzz" → 0 rows in 1 ms
+[stress] 10000 rows: search "' OR 1=1 --" → 0 rows in 1 ms
+[stress] seeded 100000 rows in 1078 ms
+[stress] 100000 rows: first page in 0 ms
+[stress] 100000 rows: page at offset 99950 in 29 ms
+[stress] 100000 rows: 50 pages scrolled in 5376 ms, 1950 rows loaded (50 page waits): 300 frames, avg 9.25 ms, p90 15.20 ms, p99 20.71 ms, > 16 ms: 25; RSS 388 MB
+[stress] 100000 rows: search "Priya" → 50 rows in 0 ms
+[stress] 100000 rows: search "Coffee 9" → 0 rows in 8 ms
+[stress] 100000 rows: search "zzz" → 0 rows in 7 ms
+[stress] 100000 rows: search "' OR 1=1 --" → 0 rows in 7 ms
+[stress] 2,000 flips in 29 ms, 1999 writes
+[stress] 1,000 dismiss+undo cycles in 12618 ms (1000 undos): 8 rows, toast open: false, transient callbacks: 0, RSS 357 → 396 MB
+[stress] year chart entrance (365 points): 60 frames, avg 2.21 ms, p90 3.69 ms, p99 36.81 ms, > 16 ms: 1
+[stress] 10 period switches (30 frames each): 300 frames, avg 1.99 ms, p90 2.60 ms, p99 15.55 ms, > 16 ms: 2
+[stress] 500 notifications entrance: 60 frames, avg 0.89 ms, p90 1.02 ms, p99 2.61 ms, > 16 ms: 0
+[stress] 500 notifications, 40 scroll frames: 40 frames, avg 12.45 ms, p90 15.91 ms, p99 18.78 ms, > 16 ms: 3
+[stress] mark all read: 250 ids in one write, 17 ms
+[stress] 50-card stack, tilt at 60 Hz: 300 frames, avg 1.25 ms, p90 1.66 ms, p99 2.37 ms, > 16 ms: 0
+[stress] 20 flips under tilt: 600 frames, avg 1.12 ms, p90 1.51 ms, p99 5.46 ms, > 16 ms: 0
+[stress] 10 swipes under tilt: 200 frames, avg 1.49 ms, p90 1.58 ms, p99 10.38 ms, > 16 ms: 0
+[stress] tickers after dispose: 0, sensor listeners: 0
+[stress] 10k transactions: seed 208 ms, home ready in 100 ms, rows on screen: 5, RSS 331 MB
+[stress] 1000 hide-balance taps in 409 ms: hidden=false, persisted=false, writes=1000
+[stress] 1000 add-card taps in 307 ms: stored=1, location=/cards
+[stress] odometer to max at 1.3x: 60 frames, avg 1.24 ms, p90 2.94 ms, p99 6.53 ms, > 16 ms: 0
+STRESS slider: 1,002 gestures in 491 ms → 1 authorize, 1 ledger write(s)
+STRESS 1,000 payments (100 flaky retries): 1943 ms, rows 1000, already paid 100, RSS 316 → 311 MB, effect listeners after: false
+STRESS keypad: 10,000 inputs in 27025 ms; 10000 frames, avg 1.93 ms, p90 4.82 ms, p99 8.27 ms, > 16 ms: 15
+STRESS confetti + odometer: 100 frames, avg 0.16 ms, p90 0.29 ms, p99 1.59 ms, > 16 ms: 0
+STRESS 50 contacts entrance: 60 frames, avg 0.21 ms, p90 0.47 ms, p99 1.55 ms, > 16 ms: 0; search filter 45490 µs
+```
+
+### Coverage (`flutter test --coverage --concurrency=4`, `dart run tool/coverage_summary.dart`)
+
+| Folder | Lines hit | Lines found | Coverage |
+|---|---:|---:|---:|
+| `lib (root)` | 36 | 41 | 87.8 % |
+| `lib/blocs` | 397 | 441 | 90.0 % |
+| `lib/core` | 538 | 609 | 88.3 % |
+| `lib/data` | 394 | 397 | 99.2 % |
+| `lib/design_system` | 2656 | 2720 | 97.6 % |
+| `lib/domain` | 100 | 113 | 88.5 % |
+| `lib/models` | 165 | 167 | 98.8 % |
+| `lib/routes` | 126 | 129 | 97.7 % |
+| `lib/screens` | 5347 | 5458 | 98.0 % |
+| `lib/utils` | 48 | 48 | 100.0 % |
+| **lib (total)** | 9807 | 10123 | 96.9 % |
+
+Targets (spec §6, ≥ 80 % on `lib/domain`, `lib/data`, `lib/blocs`, `lib/design_system`): all met (88.5 / 99.2 / 90.0 / 97.6 %). `lib/core` 88.3 % is the real platform implementations (secure storage, biometrics, vibration, sensors, the `FLAG_SECURE` channel), which only a device exercises.
+
+### Integration tests
+
+`integration_test/app_flows_test.dart` (onboarding → login → send money → swipe to pay → success → history; add card → stack; Test Decline) and `integration_test/perf_test.dart` compile and pass `flutter analyze`; **not run: no device**. Commands in README "Tests".

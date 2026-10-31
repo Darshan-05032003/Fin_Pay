@@ -7,9 +7,9 @@ import 'package:fin_pay/blocs/transaction/transaction_bloc.dart';
 import 'package:fin_pay/blocs/transaction/transaction_event.dart';
 import 'package:fin_pay/blocs/user/user_bloc.dart';
 import 'package:fin_pay/blocs/user/user_event.dart';
-import 'package:fin_pay/constants/theme.dart';
 import 'package:fin_pay/core/di/injection_container.dart' as di;
 import 'package:fin_pay/core/settings/settings_cubit.dart';
+import 'package:fin_pay/design_system/design_system.dart';
 import 'package:fin_pay/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -69,8 +69,10 @@ class _FinPayAppState extends State<FinPayApp> {
       child: MaterialApp.router(
         title: 'FinPay',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
+        // Dark only: both slots hold the design-system theme, so the first
+        // Flutter frame has the same background as the native splash.
+        theme: FpTheme.dark(),
+        darkTheme: FpTheme.dark(),
         themeMode: ThemeMode.dark,
         routerConfig: _router,
         builder: (context, child) => AccessibilityScope(child: child!),

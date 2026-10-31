@@ -237,7 +237,57 @@ Haptics, Reduce motion, Hide balance and Biometric sign-in are `FpToggle` rows c
 ### D-069: Screens are scanned for raw colours, curves and magic durations
 `test/unit/screens/screen_tokens_test.dart` walks `lib/screens/**` and fails on `Color(0x`, `Colors.`, `Curves.`, any `Duration(…seconds)` on a line that does not say "timeout", and on imports of the deleted `lib/widgets`, `lib/services`, `neopop`, `shimmer` or `flutter_staggered_animations`. Pure-logic files (cubits, states, maths, machines, rules, the transfer models) are exempt from the duration rule only. The one offender outside F6 was `spring_rise.dart`'s reduce-motion fallback (`Curves.easeOut`), now `FpMotion.standardDecelerate`.
 
+## F7 App-wide polish + Wave 2 (Agent G)
+
+### D-070: The app icon is drawn in Dart, not downloaded
+- **Context:** the spec wants an original icon and splash through `flutter_launcher_icons` / `flutter_native_splash`, and the repo must not carry CRED assets.
+- **Decision:** `tool/render_brand_assets.dart` is a `CustomPainter` rendered through `PictureRecorder.toImage` under `flutter test --dart-define=FINPAY_RENDER_ASSETS=true` (without the define it registers one skipped test; `dart run` cannot host `dart:ui`). It writes `assets/brand/{icon,icon_foreground,icon_monochrome,splash,splash_android12}.png`. Design: `FpColors.background` tile, an `accent` plate with the `accentDeep` offset edge (the NeoPOP "plunk" every surface in the app has), a bold geometric F cut out in `onPop`, a `success` chip. The same painter at different scales feeds the legacy icon, the adaptive foreground (62 % so it sits inside the 66 % safe zone), the monochrome themed icon (silhouette with the F punched out through `BlendMode.clear`) and both splash images (512 px for the layer-list splash so it stays ~120 dp on xxhdpi, 1152 px for the Android 12 icon).
+- **Packages:** `flutter_launcher_icons 0.14.4` and `flutter_native_splash 2.4.8` (both verified on pub.dev, both maintained). `flutter_native_splash` is a runtime dependency because `FlutterNativeSplash.preserve/remove` runs in `main.dart`; the icon tool is dev-only.
+- **Not changed:** `applicationId`, the label, `AndroidManifest.xml` (allowBackup=false and the single exported activity are untouched; verified by diff after both tools ran).
+
+### D-071: The native splash hands over to the first Flutter frame without a flash
+- Splash colour = `#0B0B0D` = `FpColors.background` = the scaffold colour of `FpTheme.dark()`; `test/widget/app_test.dart` pins the three together.
+- `main.dart` calls `FlutterNativeSplash.preserve` before `di.init()` and `remove()` after `runApp`, so the splash covers the DB open, settings load and session restore, and the first frame is already the route the redirect chose (welcome or home; the same test asserts no intermediate screen for `SessionUnknown`, signed-out and signed-in).
+- The generated `styles.xml` files are hand-adjusted after the tool runs: both `LaunchTheme` parents are `Theme.Black.NoTitleBar` and `NormalTheme.windowBackground` is `#FF0B0B0D` (the default `?android:colorBackground` under a light parent is white and would show behind the Flutter view during the hand-off and keyboard resizes). Re-running `flutter_native_splash:create` keeps `NormalTheme`; re-check the parents.
+
+### D-072: The root theme is the design system; the legacy theme and helpers are deleted; the token scan covers the whole `lib/`
+- **Found:** `lib/app.dart` still passed `AppTheme.lightTheme` (the legacy `lib/constants/theme.dart`: font "Inter", `0xFF0D0D0D` background, no `FpTokens` extension) while every widget test used `FpTheme.dark()`; screens looked right only because `context.fp` falls back to `FpTokens.dark`. Material-owned surfaces (scaffold, snackbars, app bars) were off-palette on the device.
+- **Decision:** `theme` and `darkTheme` are both `FpTheme.dark()` (dark-only app, both slots equal so the system setting cannot swap palettes); `lib/constants/theme.dart`, `lib/core/error_handler.dart`, `lib/core/exception_handler.dart`, `lib/utils/constants.dart` and `lib/utils/helpers.dart` had no remaining users and are deleted.
+- `test/unit/screens/screen_tokens_test.dart` now also scans `lib/app.dart`, `lib/main.dart` and `lib/routes` (screen rule: no colours, curves or magic durations), every other `lib/` folder (no colours or curves), and asserts that inside `lib/design_system` only `tokens/` and `theme/` define `Color(0x` and only `tokens/fp_motion.dart` defines a `Cubic`. The `Colors.` check is a regex that ignores `FpColors.` in comments.
+
+### D-073: One explicit transition kind per route
+- `AppPageTransitions.kinds` lists every path in `AppRoutes.all` (a test asserts the sets are equal, so a new route cannot fall back silently): shared-axis X for the steps of a flow (onboarding, login, sign-up, OTP, biometrics, password reset, transfer → review), shared-axis Y for the add-card form (it rises like a sheet), shared-axis Z for drill-in lists pushed over home (history, notifications), fade-through for root switches and results (welcome, the tab shell and its four branch roots, card details behind the Hero, payment success, gallery). `/cards/<id>` matches the pattern entry by prefix. The F1 `fade` fallback uses `FpMotion.standard` and `FpMotion.standardDecelerate` instead of literals.
+- `app_router_test.dart` navigates through one route of each kind and asserts the `SharedAxisTransition` type / `FadeThroughTransition` on screen.
+
+### D-074: The "transfer review without a typed draft" case
+- Reported flaky once in F3, when the success screen still used real-time `Future.delayed` entrance timers (legacy widgets, deleted in F5). In Wave 2 it passed 10/10 isolated runs and every full-suite run, so the original cause is gone. The remaining non-determinism in that file was that `FinPayApp` dispatches four database loads to the sqflite ffi worker thread while the test only advances fake time: under host load a load could complete after `di.reset()` closed the blocs. The test now flushes real time (`runAsync` rounds) after the first frame and before tear-down, so the outcome no longer depends on scheduling. No test was weakened or skipped.
+
+### D-075: Integration tests boot the app without `main()`
+- `integration_test/flows.dart` runs `di.init()`, `ensureDemoAccount`, settings and session restore itself, then pumps `FinPayApp()`. Calling `main()` would also invoke the native splash and orientation plugins (fine on a device, not needed by the test) and would re-register GetIt on the second test. Each test starts with `di.reset()`.
+- Every flow is device-state independent: `reachLogin` logs out a restored session through the profile tab, walks the welcome screen (first run or "seen") and the three onboarding pages, and ends on the login form. Finders are the existing `ValueKey`s; no keys had to be added.
+- `app_flows_test.dart` wraps swipe-to-pay in `binding.traceAction` and the card stack in `binding.watchPerformance`; `perf_test.dart` traces six screens for `flutter drive --profile`; `test_driver/integration_test.dart` turns every `*_timeline` report into `build/perf/<name>.timeline_summary.json` (plus the raw timeline) and every `*_performance` report into `build/perf/<name>.performance.json`.
+- No device was attached while Wave 2 ran (`adb devices` empty), so the files are compiled and analysed but their results are "not run: no device" (README, LOAD_TEST_REPORT). The commands are documented for the owner.
+
+### D-076: The widget gallery is the router's default, debug-only
+- `AppRouter.build` registers `FpGalleryScreen` for `/gallery` unless a test overrides it; `app.dart` no longer needs to know about it. The redirect still sends release builds to home/login and the screen renders nothing in release, so the profile "Widget gallery" row works in debug and is inert in release.
+
+### D-077: Host frame benchmark per key screen, one table
+- `test/stress/screen_frames_stress_test.dart` measures the five key screens the same way (build + layout + paint of one `pump` on the host) and prints one Markdown table; LOAD_TEST_REPORT "Wave 2: consolidated run" copies it. Device raster numbers come from `perf_test.dart` when a device is attached.
+
+### D-078: Coverage table from lcov without `lcov`
+- `tool/coverage_summary.dart` folds `coverage/lcov.info` (LF/LH only, so it matches `lcov --summary`) per top-level `lib/` folder into the Markdown table used in README and LOAD_TEST_REPORT; `coverage/` stays ignored.
+
+### D-079: Screenshots are copies of goldens
+- `docs/images/` holds the gallery, tokens and buttons goldens (1.0×) as the spec's "screenshot of the gallery", plus a README listing the ten flows to record on a phone (motion does not survive a golden). The 1.3× gallery golden is not copied (1.4 MB; the test folder keeps it).
+
 ## Compromises
+
+### F7 / Wave 2
+- No device was attached (`adb devices` empty), so the integration flows and the profile traces are written, analysed and documented but not executed; every device number reads "not run: no device".
+- The host frame numbers are build/layout/paint on a Linux JIT with software rendering; they rank screens relative to each other and catch regressions, they do not predict a phone's raster time.
+- The Android `styles.xml` hand edits (D-071) must be re-checked after any `flutter_native_splash:create` run; the generator rewrites `LaunchTheme`.
+- `flutter_native_splash` is a runtime dependency (D-070); `flutter_launcher_icons` stays dev-only.
+- Files touched outside `integration_test/`, `test_driver/`, `tool/`, docs and tests: `lib/app.dart` (theme, no gallery wiring), `lib/main.dart` (splash), `lib/routes/app_router.dart` (gallery default), `lib/routes/app_page_transitions.dart` (map), five deleted legacy files (D-072), `pubspec.yaml`/`pubspec.lock`, `android/app/src/main/res/**`, `ios/**` (generated icons/splash), desktop plugin registrants (packages removed). All additive except the deletions, which had zero users.
 
 ### F6
 - Paging is limit/offset (D-061); keyset paging stays a recommendation for ledgers past the F1 breaking point (400k rows). Search results are capped at 50 and not paged.

@@ -7,10 +7,17 @@ import 'package:fin_pay/core/settings/settings_cubit.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 /// Entry point: wires dependencies, restores settings and session, runs.
+///
+/// The native splash stays up while dependencies, settings and the session
+/// load, and is removed once the first Flutter frame is scheduled, so the
+/// hand-off is splash → welcome/home with no blank frame in between (the
+/// splash colour equals `FpColors.background`, the theme's scaffold colour).
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -28,4 +35,5 @@ Future<void> main() async {
   await di.sl<SessionCubit>().restore();
 
   runApp(const FinPayApp());
+  FlutterNativeSplash.remove();
 }
