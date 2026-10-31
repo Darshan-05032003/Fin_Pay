@@ -91,9 +91,68 @@ void main() {
     );
   });
 
+  group('TransactionRepositoryImpl F6 additions', () {
+    late TransactionRepositoryImpl repo;
+    setUp(() => repo = TransactionRepositoryImpl(ds));
+
+    test('a type filter is forwarded to paging and search', () async {
+      when(
+        () => ds.getTransactions(
+          limit: 50,
+          offset: 0,
+          type: TransactionType.sendMoney,
+        ),
+      ).thenAnswer((_) async => Success([tx]));
+      when(
+        () => ds.searchTransactions('cof', type: TransactionType.payment),
+      ).thenAnswer((_) async => Success([tx]));
+      when(
+        () => ds.getTransactions(type: TransactionType.payment),
+      ).thenAnswer((_) async => const Success([]));
+      expect(
+        (await repo.getTransactions(
+          limit: 50,
+          offset: 0,
+          type: TransactionType.sendMoney,
+        )).dataOrNull,
+        [tx],
+      );
+      expect(
+        (await repo.searchTransactions(
+          ' cof ',
+          type: TransactionType.payment,
+        )).dataOrNull,
+        [tx],
+      );
+      expect(
+        (await repo.searchTransactions(
+          '',
+          type: TransactionType.payment,
+        )).dataOrNull,
+        isEmpty,
+      );
+    });
+
+    test('getTransactionsBetween delegates', () async {
+      final from = DateTime.utc(2026);
+      final to = DateTime.utc(2026, 2);
+      when(
+        () => ds.getTransactionsBetween(from, to),
+      ).thenAnswer((_) async => Success([tx]));
+      expect((await repo.getTransactionsBetween(from, to)).dataOrNull, [tx]);
+    });
+  });
+
   group('NotificationRepositoryImpl', () {
     late NotificationRepositoryImpl repo;
     setUp(() => repo = NotificationRepositoryImpl(ds));
+
+    test('markRead delegates', () async {
+      when(
+        () => ds.markNotificationsRead(['a', 'b']),
+      ).thenAnswer((_) async => const Success(null));
+      expect((await repo.markRead(['a', 'b'])).isSuccess, isTrue);
+    });
 
     test('delegates every call', () async {
       when(

@@ -8,11 +8,27 @@ export 'package:fin_pay/data/datasources/local_datasource.dart'
 
 /// Repository interface for transactions.
 abstract interface class ITransactionRepository {
-  /// Newest first, optionally paged.
-  Future<Result<List<Transaction>>> getTransactions({int? limit, int? offset});
+  /// Newest first, optionally paged (`limit`/`offset`) and restricted to
+  /// one [type].
+  Future<Result<List<Transaction>>> getTransactions({
+    int? limit,
+    int? offset,
+    TransactionType? type,
+  });
 
-  /// Case-insensitive search over title and recipient.
-  Future<Result<List<Transaction>>> searchTransactions(String query);
+  /// Case-insensitive search over title and recipient (parameterised),
+  /// optionally restricted to one [type]; the data source caps the result.
+  Future<Result<List<Transaction>>> searchTransactions(
+    String query, {
+    TransactionType? type,
+  });
+
+  /// Every transaction with `from <= date < to` (UTC instants), newest
+  /// first.
+  Future<Result<List<Transaction>>> getTransactionsBetween(
+    DateTime from,
+    DateTime to,
+  );
 
   /// The newest [limit] transactions.
   Future<Result<List<Transaction>>> getRecentTransactions({int limit = 5});

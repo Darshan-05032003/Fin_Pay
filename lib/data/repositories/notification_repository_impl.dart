@@ -20,4 +20,8 @@ class NotificationRepositoryImpl implements INotificationRepository {
   @override
   Future<Result<void>> deleteNotification(String notificationId) =>
       _localDataSource.deleteNotification(notificationId);
+
+  @override
+  Future<Result<void>> markRead(List<String> ids) =>
+      _localDataSource.markNotificationsRead(ids);
 }
