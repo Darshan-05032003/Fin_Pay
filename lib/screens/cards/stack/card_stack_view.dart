@@ -175,6 +175,7 @@ class _Pile extends StatelessWidget {
       );
     final left = (width - cardWidth) / 2;
     return FpPressable(
+      key: const ValueKey('cards-pile'),
       semanticLabel: count == 1
           ? 'Your card, tap to open'
           : 'Your $count cards, tap to fan out',

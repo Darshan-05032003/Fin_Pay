@@ -1,7 +1,7 @@
 // Profile-mode frame traces for the key screens (spec §7b):
 //
 //   flutter drive --driver=test_driver/integration_test.dart \
-//       --target=integration_test/perf_test.dart --profile -d <device id>
+//       --target=integration_test/perf_test.dart --profile --no-dds -d <device id>
 //
 // Each section is a `traceAction` with its own report key, so the driver
 // writes one `build/perf/<section>.timeline_summary.json` per screen with
@@ -9,6 +9,7 @@
 // home_collapse, card_stack, transfer_keypad, swipe_to_pay, statistics,
 // transactions_scroll.
 import 'package:fin_pay/screens/shell/app_shell.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -26,7 +27,7 @@ void main() {
     }
 
     // Home: collapse and expand the balance header five times.
-    await binding.traceAction(() async {
+    await traced(binding, () async {
       final scroll = key('home-scroll');
       for (var i = 0; i < 5; i++) {
         await tester.timedDrag(
@@ -45,12 +46,47 @@ void main() {
     }, reportKey: 'home_collapse_timeline');
 
     // Cards: fan out, swipe the carousel, flip, collapse.
-    await tester.tap(find.text('Cards'));
+    await tapTab(tester, 'Cards');
     await pumpUntil(tester, key('cards-scroll'));
     await pumpFor(tester, const Duration(seconds: 1));
-    await binding.traceAction(() async {
-      final pile = find.bySemanticsLabel(RegExp('tap to fan out'));
+    await traced(binding, () async {
+      final pile = key('cards-pile');
+      // Cards load from the database first; wait for the pile instead of
+      // checking once. A fresh install (the tool reinstalls when switching
+      // debug/profile builds, which wipes the database) has no cards, so
+      // seed two and measure a real stack.
+      try {
+        await pumpUntil(
+          tester,
+          find.byWidgetPredicate(
+            (w) =>
+                w.key == const ValueKey('cards-pile') ||
+                w.key == const ValueKey('cards-empty'),
+          ),
+        );
+      } on TestFailure {
+        debugPrint('card_stack: neither a pile nor the empty state appeared');
+      }
+      if (pile.evaluate().isEmpty && key('cards-empty').evaluate().isNotEmpty) {
+        await addDemoCard(
+          tester,
+          number: freshTestPan(),
+          name: 'Perf Card One',
+          expiry: '11/31',
+          cvv: '123',
+        );
+        await addDemoCard(
+          tester,
+          number: freshTestPan(),
+          name: 'Perf Card Two',
+          expiry: '10/32',
+          cvv: '456',
+        );
+        await pumpUntil(tester, pile);
+      }
       if (pile.evaluate().isNotEmpty) {
+        await tester.ensureVisible(pile);
+        await tester.pump();
         await tester.tap(pile);
         await pumpFor(tester, const Duration(milliseconds: 1200));
         await tester.drag(key('card-carousel'), const Offset(-320, 0));
@@ -61,14 +97,14 @@ void main() {
     }, reportKey: 'card_stack_timeline');
 
     // Transfer: keypad with the rolling odometer, then swipe to pay.
-    await tester.tap(find.text('Home'));
+    await tapTab(tester, 'Home');
     await pumpUntil(tester, key('home-scroll'));
     await tapKey(tester, 'home-action-send');
     await pumpUntil(tester, key('contact-c-rohan'));
     await pumpFor(tester, const Duration(milliseconds: 600));
     await tester.tap(key('contact-c-rohan'));
     await tester.pump();
-    await binding.traceAction(() async {
+    await traced(binding, () async {
       for (final d in '1234567'.split('')) {
         await tester.tap(key('key-$d'));
         await pumpFor(tester, const Duration(milliseconds: 120));
@@ -81,17 +117,16 @@ void main() {
     await tapKey(tester, 'transfer-continue');
     await pumpUntil(tester, key('review-swipe'));
     await pumpFor(tester, const Duration(milliseconds: 600));
-    await binding.traceAction(() async {
+    await traced(binding, () async {
       await swipeToPay(tester);
       await pumpUntil(tester, key('success-done'));
       await pumpFor(tester, const Duration(seconds: 2));
     }, reportKey: 'swipe_to_pay_timeline');
-    await tapKey(tester, 'success-done');
-    await pumpUntil(tester, find.byType(AppShell));
+    await backHome(tester, 'success-done');
 
     // Statistics: entrance and period switches.
-    await binding.traceAction(() async {
-      await tester.tap(find.text('Stats'));
+    await traced(binding, () async {
+      await tapTab(tester, 'Stats');
       await pumpUntil(tester, key('stats-period'));
       await pumpFor(tester, const Duration(milliseconds: 1500));
       for (final period in ['Month', 'Year', 'Week']) {
@@ -101,12 +136,12 @@ void main() {
     }, reportKey: 'statistics_timeline');
 
     // Transactions: scroll the ledger.
-    await tester.tap(find.text('Home'));
+    await tapTab(tester, 'Home');
     await pumpUntil(tester, key('home-scroll'));
     await tapKey(tester, 'home-action-history');
     await pumpUntil(tester, key('transactions-scroll'));
     await pumpFor(tester, const Duration(seconds: 1));
-    await binding.traceAction(() async {
+    await traced(binding, () async {
       for (var i = 0; i < 6; i++) {
         await tester.fling(
           key('transactions-scroll'),

@@ -287,7 +287,8 @@ Every screen now imports only `package:fin_pay/design_system/design_system.dart`
   `test/stress/screen_frames_stress_test.dart` (per-screen frame table).
   Wave 2 totals: 1,528 tests passed, 7 skipped placeholders (969 unit,
   481 widget, 78 golden), 41 stress tests, 4 integration tests
-  (`integration_test/`, not run: no device).
+  (`integration_test/`; run on a moto g64 5G after the merge: 3/3 flows,
+  6/6 traced sections — see `docs/LOAD_TEST_REPORT.md`).
 
 ## 8. Inventory (F7)
 

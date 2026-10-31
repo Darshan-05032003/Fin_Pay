@@ -9,7 +9,7 @@
 //
 //   flutter test integration_test/app_flows_test.dart -d <device id>
 //   flutter drive --driver=test_driver/integration_test.dart \
-//       --target=integration_test/app_flows_test.dart -d <device id>
+//       --target=integration_test/app_flows_test.dart --no-dds -d <device id>
 //
 // The swipe-to-pay and card-stack sections are wrapped in
 // `binding.traceAction` / `binding.watchPerformance`, so the drive run also
@@ -35,7 +35,7 @@ void main() {
     await startTransfer(tester, contactId: 'c-priya', digits: amountDigits);
     expect(find.textContaining('Priya Raghavan'), findsWidgets);
 
-    await binding.traceAction(() async {
+    await traced(binding, () async {
       await swipeToPay(tester);
       await pumpUntil(tester, key('success-check'));
     }, reportKey: 'swipe_to_pay_timeline');
@@ -43,8 +43,7 @@ void main() {
     await pumpUntil(tester, key('success-done'));
     await pumpFor(tester, const Duration(seconds: 2));
     expect(find.textContaining('Priya Raghavan'), findsWidgets);
-    await tapKey(tester, 'success-done');
-    await pumpUntil(tester, find.byType(AppShell));
+    await backHome(tester, 'success-done');
 
     await tapKey(tester, 'home-action-history');
     await pumpUntil(tester, key('transactions-scroll'));
@@ -58,28 +57,24 @@ void main() {
       await reachLogin(tester);
       await signIn(tester);
     }
-    await tester.tap(find.text('Cards'));
+    await tapTab(tester, 'Cards');
     await pumpUntil(tester, key('cards-scroll'));
     await pumpFor(tester, const Duration(seconds: 1));
     final before = _pileCount(tester);
 
-    await tapKey(tester, 'cards-add');
-    await typeInto(tester, 'add-card-number', '4111 1111 1111 1111');
-    await typeInto(tester, 'add-card-name', 'Aarav Mehta');
-    await typeInto(tester, 'add-card-expiry', '12/30');
-    await typeInto(tester, 'add-card-cvv', '321');
-    await hideKeyboard(tester);
-    await tester.ensureVisible(key('add-card-submit'));
-    await tester.pump();
-    await tapKey(tester, 'add-card-submit');
-    await pumpUntil(tester, find.text('Card added'));
-    await pumpUntilGone(tester, key('add-card-submit'));
-    await pumpUntil(tester, key('cards-scroll'));
-    await pumpFor(tester, const Duration(seconds: 1));
+    await addDemoCard(
+      tester,
+      number: freshTestPan(),
+      name: 'Aarav Mehta',
+      expiry: '12/30',
+      cvv: '321',
+    );
     expect(_pileCount(tester), before + 1);
 
-    await binding.watchPerformance(() async {
-      await tester.tap(find.bySemanticsLabel(RegExp('tap to fan out')));
+    await watched(binding, () async {
+      await tester.ensureVisible(key('cards-pile'));
+      await tester.pump();
+      await tapKey(tester, 'cards-pile');
       await pumpFor(tester, const Duration(milliseconds: 1200));
       await tester.drag(key('card-carousel'), const Offset(-320, 0));
       await pumpFor(tester, const Duration(milliseconds: 800));
@@ -101,8 +96,7 @@ void main() {
     await pumpUntil(tester, key('review-failure'));
     expect(find.text('Payment declined'), findsOneWidget);
     expect(key('success-check'), findsNothing);
-    await tapKey(tester, 'failure-home');
-    await pumpUntil(tester, find.byType(AppShell));
+    await backHome(tester, 'failure-home');
   });
 }
 

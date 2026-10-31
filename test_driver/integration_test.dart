@@ -1,9 +1,9 @@
 // Driver for the on-device integration tests (spec §7b):
 //
 //   flutter drive --driver=test_driver/integration_test.dart \
-//       --target=integration_test/app_flows_test.dart -d <device id>
+//       --target=integration_test/app_flows_test.dart --no-dds -d <device id>
 //   flutter drive --driver=test_driver/integration_test.dart \
-//       --target=integration_test/perf_test.dart --profile -d <device id>
+//       --target=integration_test/perf_test.dart --profile --no-dds -d <device id>
 //
 // Every `binding.traceAction(..., reportKey: '<name>_timeline')` in a target
 // is summarised with `TimelineSummary` and written to
@@ -31,6 +31,12 @@ Future<void> main() => integrationDriver(
           entry.key.length - '_timeline'.length,
         );
         final summary = TimelineSummary.summarize(Timeline.fromJson(value));
+        if (summary.countFrames() == 0) {
+          // A section that did not render (e.g. a guarded step was skipped)
+          // has nothing to summarise; `writeTimelineToFile` would throw.
+          stdout.writeln('$name: no frames recorded, summary skipped');
+          continue;
+        }
         await summary.writeTimelineToFile(
           name,
           destinationDirectory: directory.path,

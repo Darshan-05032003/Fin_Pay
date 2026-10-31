@@ -219,9 +219,9 @@ flutter test --coverage --concurrency=4 && dart run tool/coverage_summary.dart
 # On an attached device (one at a time):
 flutter test integration_test/app_flows_test.dart -d <device id>
 flutter drive --driver=test_driver/integration_test.dart \
-    --target=integration_test/app_flows_test.dart -d <device id>
+    --target=integration_test/app_flows_test.dart --no-dds -d <device id>
 flutter drive --driver=test_driver/integration_test.dart \
-    --target=integration_test/perf_test.dart --profile -d <device id>
+    --target=integration_test/perf_test.dart --profile --no-dds -d <device id>
 # → build/perf/<section>.timeline_summary.json
 ```
 
@@ -231,7 +231,7 @@ flutter drive --driver=test_driver/integration_test.dart \
 | Widget | 481 | `test/widget/**` (every screen through the real router + DI with platform fakes), `test/design_system/**` components and motion |
 | Golden | 78 test cases, 144 PNG baselines | `test/golden/**` at 1.0× and 1.3× text scale (24 design-system + 120 screen baselines) |
 | Stress | 41 | `test/stress/**`, tag `stress`, gated by `FINPAY_STRESS` |
-| Integration | 4 (3 flows + 1 profile trace) | `integration_test/**`; not run: no device attached |
+| Integration | 4 (3 flows + 1 profile trace) | `integration_test/**`; run on a moto g64 5G (Android 15): 3/3 flows pass in ~35 s, 6/6 perf sections traced |
 
 `flutter test --concurrency=4` on the Wave 2 branch: **1,528 passed, 7 skipped** (the seven are the stress files' placeholders when the flag is off); `flutter analyze`: no issues; `dart format`: clean.
 
@@ -239,7 +239,12 @@ Golden baselines render the bundled fonts and tolerate ≤ 0.5 % differing
 pixels. Stress tests are tagged `stress` and gated behind the
 `FINPAY_STRESS` define, so the default run stays fast. Integration tests
 boot the real DI and the real database on the device; the flows are
-device-state independent (a restored session is logged out first).
+device-state independent (a restored session is logged out first, an empty
+card stack is seeded). Under `flutter test` the traced sections run
+uninstrumented (DDS owns the VM service); `flutter drive --no-dds` records
+the timelines. With the developer "animation scale" at 0 the app falls back
+to reduce motion (the swipe-to-pay slider becomes a confirm button), which
+the flows accept; set it to 1× for performance runs.
 
 **Coverage** (`flutter test --coverage`, lines, from `coverage/lcov.info`):
 
@@ -278,10 +283,24 @@ balance exact with no leaked tickers or sensor listeners; a 50-card stack
 under 60 Hz tilt averages ~1.2 ms per frame. The full log is in
 [`docs/LOAD_TEST_REPORT.md`](docs/LOAD_TEST_REPORT.md).
 
-Device numbers (build and raster averages, p90, p99 and missed frames per
-screen) come from `integration_test/perf_test.dart` through
-`flutter drive --profile`; **not run: no device** was attached during the
-Wave 2 run. The commands above write them to `build/perf/`.
+Device numbers come from `integration_test/perf_test.dart` through
+`flutter drive --profile --no-dds` (the commands above write them to
+`build/perf/`). Recorded on a moto g64 5G (Dimensity 7025, Android 15,
+panel at 60 Hz) with the developer animation scales at 1×:
+
+| Section | Build avg / p90 / p99 | Raster avg / p90 / p99 | Frames > 16 ms (build / raster) |
+|---|---|---|---|
+| Home header collapse + expand | 1.2 / 3.6 / 7.1 ms | 6.3 / 8.8 / 62.4 ms | 0 / 4 of 151 |
+| Card stack fan-out, swipe, collapse | 2.0 / 3.3 / 9.2 ms | 9.9 / 15.7 / 31.5 ms | 0 / 19 of 195 |
+| Transfer keypad (12 key presses) | 4.6 / 16.1 / 19.8 ms | 8.0 / 9.5 / 12.6 ms | 10 / 0 of 90 |
+| Swipe to pay → success | 2.9 / 4.0 / 7.2 ms | 9.0 / 11.5 / 27.7 ms | 1 / 11 of 192 |
+| Statistics entrance + period switches | 3.9 / 6.2 / 18.3 ms | 10.6 / 15.9 / 22.5 ms | 3 / 17 of 183 |
+| Transactions scroll (6 flings) | 1.0 / 1.4 / 1.6 ms | 5.8 / 7.3 / 7.8 ms | 0 / 0 of 265 |
+
+Build time is comfortably inside the budget everywhere; raster is the
+heavier half on this phone, with the card fan-out, the charts and the
+confetti burst missing the 16 ms raster budget on 6–10 % of their frames.
+The three integration flows pass on the same device in about 35 seconds.
 
 ## Security highlights
 

@@ -248,14 +248,33 @@ Reading: every screen averages 1.6–4.0 ms per frame; the outliers over 16 ms a
 
 ### Device raster numbers
 
-**Not run: no device** was attached during Wave 2 (`adb devices` empty). To record them:
+Recorded on 2026-10-31 (after the Wave 2 merge) on a **moto g64 5G** (MediaTek MT6855 / Dimensity 7025, Android 15, 1080 × 2400 panel running at 60 Hz, so the 16.7 ms budget applies), Flutter 3.47.9, `flutter drive --profile --no-dds`, developer animation scales set to 1× for the run (this phone normally has them at 0, which the app honours as reduce motion) and restored afterwards. Six sections, one trace each, `TimelineSummary` 16 ms budget:
+
+| Section (profile, moto g64 5G, 60 Hz) | Frames | Build avg / p90 / p99 | Build > 16 ms | Raster avg / p90 / p99 | Raster > 16 ms |
+|---|---:|---|---:|---|---:|
+| Home: header collapse + expand × 5 | 151 | 1.18 / 3.60 / 7.13 ms | 0 | 6.26 / 8.84 / 62.35 ms | 4 |
+| Cards: seed two cards, fan out, swipe, collapse | 195 | 1.96 / 3.25 / 9.20 ms | 0 | 9.93 / 15.70 / 31.51 ms | 19 |
+| Transfer: 7 keypad digits + 5 backspaces | 90 | 4.64 / 16.12 / 19.79 ms | 10 | 7.95 / 9.51 / 12.57 ms | 0 |
+| Swipe to pay → processing → success (confetti) | 192 | 2.88 / 3.99 / 7.18 ms | 1 | 9.04 / 11.53 / 27.73 ms | 11 |
+| Statistics: entrance + Month / Year / Week | 183 | 3.90 / 6.19 / 18.27 ms | 3 | 10.56 / 15.85 / 22.52 ms | 17 |
+| Transactions: 6 flings | 265 | 0.96 / 1.40 / 1.62 ms | 0 | 5.77 / 7.26 / 7.78 ms | 0 |
+
+Reading:
+- Build time is not the problem on this phone: averages of 1–5 ms with zero missed build frames on four of six sections. The host table above ranked the screens the same way, so the host suite is a usable regression signal.
+- **Raster is the heavy half.** Averages of 6–11 ms leave little headroom at 60 Hz, and the three motion-heavy sections miss the raster budget on 6–10 % of frames: card fan-out 19/195 (perspective-transformed NeoPOP cards with layered shadows), statistics 17/183 (`fl_chart` entrance and period switches), swipe-to-pay success 11/192 (confetti burst over the drawn check). The worst raster frames (48–64 ms) are single first-paint frames at a section's start.
+- The keypad's build p90 of 16 ms (10 missed frames in 90) is the odometer column and keypad rebuilding per key press; raster stays under budget there.
+- Transactions scrolling and the home header collapse are clean.
+
+Follow-ups (D-082): fewer shadow layers while cards are in motion, a `RepaintBoundary` around the chart area, a smaller confetti burst on 60 Hz devices, and a narrower `setState` scope on the keypad. The integration flows (`app_flows_test.dart`, debug) pass on the same phone in ~35 s. Note that profile builds still print redacted `Logger` lines (release is silent by design).
+
+To re-record:
 
 ```
 flutter drive --driver=test_driver/integration_test.dart \
-    --target=integration_test/perf_test.dart --profile -d <device id>
+    --target=integration_test/perf_test.dart --profile --no-dds -d <device id>
 # → build/perf/{home_collapse,card_stack,transfer_keypad,swipe_to_pay,statistics,transactions_scroll}.timeline_summary.json
 flutter drive --driver=test_driver/integration_test.dart \
-    --target=integration_test/app_flows_test.dart -d <device id>
+    --target=integration_test/app_flows_test.dart --no-dds -d <device id>
 # → build/perf/swipe_to_pay.timeline_summary.json, build/perf/card_stack.performance.json
 ```
 
