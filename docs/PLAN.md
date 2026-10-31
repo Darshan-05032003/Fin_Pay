@@ -53,3 +53,19 @@ Each agent works in a git worktree `../wt-<agent>` on branch `ui/<agent>`. The o
 - **Wave 2**: integration flows, golden baselines, on-device performance traces, README, final report.
 
 See `docs/UI_AUDIT.md` for the current-state audit and `docs/DECISIONS.md` for every judgement call.
+
+## Delivered
+
+| Feature | Agent / branch | Merge into `main` |
+|---|---|---|
+| P0 Preflight | orchestrator | fd28fad (pushed with F0) |
+| F0 Baseline green | orchestrator | 773a7c6 |
+| F1 Foundations | A / `ui/a` | cccf852 |
+| F2 Design system | B / `ui/b` | 9c1444b |
+| F3 Onboarding + Auth | C / `ui/c` | b087c4a |
+| F4 Home + Cards | D / `ui/d` | f3c6e5f |
+| F5 Payments | E / `ui/e` | 24afaf5 |
+| F6 Insights + Activity | F / `ui/f` | a9aee63 |
+| F7 Polish + Wave 2 QA/Perf/Docs | G / `ui/g` | merged by the orchestrator after this branch |
+
+Every feature landed with its tests, a `SECURITY_REVIEW.md` entry and a `LOAD_TEST_REPORT.md` entry; the per-feature decisions are in `DECISIONS.md` (D-001 … D-079).

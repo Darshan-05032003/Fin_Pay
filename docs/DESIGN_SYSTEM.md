@@ -186,6 +186,22 @@ The gallery is used by the golden tests (1.0× and 1.3× text scale) and by the
 accessibility guideline tests (`androidTapTargetGuideline`,
 `labeledTapTargetGuideline`, `textContrastGuideline`).
 
+Since F7 the router registers the gallery itself (`AppRouter.build` defaults
+`gallery` to `FpGalleryScreen`; the redirect hides it in release, D-076), and
+the profile screen's "Widget gallery" row opens it in debug builds.
+
+Screenshot of the gallery (the 1.0× golden baseline, copied to
+`docs/images/gallery_1_0.png`; Material icons render as boxes in goldens,
+D-009):
+
+![Design-system gallery](images/gallery_1_0.png)
+
+Tokens and buttons, from the same baselines:
+
+![Tokens](images/tokens_1_0.png)
+
+![Buttons](images/buttons_1_0.png)
+
 ## 6. Old widget → new primitive
 
 | Old (`lib/widgets/…`) | Verdict | Replacement |
@@ -245,7 +261,9 @@ Every screen now imports only `package:fin_pay/design_system/design_system.dart`
 - `test/design_system/` unit + widget (tokens, motion logic, every component and
   state, reduce-motion, haptics, semantics, security regressions).
 - `test/golden/design_system/` tag `golden`: every component group and the whole
-  gallery at 1.0× and 1.3×. Fonts load in `test/flutter_test_config.dart`;
+  gallery at 1.0× and 1.3× (12 sections × 2 scales = 24 baselines; with the
+  120 screen baselines the repo holds 144 golden PNGs, all committed and
+  green on the Wave 2 run: 78 golden test cases). Fonts load in `test/flutter_test_config.dart`;
   the comparator tolerates ≤ 0.5 % pixel difference (D-009). Regenerate with
   `flutter test --update-goldens test/golden` only when a change is intended.
 - `test/stress/design_system_stress_test.dart` tag `stress`:
@@ -262,3 +280,56 @@ Every screen now imports only `package:fin_pay/design_system/design_system.dart`
   (math + widget + toast action), DS golden `swipe_action_row_<scale>.png`,
   screen goldens `insights_activity_golden_test.dart`,
   `test/stress/insights_activity_stress_test.dart`.
+- F7 / Wave 2: `test/widget/app_test.dart` (root theme = `FpTheme.dark()`,
+  splash hand-off), `test/unit/routes/app_page_transitions_test.dart` (one
+  explicit kind per route), `test/unit/screens/screen_tokens_test.dart`
+  (raw values only inside `tokens/` and `theme/`),
+  `test/stress/screen_frames_stress_test.dart` (per-screen frame table).
+  Wave 2 totals: 1,528 tests passed, 7 skipped placeholders (969 unit,
+  481 widget, 78 golden), 41 stress tests, 4 integration tests
+  (`integration_test/`, not run: no device).
+
+## 8. Inventory (F7)
+
+Every component and motion primitive, where it lives, where it is tested and
+which gallery golden (`test/golden/design_system/goldens/<name>_<scale>.png`)
+shows it. Screen goldens (`test/golden/screens/goldens/`) cover them again in
+context.
+
+| Name | File | Test file(s) (`test/design_system/`) | Gallery golden |
+|---|---|---|---|
+| `FpAmountText` (+ `FpOdometer`, `FpDigitRoll`) | `components/fp_amount_text.dart` | `components/fp_display_test.dart`, `fp_security_test.dart` | `amount_text` |
+| `FpBottomNav` | `components/fp_bottom_nav.dart` | `components/fp_bottom_nav_test.dart` | `nav_refresh_flip_tilt` |
+| `FpBottomSheet` | `components/fp_bottom_sheet.dart` | `components/fp_overlays_test.dart`, `motion/fp_motion_logic_test.dart` | — (overlay; screen goldens `*_sheet_*`) |
+| `FpButton` | `components/fp_button.dart` | `components/fp_button_test.dart`, `fp_security_test.dart` | `buttons` |
+| `FpChip` | `components/fp_chip.dart` | `components/fp_inputs_test.dart` | `surfaces_chips` |
+| `FpCollapsingHeader` (+ `FpCollapseMath`) | `components/fp_collapsing_header.dart` | `components/fp_collapsing_header_test.dart` | `nav_refresh_flip_tilt` |
+| `FpCountdownRing` | `components/fp_countdown_ring.dart` | `components/fp_countdown_ring_test.dart` | `otp_countdown_check` |
+| `FpOtpField` | `components/fp_otp_field.dart` | `components/fp_otp_field_test.dart` | `otp_countdown_check` |
+| `FpPageIndicator` | `components/fp_page_indicator.dart` | `components/fp_inputs_test.dart` | `controls` |
+| `FpProcessingRing` | `components/fp_processing_ring.dart` | `components/fp_swipe_to_pay_test.dart` | `swipe_to_pay` |
+| `FpRefreshIndicator` (+ `FpRefreshMath`, `FpRefreshGlyph`) | `components/fp_refresh_indicator.dart` | `components/fp_refresh_indicator_test.dart` | `nav_refresh_flip_tilt` |
+| `FpSegmentedControl` | `components/fp_segmented_control.dart` | `components/fp_inputs_test.dart` | `controls` |
+| `FpSkeleton` / `FpSkeletonRow` / `FpSkeletonGroup` | `components/fp_skeleton.dart` | `components/fp_display_test.dart` | `states` |
+| `FpEmptyState` / `FpErrorState` | `components/fp_state_views.dart` | `components/fp_display_test.dart` | `states` |
+| `FpSurface` | `components/fp_surface.dart` | `components/fp_display_test.dart` | `surfaces_chips` |
+| `FpSwipeActionRow` (+ `FpSwipeActionMath`, `FpSwipeActionController`) | `components/fp_swipe_action_row.dart` | `components/fp_swipe_action_row_test.dart` | `swipe_action_row` |
+| `FpSwipeToPay` (+ `FpSwipeMath`) | `components/fp_swipe_to_pay.dart` | `components/fp_swipe_to_pay_test.dart` | `swipe_to_pay` |
+| `FpTextField` | `components/fp_text_field.dart` | `components/fp_inputs_test.dart`, `fp_security_test.dart` | `text_fields` |
+| `FpToast` | `components/fp_toast.dart` | `components/fp_overlays_test.dart`, `components/fp_swipe_action_row_test.dart` | — (overlay) |
+| `FpToggle` | `components/fp_toggle.dart` | `components/fp_inputs_test.dart` | `controls` |
+| `FpConfetti` (+ `FpConfettiBurst`) | `motion/fp_confetti.dart` | `motion/fp_motion_logic_test.dart`, `motion/fp_motion_widgets_test.dart` | — (screen golden `transfer_success_*`) |
+| `FpDrawnCheck` | `motion/fp_drawn_check.dart` | `motion/fp_drawn_check_test.dart` | `otp_countdown_check` |
+| `FpFlipCard` (+ `FpFlipMath`) | `motion/fp_flip_card.dart` | `motion/fp_flip_tilt_test.dart` | `nav_refresh_flip_tilt` |
+| `FpHero` | `motion/fp_hero.dart` | `motion/fp_motion_widgets_test.dart` | — |
+| `FpPageTransitions` | `motion/fp_page_transitions.dart` | `motion/fp_motion_widgets_test.dart`, `test/unit/routes/app_page_transitions_test.dart`, `test/widget/app_router_test.dart` | — |
+| `FpParallax` | `motion/fp_parallax.dart` | `motion/fp_motion_logic_test.dart`, `motion/fp_motion_widgets_test.dart` | — (screen golden `onboarding_*`) |
+| `FpPressable` | `motion/fp_pressable.dart` | `motion/fp_motion_widgets_test.dart`, `fp_security_test.dart` | `surfaces_chips` |
+| `FpPulse` | `motion/fp_pulse.dart` | `motion/fp_motion_widgets_test.dart` | — |
+| `FpShake` (+ `FpShakeController`) | `motion/fp_shake.dart` | `motion/fp_motion_widgets_test.dart`, `components/fp_inputs_test.dart` | — |
+| `FpEntrance` / `FpStaggeredEntrance` (+ `FpStagger`) | `motion/fp_staggered_entrance.dart` | `motion/fp_motion_logic_test.dart`, `motion/fp_motion_widgets_test.dart` | — |
+| `FpSubmitGuard` | `motion/fp_submit_guard.dart` | `motion/fp_motion_logic_test.dart` | — |
+| `FpTiltCard` (+ `FpTiltMath`, `FpTiltController`) | `motion/fp_tilt_card.dart` | `motion/fp_flip_tilt_test.dart` | `nav_refresh_flip_tilt` |
+| Tokens (`FpColors`, `FpSpacing`, `FpRadii`, `FpDepth`, `FpTypography`, `FpMotion`, `FpSprings`) | `tokens/*.dart` | `tokens/fp_tokens_test.dart`, `tokens/fp_motion_test.dart` | `tokens` |
+| Theme (`FpTheme`, `FpTokens`, `context.fp`) | `theme/*.dart` | `tokens/fp_tokens_test.dart`, `test/widget/app_test.dart` | `gallery` |
+| Gallery (`FpGalleryScreen`) | `gallery/gallery_screen.dart` | `gallery/gallery_test.dart` | `gallery` |

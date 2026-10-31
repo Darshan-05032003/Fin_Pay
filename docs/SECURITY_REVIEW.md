@@ -279,3 +279,21 @@ One entry per feature, appended after the feature's quality loop (spec §7a).
   - SQLCipher for data at rest (F1 open item) would also cover the notification texts.
   - Only one swipe row open at a time (D-065) would stop two open trays from stacking "Delete" buttons on screen.
 
+## Feature: F7 App-wide polish + Wave 2
+- Attacks tried:
+  - Generated Android resources after `flutter_launcher_icons` and `flutter_native_splash:create`: diffed `AndroidManifest.xml` (unchanged: `allowBackup="false"`, `fullBackupContent`/`dataExtractionRules` kept, `MainActivity` the only exported component, no VIEW/deep-link filter, no `usesCleartextTraffic`), every `styles.xml` variant (only window themes and splash items; no `android:debuggable`, no network config), the new `mipmap-anydpi-v26`, `drawable-*` and `values-v31` files (bitmaps, colours and the Android 12 splash items only). `MainActivity.kt` (FLAG_SECURE channel, `filterTouchesWhenObscured`) is untouched.
+  - iOS: `Info.plist` gained only `UIStatusBarHidden=false`; no ATS exception, no URL schemes.
+  - Dependency surface: `flutter_svg`, `url_launcher` and `cupertino_icons` removed (zero imports; `url_launcher` was the only package able to open external URLs). `flutter_native_splash` runs two platform calls at start-up and nothing after `remove()`; `flutter_launcher_icons`, `integration_test` and `flutter_driver` are dev/test only and never ship.
+  - Integration tests: `git grep` for the demo password finds it only in `integration_test/flows.dart` and the README; both are public by design (spec §10, D-030). The tests use `enterText` through the keys the screens already had, read nothing from secure storage and print no credential; the perf driver writes timeline JSON only (frame timings, no app data).
+  - Theme swap: with `FpTheme.dark()` at the root, `MaterialApp.themeMode` is forced dark, so a system light theme cannot surface light Material defaults around sensitive content; `FLAG_SECURE` behaviour is unchanged (shell tabs and credential screens).
+  - Route guard regression after the transition map change: the redirect is untouched; `app_router_test.dart` still asserts protected routes redirect when signed out, guest routes redirect when signed in, the gallery is unreachable in release and the transfer review/success routes reject untyped extras; the token scan asserts no screen, route or app file imports the deleted legacy theme.
+- What broke:
+  - **Medium** – the shipped app ran under the legacy `AppTheme` (font "Inter", a different background, no `FpTokens` extension) although every test ran under `FpTheme.dark()`; Material-owned surfaces (snackbars, app bars, dialogs) were off-palette on the device and the native splash would have handed over to a different background. Fixed (D-072), pinned by `test/widget/app_test.dart`.
+  - **Low** – the Android `NormalTheme` window background resolved to white under a `Theme.Light` parent, so a light frame could show behind the Flutter view at start-up and during keyboard resizes (not a data leak, a flash). Fixed (D-071).
+  - **Low** – `/gallery` rendered a placeholder in the app: the profile "Widget gallery" row led nowhere in debug. Fixed (D-076); release behaviour unchanged.
+  - Nothing Critical or High. The icon and splash add no attack surface: static bitmaps and colours, no code, no permissions, no exported components.
+- Fixed now: all of the above.
+- Scope for improvement:
+  - SQLCipher for data at rest and a keystore-backed biometric sign-in remain open from F1/F3.
+  - Run the integration flows on a device with `adb shell dumpsys window` to confirm `FLAG_SECURE` on the shell tabs under the new window themes (not run: no device).
+  - A release-build smoke test (`flutter build apk --release --obfuscate --split-debug-info`) by the orchestrator confirms the gallery redirect and the silent logger in release.
