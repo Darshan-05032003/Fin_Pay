@@ -20,7 +20,8 @@ lib/design_system/
                           fp_amount_text (+ FpOdometer), fp_segmented_control, fp_page_indicator,
                           fp_otp_field, fp_countdown_ring (F3),
                           fp_bottom_nav, fp_refresh_indicator, fp_collapsing_header (F4),
-                          fp_swipe_to_pay (+ FpSwipeMath), fp_processing_ring (F5)
+                          fp_swipe_to_pay (+ FpSwipeMath), fp_processing_ring (F5),
+                          fp_swipe_action_row (+ FpSwipeActionMath) (F6)
   motion/                 fp_pressable, fp_submit_guard, fp_staggered_entrance (FpEntrance,
                           FpStaggeredEntrance, FpStagger), fp_parallax, fp_page_transitions,
                           fp_hero, fp_shake, fp_pulse, fp_confetti, fp_drawn_check (F3),
@@ -126,7 +127,7 @@ haptics through `HapticService` (constructor parameter, else GetIt, else none).
 | `FpPageIndicator` | count/index | Active dot morphs 8 → 24 px, 250 ms | – |
 | `FpAmountText` | value (paise), `hide` none / mask / blur, `animateFirstBuild` | Per-digit odometer roll, 250 ms per column, 30 ms stagger from the right capped at 200 ms; instant with reduce-motion | – |
 | `FpBottomSheet.show` | title, builder, `isDismissible`, `barrierLabel` | `sheet` spring entrance; drag follows finger; release dismisses below 50 % or on a ≥ 700 px/s fling, else snaps back; fade with reduce-motion | – |
-| `FpToast.show` | success, error, info; auto-dismiss (3 s), tap to dismiss, one at a time | Slide (-1.2 × height) + fade 400 ms in, 250 ms out; fade only with reduce-motion | – |
+| `FpToast.show` | success, error, info; auto-dismiss (3 s), tap to dismiss, one at a time; optional `actionLabel`/`onAction` (F6, e.g. "Undo": runs once, closes the toast, `handle.actionTaken`) | Slide (-1.2 × height) + fade 400 ms in, 250 ms out; fade only with reduce-motion | – |
 | `FpSkeleton` / `FpSkeletonRow` / `FpSkeletonGroup` | block, circle, list row | Gradient sweep 1.4 s, shared ticker in a group; static with reduce-motion | – |
 | `FpEmptyState` / `FpErrorState` | icon, title, message, action / retry | Staggered entrance | via `FpButton` |
 | `FpOtpField` (F3) | `length` cells (default 6) over one hidden text field (typing, paste, `oneTimeCode` autofill share one path); idle, focused (active cell follows the digits), error, disabled; `onCompleted` | Active-cell border 150 ms; new error → shake (400 ms) + red flash (400 ms) | `selection` per digit, `error` on a new error |
@@ -135,6 +136,7 @@ haptics through `HapticService` (constructor parameter, else GetIt, else none).
 | `FpRefreshIndicator` (F4) | Wraps any vertical scrollable; `onRefresh` future; works with clamping and bouncing physics; `FpRefreshGlyph` for galleries | Drawn plunk tile slides down with a resisted curve (`FpRefreshMath`), arc sweeps with drag, spins while refreshing, retracts 400 ms; no spin with reduce-motion; errors reported, never thrown | `medium` on arm |
 | `FpCollapsingHeader` (F4) | Pinned sliver with `expandedHeight`, `collapsedHeight`, `rebuildKey`; builder receives the collapse fraction `t` (`FpCollapseMath`: fraction, lerp, fadeOut, fadeIn) | Scroll-linked only | – |
 | `FpSwipeToPay` (F5) | `label`, `onConfirmed` (one call per swipe through `FpSubmitGuard`), `processing` (locks the thumb at the end, shows a ring, springs back when cleared), `enabled`; one button semantics node ("double tap to pay") for screen readers. Pure `FpSwipeMath`: travel, progress, 85 % threshold, fling ≥ 1,200 px/s from 50 %, ticks at 25/50/75 %, label fade | Thumb follows the finger; release springs to 0 or 1 on `FpSprings.slider`; label fades over the first 40 %; with reduce-motion the whole slider is a large `FpButton` | `selection` per forward tick crossing, `heavy` on confirm |
+| `FpSwipeActionRow` (F6) | `child`, 1–3 `FpSwipeAction`s (label, icon, `neutral` pop-white or `danger` alert tone, `onPressed`), optional `onDismissed` (makes the row dismissible), `onTap`, `controller` (`FpSwipeActionController.close()`), `enabled`; screen readers get every action (and "Dismiss") as custom semantics actions. Pure `FpSwipeActionMath`: 72 dp per action, snap open at 50 % of the tray or an 800 px/s fling, dismiss past 55 % of the row width (or a fling past the tray), 0.3 overdrag resistance when not dismissible | Foreground follows the finger (`DragStartBehavior.down`), releases on `FpSprings.slider`; dismiss slides the row out (250 ms) then collapses its height (250 ms); jumps with reduce-motion | `selection` when the open threshold is crossed either way, `light` on an action, `medium` on dismiss |
 | `FpProcessingRing` (F5) | Indeterminate three-quarter arc on `FpCountdownRingPainter`; `size`, `strokeWidth`, colours, `period` (1.2 s), `semanticLabel` | One rotation per period; static arc with reduce-motion | – |
 
 ## 4. Motion primitives
@@ -230,29 +232,13 @@ in the `StatefulShellRoute` shell; statistics and profile lost their own bar).
 (→ `FpConfetti`) and `animations/delayed_animation.dart` (→ `FpEntrance`). The
 `confetti` package left pubspec with its only importer.
 
-### Pending removals (still imported by screens; Wave 1 switches them over)
+### Deleted in F6 (zero usages in `lib/` after the insights + activity rewrite)
 
-Counts are the screens still importing each file after F5 (home, cards,
-transfer, onboarding and auth screens import nothing from `lib/widgets/`;
-only statistics, transactions, notifications and profile remain for F6).
-
-| File | Used by | Replace with |
-|---|---|---|
-| `animations/cred_slide_in.dart` | 4 screens | `FpEntrance` / `FpStaggeredEntrance` |
-| `animations/cred_button_press.dart` | 4 screens | `FpPressable` (or `FpButton` for real buttons) |
-| `animations/cred_card_reveal.dart` | 4 screens | `FpEntrance` |
-| `animations/skeleton_loader_full.dart` | 4 screens | `FpSkeleton*` |
-| `animations/pull_to_refresh_custom.dart` | 4 screens | `FpRefreshIndicator` (F4) |
-| `animations/pulse_animation.dart` | 2 screens | `FpPulse` (finite; drop decorative uses) |
-| `animations/fade_in_animation.dart` | 2 screens | `FpEntrance` |
-| `animations/spring_animation.dart` | profile | `FpEntrance(scaleFrom: 0.85)` |
-| `animations/cred_number_counter.dart` | statistics | `FpAmountText` |
-| `animations/swipe_to_dismiss.dart` | 2 screens | F6: `components/fp_swipe_action_row.dart` (not in F2 scope) |
-| `animations/ripple_effect.dart` | profile | `FpPressable` |
-
-When the last screen stops importing a file, delete it; the `shimmer` and
-`flutter_staggered_animations` packages can go with their last user
-(`confetti` left in F5).
+All legacy widgets are gone as of F6: `lib/widgets/` was deleted along with
+`lib/services/user_service.dart`, and the `shimmer` and
+`flutter_staggered_animations` packages were removed from `pubspec.yaml`.
+Every screen now imports only `package:fin_pay/design_system/design_system.dart`
+(enforced by `test/unit/screens/screen_tokens_test.dart`).
 
 ## 7. Tests
 
@@ -272,3 +258,7 @@ When the last screen stops importing a file, delete it; the `shimmer` and
   + widget, 23 cases), DS golden `swipe_to_pay_<scale>.png`, screen goldens
   `transfer_<state>_<scale>.png` (18 baselines),
   `test/stress/payments_stress_test.dart`.
+- F6 insights + activity: `test/design_system/components/fp_swipe_action_row_test.dart`
+  (math + widget + toast action), DS golden `swipe_action_row_<scale>.png`,
+  screen goldens `insights_activity_golden_test.dart`,
+  `test/stress/insights_activity_stress_test.dart`.

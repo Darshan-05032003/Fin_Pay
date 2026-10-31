@@ -29,8 +29,8 @@ void main() {
     );
     await tester.pump();
     await h.settle(tester);
-    // The legacy statistics / profile tabs read the database on first show
-    // and call setState when it answers; let that finish while mounted.
+    // The shell's tabs read the real in-memory database on first show; let
+    // those reads answer while the tree is still mounted.
     await h.flush(tester, rounds: 3);
   }
 

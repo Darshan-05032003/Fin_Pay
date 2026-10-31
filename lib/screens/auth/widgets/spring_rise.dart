@@ -41,7 +41,11 @@ class _SpringRiseState extends State<SpringRise>
     _started = true;
     _reduce = FpMotion.of(context).reduce;
     if (_reduce) {
-      _controller.animateTo(1, duration: FpMotion.fast, curve: Curves.easeOut);
+      _controller.animateTo(
+        1,
+        duration: FpMotion.fast,
+        curve: FpMotion.standardDecelerate,
+      );
       return;
     }
     // The delay is part of the simulation (a hold before the spring), so
