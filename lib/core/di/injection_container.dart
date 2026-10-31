@@ -58,6 +58,7 @@ class DiOverrides {
     this.transactionRepository,
     this.cardRepository,
     this.contactRepository,
+    this.notificationRepository,
     this.paymentGateway,
   });
 
@@ -80,6 +81,7 @@ class DiOverrides {
   final ITransactionRepository? transactionRepository;
   final ICardRepository? cardRepository;
   final IContactRepository? contactRepository;
+  final INotificationRepository? notificationRepository;
 
   /// Replaces the simulated bank (payment tests).
   final PaymentGateway? paymentGateway;
@@ -142,7 +144,8 @@ Future<void> init({DiOverrides overrides = const DiOverrides()}) async {
       () => overrides.cardRepository ?? CardRepositoryImpl(sl(), sl()),
     )
     ..registerLazySingleton<INotificationRepository>(
-      () => NotificationRepositoryImpl(sl()),
+      () =>
+          overrides.notificationRepository ?? NotificationRepositoryImpl(sl()),
     )
     ..registerLazySingleton<IContactRepository>(
       () => overrides.contactRepository ?? const DemoContactRepository(),

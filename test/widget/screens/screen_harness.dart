@@ -17,6 +17,7 @@ import 'package:fin_pay/domain/payments/payment_gateway.dart';
 import 'package:fin_pay/domain/repositories/auth_repository.dart';
 import 'package:fin_pay/domain/repositories/card_repository.dart';
 import 'package:fin_pay/domain/repositories/contact_repository.dart';
+import 'package:fin_pay/domain/repositories/notification_repository.dart';
 import 'package:fin_pay/domain/repositories/transaction_repository.dart';
 import 'package:fin_pay/domain/repositories/user_repository.dart';
 import 'package:fin_pay/models/user.dart';
@@ -74,6 +75,7 @@ class ScreenHarness {
     ITransactionRepository? transactionRepository,
     IUserRepository? userRepository,
     IContactRepository? contactRepository,
+    INotificationRepository? notificationRepository,
     PaymentGateway? paymentGateway,
     FakeMotionSensor? motionSensor,
   }) async {
@@ -125,6 +127,7 @@ class ScreenHarness {
         transactionRepository: transactionRepository,
         userRepository: userRepository,
         contactRepository: contactRepository,
+        notificationRepository: notificationRepository,
         paymentGateway: paymentGateway,
       ),
     );
