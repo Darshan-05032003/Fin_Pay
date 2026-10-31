@@ -23,12 +23,10 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The tab loads when it is first shown (see `_StatsViewState`), not
+    // when the shell mounts every branch at start-up.
     return BlocProvider(
-      create: (_) {
-        final cubit = StatsCubit(repository: di.sl(), clock: di.sl());
-        unawaited(cubit.load());
-        return cubit;
-      },
+      create: (_) => StatsCubit(repository: di.sl(), clock: di.sl()),
       child: const _StatsView(),
     );
   }
@@ -55,10 +53,16 @@ class _StatsViewState extends State<_StatsView>
   TabReselect? _reselect;
   int _seenReselects = 0;
   int _shownRevision = 0;
+  bool _loadRequested = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_loadRequested &&
+        AppShell.isVisibleTab(context, StatisticsScreen.tabIndex)) {
+      _loadRequested = true;
+      unawaited(context.read<StatsCubit>().load());
+    }
     final reselect = AppShell.reselectOf(context);
     if (reselect != _reselect) {
       _reselect?.removeListener(_onReselect);
