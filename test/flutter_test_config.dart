@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/utils/utils.dart' as sqflite_utils;
 
 /// Runs before every test file.
 ///
@@ -12,8 +13,19 @@ import 'package:flutter_test/flutter_test.dart';
 /// 2. Installs a golden comparator that tolerates up to 0.5 % differing
 ///    pixels, so anti-aliasing differences between Linux machines do not
 ///    flake CI. `--update-goldens` still works.
+/// 3. Disables sqflite's "database locked" warning timer. Every query that
+///    waits for the database lock arms a 10 s `Timer` under the test's fake
+///    clock; a slow runner can finish the widget test before the real-thread
+///    query returns, and the still-armed timer fails the test with
+///    "A Timer is still pending even after the widget tree was disposed"
+///    (CI run for a9aee63). The warning only exists to flag deadlocks in
+///    development, so tests do without it (D-080).
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // `setLockWarningInfo` cannot clear the duration (`duration ?? current`),
+  // so the deprecated setter is the only way to switch the timer off.
+  // ignore: deprecated_member_use
+  sqflite_utils.lockWarningDuration = null;
   await loadFpFonts();
   final current = goldenFileComparator;
   if (current is LocalFileComparator) {

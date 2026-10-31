@@ -280,6 +280,9 @@ Haptics, Reduce motion, Hide balance and Biometric sign-in are `FpToggle` rows c
 ### D-079: Screenshots are copies of goldens
 - `docs/images/` holds the gallery, tokens and buttons goldens (1.0×) as the spec's "screenshot of the gallery", plus a README listing the ten flows to record on a phone (motion does not survive a golden). The 1.3× gallery golden is not copied (1.4 MB; the test folder keeps it).
 
+### D-080: Tests switch off sqflite's lock-warning timer
+- Every sqflite query that waits for the database lock arms a 10 s `Timer` ("database has been locked for 10 seconds") under the widget test's fake clock. On a slow runner the test can finish before the real-thread query returns and the still-armed timer fails it with "A Timer is still pending even after the widget tree was disposed" (CI run for a9aee63, `app_shell_test`; the next run passed unchanged). `test/flutter_test_config.dart` now sets `lockWarningDuration = null`, which stops the timer from being created at all, instead of each harness pumping 11 s of fake time. The setter is deprecated ("used internally") and `setLockWarningInfo` cannot clear it, so the single use carries an `ignore` with the reason. The warning is a development aid for deadlocks; production code is untouched.
+
 ## Compromises
 
 ### F7 / Wave 2
