@@ -61,6 +61,7 @@ void main() {
         'EMPTY AND ERROR STATES',
         'MOTION',
         'SWIPE TO PAY',
+        'SWIPE ACTIONS',
         'BOTTOM NAVIGATION',
         'REFRESH GLYPH',
         'FLIP CARD',
@@ -71,7 +72,7 @@ void main() {
         expect(find.text(section), findsOneWidget, reason: section);
       }
       expect(find.byType(FpButton), findsWidgets);
-      expect(find.byType(FpSurface), findsNWidgets(3));
+      expect(find.byType(FpSurface), findsNWidgets(4));
       expect(find.byType(FpTextField), findsNWidgets(4));
       expect(find.byType(FpChip), findsNWidgets(4));
       expect(find.byType(FpOtpField), findsNWidgets(2));
