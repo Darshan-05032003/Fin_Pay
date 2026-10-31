@@ -8,11 +8,13 @@ import 'package:fin_pay/design_system/components/fp_collapsing_header.dart';
 import 'package:fin_pay/design_system/components/fp_countdown_ring.dart';
 import 'package:fin_pay/design_system/components/fp_otp_field.dart';
 import 'package:fin_pay/design_system/components/fp_page_indicator.dart';
+import 'package:fin_pay/design_system/components/fp_processing_ring.dart';
 import 'package:fin_pay/design_system/components/fp_refresh_indicator.dart';
 import 'package:fin_pay/design_system/components/fp_segmented_control.dart';
 import 'package:fin_pay/design_system/components/fp_skeleton.dart';
 import 'package:fin_pay/design_system/components/fp_state_views.dart';
 import 'package:fin_pay/design_system/components/fp_surface.dart';
+import 'package:fin_pay/design_system/components/fp_swipe_to_pay.dart';
 import 'package:fin_pay/design_system/components/fp_text_field.dart';
 import 'package:fin_pay/design_system/components/fp_toast.dart';
 import 'package:fin_pay/design_system/components/fp_toggle.dart';
@@ -75,6 +77,7 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
   bool _checkShown = false;
   int _navIndex = 0;
   bool _flipped = false;
+  bool _paying = false;
   late final FpTiltController _tilt = FpTiltController()
     ..set(const Offset(0.6, -0.4));
 
@@ -397,6 +400,40 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
               const SizedBox(width: FpSpacing.md),
               Text('Pulse (3 times)', style: fp.text.bodySmall),
             ]),
+            const _Section('Swipe to pay'),
+            _Item(
+              FpSwipeToPay(
+                label: 'Swipe to pay ₹1,200.00',
+                processing: _paying,
+                onConfirmed: () async {
+                  setState(() => _paying = true);
+                  await Future<void>.delayed(
+                    const Duration(milliseconds: 1500),
+                  );
+                  if (mounted) setState(() => _paying = false);
+                },
+                haptics: h,
+              ),
+            ),
+            const _Item(
+              FpSwipeToPay(
+                label: 'Processing',
+                processing: true,
+                onConfirmed: _noopAsync,
+              ),
+            ),
+            const _Item(
+              FpSwipeToPay(
+                label: 'Disabled',
+                enabled: false,
+                onConfirmed: _noopAsync,
+              ),
+            ),
+            _Row([
+              const FpProcessingRing(),
+              const SizedBox(width: FpSpacing.md),
+              Text('Processing ring', style: fp.text.bodySmall),
+            ]),
             const _Section('Bottom navigation'),
             FpBottomNav(
               items: const [
@@ -510,6 +547,8 @@ class _FpGalleryScreenState extends State<FpGalleryScreen> {
 }
 
 void _noop(String _) {}
+
+Future<void> _noopAsync() async {}
 
 class _GalleryCard extends StatelessWidget {
   const _GalleryCard({required this.label, required this.color});

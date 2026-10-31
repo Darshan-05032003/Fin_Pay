@@ -60,6 +60,7 @@ void main() {
         'SKELETON',
         'EMPTY AND ERROR STATES',
         'MOTION',
+        'SWIPE TO PAY',
         'BOTTOM NAVIGATION',
         'REFRESH GLYPH',
         'FLIP CARD',
@@ -84,6 +85,8 @@ void main() {
       expect(find.byType(FpEmptyState), findsOneWidget);
       expect(find.byType(FpErrorState), findsOneWidget);
       expect(find.byType(FpBottomNav), findsOneWidget);
+      expect(find.byType(FpSwipeToPay), findsNWidgets(3));
+      expect(find.byType(FpProcessingRing), findsNWidgets(2));
       expect(find.byType(FpRefreshGlyph), findsNWidgets(3));
       expect(find.byType(FpFlipCard), findsOneWidget);
       expect(find.byType(FpTiltCard), findsOneWidget);
