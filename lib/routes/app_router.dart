@@ -1,6 +1,7 @@
 import 'package:fin_pay/blocs/session/session_cubit.dart';
 import 'package:fin_pay/core/di/injection_container.dart' as di;
 import 'package:fin_pay/core/settings/settings_cubit.dart';
+import 'package:fin_pay/design_system/gallery/gallery_screen.dart';
 import 'package:fin_pay/routes/app_page_transitions.dart';
 import 'package:fin_pay/routes/app_redirect.dart';
 import 'package:fin_pay/routes/app_routes.dart';
@@ -39,8 +40,9 @@ typedef CreateAccountCubitFactory =
 /// Builds the app's [GoRouter].
 abstract final class AppRouter {
   /// Creates the router. [session] drives the auth redirect and [settings]
-  /// (optional) the "onboarding seen" skip; [gallery] supplies the
-  /// debug-only widget gallery (null → placeholder); [isDebug] defaults to
+  /// (optional) the "onboarding seen" skip; [gallery] overrides the
+  /// debug-only widget gallery (defaults to `FpGalleryScreen`, which the
+  /// redirect hides in release); [isDebug] defaults to
   /// [kDebugMode] and is overridable for tests; [createAccount] overrides
   /// the sign-up flow object (defaults to the GetIt repositories).
   static GoRouter build({
@@ -165,10 +167,7 @@ abstract final class AppRouter {
           ),
         ),
         _route(AppRoutes.notifications, (_) => const NotificationsScreen()),
-        _route(
-          AppRoutes.gallery,
-          gallery ?? (_) => const _GalleryPlaceholder(),
-        ),
+        _route(AppRoutes.gallery, gallery ?? (_) => const FpGalleryScreen()),
       ],
     );
   }
@@ -202,12 +201,4 @@ class _MissingDraftScreen extends StatelessWidget {
   Widget build(BuildContext context) => const Scaffold(
     body: Center(child: Text('Start a transfer from the home screen.')),
   );
-}
-
-class _GalleryPlaceholder extends StatelessWidget {
-  const _GalleryPlaceholder();
-
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Widget gallery (F2)')));
 }
