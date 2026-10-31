@@ -189,3 +189,29 @@ per pumped frame, not GPU raster time; on-device profile traces are Wave 2.
   - The slider, the cubit and the ledger each refuse a second confirmation (guard → in-flight flag → unique key), so the 1,000-gesture burst costs one bank round trip.
   - `PaymentCubit` listens to the effects stream only between dispatch and answer and cancels synchronously, so 1,000 payments leave no listener.
   - Recommendation: the keypad's >16 ms frames are host JIT noise; verify on the moto g64 in profile mode in Wave 2 (`FpAmountText` is one `RepaintBoundary`, the keypad another). If the ledger ever grows past the F1 breaking point (400k rows, OFFSET paging), the review is unaffected (one key lookup by index), but `TransferCubit.load` reads 20 recent rows and would inherit the F6 paging work.
+
+## Feature: F6 Insights + Activity
+- Scenario and scale:
+  - `test/stress/insights_activity_stress_test.dart`, 6 scenarios:
+    1. 10,000-row and 100,000-row ledgers seeded into the real in-memory sqflite database (batches of 5,000): first page through `TransactionsCubit`, the page at the last offset, the real `/transactions` screen scrolled 50 pages (6 × 600 px drags per page, each followed by a flush so the next page can arrive), then four searches over the whole ledger (`Priya`, `Coffee 9`, `zzz`, `' OR 1=1 --`).
+    2. 2,000 rapid `SettingsCubit` flips (1,000 × haptics set + hide-balance toggle) on an in-memory repository: final state, repository state and write count.
+    3. 1,000 swipe-dismiss + Undo cycles on the real notifications screen (mocked repository counting writes): rows, duplicates, open toast, transient callbacks (tickers), RSS.
+    4. Statistics with four rows per day for a year (365 daily points, 12 monthly bars): 60 frames of the year entrance, then 10 Week ↔ Year switches × 30 frames.
+    5. 500 notifications: 60 frames of the staggered entrance, 40 scroll frames, "Mark all read".
+- Results (numbers, Linux test host, Dart JIT, software rendering):
+  1. Seeding: 10k rows **229 ms**, 100k rows **1,005 ms**. First page: **3 ms** (10k), **0–1 ms** (100k). Page at the last offset: **3 ms** (10k), **30 ms** (100k, OFFSET 99,950). 50 pages scrolled: 10k rows **6.9 s** wall (test gestures + flushes), 1,950 rows loaded, 300 frames **avg 13.06 ms, p90 23.06 ms, p99 40.22 ms, > 16 ms: 86**; 100k rows **5.4 s**, 1,950 rows, 300 frames **avg 9.27 ms, p90 15.86 ms, p99 22.37 ms, > 16 ms: 29**; RSS 364 / 384 MB. Search over 100k rows: `Priya` 50 rows **0 ms** (early exit at the cap), `Coffee 9` **7 ms**, `zzz` **7 ms**, injection string **7 ms**, 0 rows each; over 10k rows 1–3 ms.
+  2. 2,000 flips in **25 ms**, **1,999 writes** (the first flip set haptics to its current value and the cubit skipped it), final state `hapticsEnabled: false, hideBalance: false`, repository equal to the cubit.
+  3. 1,000 dismiss + undo cycles in **12.4 s** (1,000 deletes, 1,000 re-adds counted on the mock): 8 rows, 8 distinct ids, toast open **false**, transient callbacks **0**, RSS **372 → 407 MB**.
+  4. Year chart entrance: 60 frames **avg 2.20 ms, p90 3.92 ms, p99 37.28 ms, > 16 ms: 1** (the first frame builds three `fl_chart` charts); 10 period switches: 300 frames **avg 2.05 ms, p90 2.48 ms, p99 15.67 ms, > 16 ms: 1**.
+  5. 500 notifications entrance: 60 frames **avg 0.94 ms, p90 1.12 ms, p99 2.79 ms, > 16 ms: 0**; 40 scroll frames **avg 11.89 ms, p90 13.75 ms, p99 23.33 ms, > 16 ms: 1**; mark all read: **250 ids in one write, 34 ms** end to end.
+- What broke:
+  - Scenario 3 first left **3 transient callbacks** after 1,000 cycles and re-ran the entrance of every row on each dismiss: `ListView.separated` matched children by index, so inserting or removing a row re-created every other row's element (`FpEntrance` and the unread `FpPulse` restarted). Fixed with `findItemIndexCallback` keyed by id on both the notifications list and the transactions `SliverList.separated`; tickers after the run are now 0 and the cycle time fell from 24.7 s to 12.4 s.
+  - The first stress draft expected 2,000 settings writes; the cubit's "same value → no write" rule is correct and the expectation now documents it.
+  - Nothing else failed: no duplicate ids after 1,000 undos, the offset bookkeeping produced 1,950 distinct rows over 50 pages, and every hostile search returned a result instead of an exception.
+- Failure flow (step by step): none reached in the product. The expensive path is scrolling a page of newly built rows on the host JIT (each measured frame also lays out ~10 fresh `FpSwipeActionRow`s); on a phone the raster of the NeoPOP edges is the cost to watch (Wave 2).
+- Fix applied / recommendation:
+  - Keyed child reuse on both lists (above). Pages stay at 50 rows; `OFFSET` is 30 ms at 100k rows, so keyset paging remains a recommendation, not a need, for this ledger (D-061).
+  - Search is capped at 50 rows and bounded to 200 characters (D-068); the title index makes the capped `Priya` search return in under a millisecond even at 100k rows.
+  - The Stats tab loads only when first shown (D-066), so the start-up path pays no chart query.
+  - Verify the 10k-row scroll frames on the moto g64 in profile mode in Wave 2; if the 16 ms budget is missed, cap the day groups' separators or move the row glyph to a `const` widget.
+

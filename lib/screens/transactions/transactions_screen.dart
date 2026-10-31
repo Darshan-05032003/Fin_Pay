@@ -275,6 +275,13 @@ class _GroupedList extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: FpSpacing.lg),
                 sliver: SliverList.separated(
                   itemCount: group.items.length,
+                  // Elements stay keyed by id across deletes and undos.
+                  findItemIndexCallback: (key) {
+                    if (key is! ValueKey<String>) return null;
+                    final id = key.value.replaceFirst('tx-', '');
+                    final i = group.items.indexWhere((t) => t.id == id);
+                    return i < 0 ? null : i;
+                  },
                   separatorBuilder: (_, _) =>
                       const SizedBox(height: FpSpacing.sm),
                   itemBuilder: (context, i) {

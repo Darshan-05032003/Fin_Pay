@@ -110,9 +110,10 @@ List<NotificationItem> fixtureNotifications({DateTime? now}) {
 /// profile screens. The transaction mock pages a fixture ledger honestly
 /// (limit / offset / type / search), so paging is exercised end to end.
 class InsightsRepos {
-  InsightsRepos({int ledgerRows = 40, DateTime? now}) {
-    ledger = fixtureLedger(ledgerRows, now: now);
-    notifications = fixtureNotifications(now: now);
+  InsightsRepos({int ledgerRows = 40, DateTime? now})
+    : now = now ?? insightsNow {
+    ledger = fixtureLedger(ledgerRows, now: this.now);
+    notifications = fixtureNotifications(now: this.now);
     registerFallbackValue(fixtureLedger(1).first);
     registerFallbackValue(notifications.first);
     registerFallbackValue(harnessUser);
@@ -230,6 +231,9 @@ class InsightsRepos {
   final MockUserRepository users = MockUserRepository();
   final MockCardRepository cards = MockCardRepository();
 
+  /// "Now" for the fixtures and the harness clock.
+  final DateTime now;
+
   /// Mutable: deletes and undos change it.
   late final List<Transaction> ledger;
   late final List<NotificationItem> notifications;
@@ -244,7 +248,7 @@ class InsightsRepos {
     signedIn: signedIn,
     initialSettings: initialSettings,
     // Day labels ("Today") and the statistics periods depend on "now".
-    clock: Clock.fixed(insightsNow),
+    clock: Clock.fixed(now),
     cardRepository: cards,
     transactionRepository: txns,
     userRepository: users,

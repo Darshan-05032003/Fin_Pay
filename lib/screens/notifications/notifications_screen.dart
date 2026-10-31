@@ -201,6 +201,16 @@ class _NotificationList extends StatelessWidget {
         FpSpacing.xxl,
       ),
       itemCount: items.length,
+      // Keep elements keyed by id across inserts and removals, so a dismiss
+      // or an undo never re-runs the other rows' entrances and pulses.
+      findItemIndexCallback: (key) {
+        if (key is! ValueKey<String>) return null;
+        final id = key.value
+            .replaceFirst('notification-entrance-', '')
+            .replaceFirst('notification-', '');
+        final i = items.indexWhere((n) => n.id == id);
+        return i < 0 ? null : i;
+      },
       separatorBuilder: (_, _) => const SizedBox(height: FpSpacing.sm),
       itemBuilder: (context, i) {
         final n = items[i];
