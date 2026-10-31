@@ -290,6 +290,11 @@ Haptics, Reduce motion, Hide balance and Biometric sign-in are `FpToggle` rows c
 ### D-082: Device numbers rank raster, not build, as the next performance target
 - Profile traces on the moto g64 5G (60 Hz panel; table in `docs/LOAD_TEST_REPORT.md` "Device raster numbers") show build averages of 1–5 ms with no missed build frames on four of six sections, while raster averages 6–11 ms and the card fan-out (19/195), statistics (17/183) and swipe-to-pay success (11/192) miss the 16 ms raster budget on 6–10 % of frames. The keypad's build p90 of 16 ms is the one build-side outlier. Decided follow-ups, in order: fewer NeoPOP shadow layers while cards are in motion, a `RepaintBoundary` around the chart area, a smaller confetti burst on 60 Hz panels, a narrower rebuild scope on the keypad. Not done here: each is a visual change that needs new goldens and a device re-run, so they are recorded as the next feature rather than squeezed in.
 
+### D-083: Android build on Gradle 9.3.1 / AGP 9.1.0 / Kotlin 2.4.0
+- Flutter 3.47.9 had started warning that Gradle 8.14 / AGP 8.11.1 / Kotlin 2.2.20 support would be dropped, so `android/` follows the current `flutter create` template: wrapper `gradle-9.3.1-bin` (still `-bin`, D-006), `com.android.application` 9.1.0 and `org.jetbrains.kotlin.android` 2.4.0 in `settings.gradle.kts`.
+- AGP 9 applies Kotlin itself and removed the `kotlinOptions` DSL, so `app/build.gradle.kts` drops the explicit `kotlin-android` plugin id and sets the JVM target with `kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }`. Everything else (namespace, SDK versions, signing, R8 flags) is unchanged.
+- Verified by a local `flutter build apk --debug` (109 s) and the full gate; CI runs format/analyze/test only and never assembles the APK, so a wrapper or plugin regression would only show up in a local or release build.
+
 ## Compromises
 
 ### F7 / Wave 2
