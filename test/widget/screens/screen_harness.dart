@@ -225,9 +225,11 @@ class ScreenHarness {
   Future<void> dispose(WidgetTester tester) async {
     if (_disposed) return;
     _disposed = true;
-    // Flush submit-guard timers, the legacy screens' delayed entrances and
-    // sqflite's 10 s lock-warning timer before unmounting, so no timer is
-    // pending when the test ends.
+    // Let outstanding sqflite work (real async on the ffi worker) answer
+    // while the tree is still mounted, then flush submit-guard timers, the
+    // legacy screens' delayed entrances and sqflite's 10 s lock-warning
+    // timer before unmounting, so no timer is pending when the test ends.
+    await flush(tester, rounds: 2);
     await tester.pump(const Duration(seconds: 11));
     await tester.pumpWidget(const SizedBox());
     router?.dispose();

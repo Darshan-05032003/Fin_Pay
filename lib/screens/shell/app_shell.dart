@@ -42,8 +42,8 @@ class _ShellScope extends InheritedWidget {
 /// switches), the NeoPOP bottom bar, and the Android back rule (back on a
 /// non-home tab returns to home; back on home leaves the app).
 ///
-/// Home and Cards show balances and card details, so `FLAG_SECURE` is on
-/// while one of them is the visible tab.
+/// Home, Stats and Cards show balances, totals and card details, so
+/// `FLAG_SECURE` is on while one of them is the visible tab.
 class AppShell extends StatefulWidget {
   const AppShell({required this.navigationShell, super.key});
 
@@ -53,7 +53,7 @@ class AppShell extends StatefulWidget {
   static const int homeIndex = 0;
 
   /// Tabs whose content must not appear in screenshots or recents.
-  static const Set<int> protectedTabs = {0, 2};
+  static const Set<int> protectedTabs = {0, 1, 2};
 
   /// The destinations, in [AppRoutes.tabs] order.
   static const List<FpBottomNavItem> items = [
